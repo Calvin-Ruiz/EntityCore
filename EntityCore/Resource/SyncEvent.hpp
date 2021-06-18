@@ -37,6 +37,8 @@ public:
     // Event dependency
     void srcDependency(VkCommandBuffer &cmd);
     void dstDependency(VkCommandBuffer &cmd);
+    void combineDstDependencies(SyncEvent &with);
+    void multiDstDependency(VkCommandBuffer &cmd);
     void resetDependency(VkCommandBuffer &cmd, VkPipelineStageFlags2KHR stage);
     bool isSet();
     // Pipeline barrier
@@ -53,6 +55,8 @@ private:
     std::vector<VkMemoryBarrier2KHR> global;
     std::vector<VkBufferMemoryBarrier2KHR> buffers;
     std::vector<VkImageMemoryBarrier2KHR> image;
+    std::vector<VkEvent> multiEvent;
+    std::vector<VkDependencyInfoKHR> multiDep;
 };
 
 #endif /* SYNCEVENT_HPP_ */

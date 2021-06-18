@@ -67,25 +67,24 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     cacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
     cacheCreateInfo.pNext = nullptr;
     cacheCreateInfo.flags = 0;
-    std::string cacheContent;
-    if (cachePath.empty()) {
-        cacheCreateInfo.initialDataSize = 0;
-        cacheCreateInfo.pInitialData = nullptr;
-    } else {
-        std::ifstream t(cachePath + "pipelineCache.dat", std::ifstream::in | std::ifstream::binary);
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        t.close();
-        cacheContent = buffer.str();
-        cacheCreateInfo.initialDataSize = cacheContent.size();
-        cacheCreateInfo.pInitialData = cacheContent.c_str();
+    cacheCreateInfo.initialDataSize = 0;
+    cacheCreateInfo.pInitialData = nullptr;
+    std::vector<char> cacheContent;
+    if (!cachePath.empty()) {
+        std::ifstream t(cachePath + "pipelineCache.dat", std::ifstream::binary);
+        if (t) {
+            t.seekg(0, t.end);
+            cacheContent.resize(t.tellg());
+            t.seekg(0, t.begin);
+            t.read(cacheContent.data(), cacheContent.size());
+            cacheCreateInfo.initialDataSize = cacheContent.size();
+            cacheCreateInfo.pInitialData = cacheContent.data();
+            t.close();
+        }
     }
     if (vkCreatePipelineCache(device, &cacheCreateInfo, nullptr, &pipelineCache) != VK_SUCCESS) {
         std::cerr << "Failed to create pipeline cache.";
     }
-    // CommandMgr::setPFN_vkCmdPushDescriptorSetKHR((PFN_vkCmdPushDescriptorSetKHR) vkGetInstanceProcAddr(vkinstance.get(), "vkCmdPushDescriptorSetKHR"));
-    // CommandMgr::setPFN_vkCmdBeginConditionalRenderingEXT((PFN_vkCmdBeginConditionalRenderingEXT) vkGetInstanceProcAddr(vkinstance.get(), "vkCmdBeginConditionalRenderingEXT"));
-    // CommandMgr::setPFN_vkCmdEndConditionalRenderingEXT((PFN_vkCmdEndConditionalRenderingEXT) vkGetInstanceProcAddr(vkinstance.get(), "vkCmdEndConditionalRenderingEXT"));
 }
 
 VulkanMgr::~VulkanMgr()
@@ -99,14 +98,31 @@ VulkanMgr::~VulkanMgr()
     vkDestroySwapchainKHR(device, swapChain, nullptr);
     vkDestroySurfaceKHR(vkinstance.get(), surface, nullptr);
     if (!cachePath.empty()) {
-        std::ofstream t(cachePath + "pipelineCache.dat", std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
         std::vector<char> cacheContent;
+        std::vector<char> previousContent;
         size_t size;
         vkGetPipelineCacheData(device, pipelineCache, &size, nullptr);
         cacheContent.resize(size);
         vkGetPipelineCacheData(device, pipelineCache, &size, cacheContent.data());
-        t.write(cacheContent.data(), size);
-        t.close();
+        // Check if there is effective changes
+        {
+            std::ifstream t(cachePath + "pipelineCache.dat", std::ofstream::in | std::ofstream::binary);
+            if (t) {
+                t.seekg(0, t.end);
+                previousContent.resize(t.tellg());
+                t.seekg(0, t.begin);
+                t.read(previousContent.data(), previousContent.size());
+                t.close();
+            }
+        }
+        if (cacheContent.size() == previousContent.size() && memcmp(cacheContent.data(), previousContent.data(), cacheContent.size()) == 0) {
+            std::ofstream t(cachePath + "pipelineCache.dat", std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+            t.write(cacheContent.data(), size);
+            t.close();
+            putLog("Changes detected in the pipelineCache, store them", LogType::INFO);
+        } else {
+            putLog("No changes in the pipelineCache", LogType::INFO);
+        }
     }
     vkDestroyPipelineCache(device, pipelineCache, nullptr);
     delete memoryManager;
@@ -249,7 +265,7 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
     }
     assert(graphicsQueueFamilyIndex.size() + graphicsAndPresentQueueFamilyIndex.size() > 0);
     assert(presentQueueFamilyIndex.size() + graphicsAndPresentQueueFamilyIndex.size() > 0);
-    assert(transferQueueFamilyIndex.size() > 0);
+    //assert(transferQueueFamilyIndex.size() > 0);
 
     VkPhysicalDeviceFeatures supportedDeviceFeatures;
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);

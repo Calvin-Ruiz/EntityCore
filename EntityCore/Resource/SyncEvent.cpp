@@ -83,6 +83,21 @@ void SyncEvent::dstDependency(VkCommandBuffer &cmd)
     ptr_vkCmdWaitEvents2KHR(cmd, 1, &event, &dep);
 }
 
+void multiDstDependency(VkCommandBuffer &cmd)
+{
+    ptr_vkCmdWaitEvents2KHR(cmd, multiEvent.size(), multiEvent.data(), &multiDep.data());
+}
+
+void combineDstDependencies(SyncEvent &with)
+{
+    if (multiDep.empty()) {
+        multiEvent.push_back(event);
+        multiDep.push_back(dep);
+    }
+    multiEvent.push_back(with.event);
+    multiDep.push_back(with.dep);
+}
+
 void SyncEvent::resetDependency(VkCommandBuffer &cmd, VkPipelineStageFlags2KHR stage)
 {
     ptr_vkCmdResetEvent2KHR(cmd, event, stage);

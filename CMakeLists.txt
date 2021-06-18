@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.17)
 INCLUDE_DIRECTORIES( ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} )
 
 project(LaserBombon)
+add_subdirectory(saves)
+add_subdirectory(screenshots)
+add_subdirectory(cache)
 
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/EntityCore/*/*.cpp"

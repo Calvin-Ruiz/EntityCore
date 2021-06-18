@@ -47,7 +47,7 @@ bool FrameMgr::build(bool alwaysRecord, bool useSecondary, bool staticSecondary)
     builded = true;
     VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, (alwaysRecord ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : (VkCommandPoolCreateFlags) 0), (uint32_t) master.getGraphicQueueFamilyIndex()[0]};
     vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &graphicPool);
-    VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY, 1};
+    VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
     vkAllocateCommandBuffers(master.refDevice, &allocInfo, &mainCmd);
     master.setObjectName(mainCmd, VK_OBJECT_TYPE_COMMAND_BUFFER, "mainCmd of " + name);
     cmdInfo.flags = (alwaysRecord) ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;

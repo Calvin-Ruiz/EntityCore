@@ -32,7 +32,7 @@ enum class LogType {
 
 class VulkanMgr {
 public:
-    VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width = 600, int height = 600, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0");
+    VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *window, int width = 600, int height = 600, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0");
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
