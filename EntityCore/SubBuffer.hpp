@@ -1,6 +1,8 @@
 #ifndef SUB_BUFFER_HPP
 #define SUB_BUFFER_HPP
 
+#include <vulkan/vulkan.h>
+
 struct SubBuffer {
     VkBuffer buffer;
     int offset;

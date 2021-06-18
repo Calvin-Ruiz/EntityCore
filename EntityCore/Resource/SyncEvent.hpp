@@ -18,7 +18,7 @@ class Texture;
 
 class SyncEvent {
 public:
-    // Create SyncEvent for event dependency
+    // Create SyncEvent for event dependency (and pipeline barrier)
     SyncEvent(VulkanMgr *master, bool deviceOnly = true);
     // Create SyncEvent for pipeline barrier
     SyncEvent(VkDependencyFlags dependencies = 0);

@@ -1,0 +1,30 @@
+#version 450
+#extension GL_ARB_compute_shader : require
+layout(local_size_x = 4, local_size_y = 384, local_size_z = 1) in;
+
+layout(binding=0, std430) buffer EntityData {
+    vec2 pos;
+    vec2 vel;
+    int health;
+    int damage;
+    vec2 size;
+    vec2 tex1;
+    vec2 tex2;
+    bool alive;
+    bool inserted;
+} entities[1024];
+
+#define self entities[gl_GlobalInvocationID.x]
+#define other entities[gl_GlobalInvocationID.y]
+
+void main()
+{
+    if (self.alive) {
+        vec2 tmp = (self.pos - other.pos) / (self.size + other.size);
+        tmp *= tmp;
+        if (tmp.x + tmp.y > 1) {
+            atomicAdd(other.health, -1);
+            atomicAdd(self.health, other.damage);
+        }
+    }
+}

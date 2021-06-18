@@ -58,7 +58,7 @@
 
 // Player -> check collision candy shoot and special candy shoot
 // Candy -> check if alive, then check collision with player, candy shoot and player shoot
-// Player : 1x228 dispatch 1x1 to 4x1 (shifted by 284)
+// Player : 4x228 dispatch 1x1 to 4x1 (shifted by 284)
 // Candy : 4x384 dispatch 1x1 to 128x1
 // Update : 1024 dispatch 1
 // Double shoot power if single player
@@ -78,59 +78,64 @@
 class EntityLib;
 class VulkanMgr;
 class BufferMgr;
+class SetMgr;
+class Set;
+class PipelineLayout;
+class ComputePipeline;
+class SyncEvent;
 
 // Note : the player is an entity like any other
 struct EntityData {
-    VkFloat32 posX;
-    VkFloat32 posY;
-    VkFloat32 velX;
-    VkFloat32 velY;
-    VkInt32 health; // Only those datas are querried for player
-    VkInt32 damage;
-    VkFloat32 sizeX;
-    VkFloat32 sizeY;
-    VkFloat32 texX1;
-    VkFloat32 texY1;
-    VkFloat32 texX2;
-    VkFloat32 texY2;
-    VkBool32 aliveNow;
-    VkBool32 newlyInserted;
+    float posX;
+    float posY;
+    float velX;
+    float velY;
+    int health; // Only those datas are querried for player
+    int damage;
+    float sizeX;
+    float sizeY;
+    float texX1;
+    float texY1;
+    float texX2;
+    float texY2;
+    VkBool32 aliveNow; // MUST BE VK_FALSE ON INSERTION
+    VkBool32 newlyInserted; // MUST BE VK_TRUE ON INSERTION
 };
 
 struct EntityVertexGroup {
-    VkFloat32 X1;
-    VkFloat32 Y1;
-    VkFloat32 zero1;
-    VkFloat32 one1;
-    VkFloat32 texX1;
-    VkFloat32 texY1;
+    float X1;
+    float Y1;
+    float zero1;
+    float one1;
+    float texX1;
+    float texY1;
 
-    VkFloat32 relX2;
-    VkFloat32 relY2;
-    VkFloat32 zero2;
-    VkFloat32 zero3;
-    VkFloat32 texX2;
-    VkFloat32 texY2;
+    float relX2;
+    float relY2;
+    float zero2;
+    float zero3;
+    float texX2;
+    float texY2;
 
-    VkFloat32 relX2;
-    VkFloat32 zero4;
-    VkFloat32 zero5;
-    VkFloat32 zero6;
-    VkFloat32 texX2;
-    VkFloat32 texY1;
+    float zero4;
+    float negRelY2;
+    float zero5;
+    float zero6;
+    float _texX2;
+    float _texY1;
 
-    VkFloat32 zero7;
-    VkFloat32 relY2;
-    VkFloat32 zero8;
-    VkFloat32 zero9;
-    VkFloat32 texX1;
-    VkFloat32 texY2;
+    float negRelX2;
+    float zero7;
+    float zero8;
+    float zero9;
+    float __texX1;
+    float __texY2;
 };
 
 struct EntityState {
-    VkFloat32 deadX;
-    VkFloat32 deadY;
-    VkInt32 health; // negative mean dead
+    float deadX;
+    float deadY;
+    int health; // negative mean dead
 };
 
 struct EntityAttachment {
@@ -140,7 +145,7 @@ struct EntityAttachment {
 
 class GPUEntityMgr {
 public:
-    GPUEntityMgr(std::shared_ptr<EntityLib> master, BufferMgr &localBuffer);
+    GPUEntityMgr(std::shared_ptr<EntityLib> master);
     virtual ~GPUEntityMgr();
     GPUEntityMgr(const GPUEntityMgr &cpy) = delete;
     GPUEntityMgr &operator=(const GPUEntityMgr &src) = delete;
@@ -151,8 +156,8 @@ public:
     void unpause() {active = true;}
     void stop() {alive = false;}
 
-    // Require index buffer pattern 0 2 1 0 3 1
-    SubBuffer &getVertexBuffer() const {return gpuVertices;}
+    // Require index buffer pattern 0 1 2 0 1 3
+    SubBuffer &getVertexBuffer() {return gpuVertices;}
 
     //! Those functions are only valid for write operations, do NEVER read anything from push*()
     //! push*() = EntityData {posX, posY, velX, velY, health, -damage, sizeX, sizeY, texX1, texY1, texX2, texY2, VK_FALSE, VK_TRUE};
@@ -171,13 +176,14 @@ private:
     void updateChanges();
     void buildCompute();
     void resetAll();
-    PlayerData cached;
+    void pushRegion(short idx);
     VulkanMgr &vkmgr;
     BufferMgr &localBuffer;
     std::unique_ptr<std::thread> updater;
     bool limit = true;
     bool alive = false;
     bool active = true;
+    bool initDep = true;
     std::unique_ptr<BufferMgr> entityMgr;
     std::unique_ptr<BufferMgr> vertexMgr;
     std::unique_ptr<BufferMgr> readbackMgr;
@@ -187,7 +193,7 @@ private:
     SubBuffer gpuVertices;
     EntityState *readback;
     EntityData *entityPush;
-    EntityData default; // Used if there is no available slot
+    EntityData deft; // Used if there is no available slot
     VkCommandPool computePool;
     VkCommandPool transferPool;
     VkQueue computeQueue;
@@ -198,7 +204,6 @@ private:
     VkCommandBufferBeginInfo begInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
     SyncEvent *syncExt; // [2]
     SyncEvent *syncInt; // [4] with 1 merged with 3 and 2 merged with 4
-    SyncEvent barrier;
     unsigned char frameparity = 0;
     EntityAttachment attachment[1024];
     // 0-3 PLAYER | 4-283 PLAYER SHOOT | 284-383 CANDY SHOOT | 384-511 BONUS/SPECIAL_CANDY_SHOOT | 512-1023 CANDY
@@ -208,6 +213,14 @@ private:
     int bidx = BEG_BONUS;
     int cidx = BEG_CANDY;
     int lastPush = 0;
+    std::unique_ptr<SetMgr> setMgr;
+    std::unique_ptr<Set> globalSet;
+    std::unique_ptr<Set> updateSet;
+    std::unique_ptr<PipelineLayout> collidePLayout;
+    std::unique_ptr<PipelineLayout> updatePLayout;
+    std::unique_ptr<ComputePipeline> collidePipeline;
+    std::unique_ptr<ComputePipeline> pcollidePipeline;
+    std::unique_ptr<ComputePipeline> updatePipeline;
     std::vector<VkBufferCopy> regionsBase; // Player copy
     std::vector<VkBufferCopy> regions;
     std::shared_ptr<EntityLib> master;

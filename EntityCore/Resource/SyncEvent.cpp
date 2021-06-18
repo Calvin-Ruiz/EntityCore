@@ -83,12 +83,12 @@ void SyncEvent::dstDependency(VkCommandBuffer &cmd)
     ptr_vkCmdWaitEvents2KHR(cmd, 1, &event, &dep);
 }
 
-void multiDstDependency(VkCommandBuffer &cmd)
+void SyncEvent::multiDstDependency(VkCommandBuffer &cmd)
 {
-    ptr_vkCmdWaitEvents2KHR(cmd, multiEvent.size(), multiEvent.data(), &multiDep.data());
+    ptr_vkCmdWaitEvents2KHR(cmd, multiEvent.size(), multiEvent.data(), multiDep.data());
 }
 
-void combineDstDependencies(SyncEvent &with)
+void SyncEvent::combineDstDependencies(SyncEvent &with)
 {
     if (multiDep.empty()) {
         multiEvent.push_back(event);

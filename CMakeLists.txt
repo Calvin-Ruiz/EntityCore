@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.17)
 INCLUDE_DIRECTORIES( ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR} )
 
 project(LaserBombon)
-add_subdirectory(saves)
-add_subdirectory(screenshots)
-add_subdirectory(cache)
 
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/EntityCore/*/*.cpp"
@@ -27,3 +24,7 @@ set(CPACK_SOURCE_IGNORE_FILES "/.git/" "/build/")
 
 add_executable(LaserBombon ${all_SRCS})
 target_link_libraries(LaserBombon ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} ${SDL2_TTF_LIBRARY} ${Vulkan_LIBRARIES})
+
+install(DIRECTORY DESTINATION saves)
+install(DIRECTORY DESTINATION screenshots)
+install(DIRECTORY DESTINATION cache)

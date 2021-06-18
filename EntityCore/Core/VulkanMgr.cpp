@@ -75,7 +75,7 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
         if (t) {
             t.seekg(0, t.end);
             cacheContent.resize(t.tellg());
-            t.seekg(0, t.begin);
+            t.seekg(0, t.beg);
             t.read(cacheContent.data(), cacheContent.size());
             cacheCreateInfo.initialDataSize = cacheContent.size();
             cacheCreateInfo.pInitialData = cacheContent.data();
@@ -110,7 +110,7 @@ VulkanMgr::~VulkanMgr()
             if (t) {
                 t.seekg(0, t.end);
                 previousContent.resize(t.tellg());
-                t.seekg(0, t.begin);
+                t.seekg(0, t.beg);
                 t.read(previousContent.data(), previousContent.size());
                 t.close();
             }
@@ -330,6 +330,7 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
             presentQueues.push_back(tmpQueue);
         }
     }
+    return; // We don't want dedicated transfer queue for laser bonbon
     for (auto index : transferQueueFamilyIndex) {
         maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
         putLog("Create " + std::to_string(maxQueues) + " transfer queues", LogType::INFO);
