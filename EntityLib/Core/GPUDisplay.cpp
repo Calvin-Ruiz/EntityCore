@@ -39,9 +39,10 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     imagePLayout->build();
     jaugePLayout = std::make_unique<PipelineLayout>(vkmgr);
     jaugePLayout->build();
-    setMgr = std::make_unique<SetMgr>(vkmgr, 2, 0, 2);
+    setMgr = std::make_unique<SetMgr>(vkmgr, 3, 0, 3);
     bgSet = std::make_unique<Set>(vkmgr, *setMgr, imagePLayout.get());
     entitySet = std::make_unique<Set>(vkmgr, *setMgr, imagePLayout.get());
+    sbSet = std::make_unique<Set>(vkmgr, *setMgr, imagePLayout.get());
 
     entityVertexArray = std::make_unique<VertexArray>(vkmgr, sizeof(float) * 6);
     entityVertexArray->createBindingEntry(sizeof(float) * 6);
@@ -219,18 +220,21 @@ void GPUDisplay::submitResources()
     VkSubmitInfo sInfo {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 1, cmds, 0, nullptr};
     vkQueueSubmit(graphicQueue, 1, &sInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicQueue);
-    vkResetCommandPool(vkmgr.refDevice, cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
     entityMap.detach();
     background->detach();
-
     jaugeStaging = localBuffer.acquireBuffer(sizeof(JaugeVertex)*9*2);
     jaugePtr = (JaugeVertex *) localBuffer.getPtr(jaugeStaging);
+    scoreboard = std::make_unique<Texture>(vkmgr, localBuffer, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "scoreboard");
+    scoreboard->init(68, 240);
+    vkResetCommandPool(vkmgr.refDevice, cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 }
 
 void GPUDisplay::initCommands()
 {
     bgSet->bindTexture(*background, 0);
     entitySet->bindTexture(entityMap, 0);
+    sbSet->bindTexture(*scoreboard, 0);
     entityPipeline = std::make_unique<Pipeline>(vkmgr, renderMgr, 0, imagePLayout.get());
     entityPipeline->bindShader("image.vert.spv");
     entityPipeline->bindShader("image.frag.spv");

@@ -99,6 +99,7 @@ private:
     std::unique_ptr<SetMgr> setMgr;
     std::unique_ptr<Set> bgSet;
     std::unique_ptr<Set> entitySet;
+    std::unique_ptr<Set> sbSet;
     std::unique_ptr<VertexArray> imageVertexArray;
     std::unique_ptr<VertexArray> jaugeVertexArray;
     std::unique_ptr<VertexArray> entityVertexArray;
@@ -112,6 +113,7 @@ private:
     std::unique_ptr<BufferMgr> indexBufferMgr;
     std::unique_ptr<BufferMgr> vertexBufferMgr;
     std::unique_ptr<Texture> background;
+    std::unique_ptr<Texture> scoreboard; // 68x240
 
     SubBuffer jaugeIndexBuffer;
     SubBuffer entityIndexBuffer;

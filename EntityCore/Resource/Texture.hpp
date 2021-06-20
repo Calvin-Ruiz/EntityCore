@@ -25,6 +25,8 @@ public:
     bool use(VkCommandBuffer cmd = VK_NULL_HANDLE, bool includeTransition = false);
     //! Release texture on GPU (may invalidate all previous bindings)
     void unuse();
+    //! Create texture on RAM with undefined content
+    void createSurface();
     //! Release texture on RAM, assuming the last transfer to GPU has complete
     void detach();
     //! Acquire pointer to staging memory

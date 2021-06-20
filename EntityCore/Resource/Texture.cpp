@@ -126,6 +126,16 @@ void Texture::unuse()
     }
 }
 
+void Texture::createSurface()
+{
+    if (!onCPU) {
+        VkDeviceSize size = into.extent.width * into.extent.height * nbChannels * elemSize;
+        staging = mgr.acquireBuffer(size);
+        mgr.releaseBuffer(staging);
+        onCPU = true;
+    }
+}
+
 void Texture::detach()
 {
     if (onCPU) {
