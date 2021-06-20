@@ -6,7 +6,7 @@ project(LaserBombon)
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/EntityCore/*/*.cpp"
     "${PROJECT_SOURCE_DIR}/EntityLib/*/*.cpp"
-    "${PROJECT_SOURCE_DIR}/LaserBombon/*/*.cpp"
+    "${PROJECT_SOURCE_DIR}/LaserBombon/*.cpp"
     )
 
 set(CMAKE_CXX_STANDARD 17)

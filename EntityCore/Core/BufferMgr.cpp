@@ -202,3 +202,17 @@ void BufferMgr::invalidate(const std::vector<SubBuffer> &subBuffers)
     }
     vkInvalidateMappedMemoryRanges(master.refDevice, ranges.size(), ranges.data());
 }
+
+void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst)
+{
+    VkBufferCopy region {src.offset, dst.offset, src.size};
+
+    vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
+}
+
+void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int range)
+{
+    VkBufferCopy region {src.offset, dst.offset, range};
+
+    vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
+}

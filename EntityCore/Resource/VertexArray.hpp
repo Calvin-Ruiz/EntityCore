@@ -21,7 +21,7 @@ public:
     ~VertexArray() = default;
 
     // Create a binding entry which match a VertexBuffer binding
-    bool createBindingEntry(uint32_t stride, VkVertexInputRate type);
+    bool createBindingEntry(uint32_t stride, VkVertexInputRate type = VK_VERTEX_INPUT_RATE_VERTEX);
     // Add input for the last binding entry created
     bool addInput(VkFormat format, bool used = true);
     VertexBuffer *createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr = nullptr, BufferMgr *instanceMgr = nullptr);

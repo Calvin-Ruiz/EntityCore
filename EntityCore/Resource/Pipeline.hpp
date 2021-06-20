@@ -37,7 +37,7 @@ public:
     void setCullMode(bool enable) {rasterizer.cullMode = enable ? VK_CULL_MODE_BACK_BIT : 0;}
     //! Set front face (default : false)
     void setFrontFace(bool clockwise = true) {rasterizer.frontFace = clockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;}
-    //! Set draw topology (default : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, no breaks)
+    //! Set draw topology (default : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, no breaks)
     void setTopology(VkPrimitiveTopology state, bool enableStripBreaks = false);
     //! Set blend mode (default : blend src alpha)
     void setBlendMode(const VkPipelineColorBlendAttachmentState &blendMode);

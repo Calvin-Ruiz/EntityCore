@@ -8,61 +8,6 @@
 #ifndef GPUENTITYMGR_HPP_
 #define GPUENTITYMGR_HPP_
 
-// Transfer 1 (single-use) :
-// Wait event 2
-// Push new entities
-// Signal event 3 after writing updates
-
-// Compute 1 (reused) :
-// Wait event 3 before reading entries or transfering data
-// Reset event 3
-// Querry player datas
-// Dispatch collision (bullet/player look at block to damage)
-// Barrier : wait health update before updating state
-// Dispatch update (except collision test)
-// Reset event 2
-// Signal event 4 after writing player and output
-
-// Transfer 2 (single-use) :
-// Wait event 5
-// Querry player datas
-// Push new entities
-// Signal event 1 after writing updates
-
-// Compute 2 (reused) :
-// Wait event 1 before reading entries or transfering data and event 6 before reading entries
-// Reset event 1
-// Dispatch update (except collision test)
-// Reset event 5 on compute stage
-// Reset event 6 on compute stage
-// Signal event 2 after position update
-// Barrier : wait position update completion
-// Dispatch collision (bullet/player look at block to damage)
-// Signal event 3 after health update
-
-// Local :
-// Update game
-// Record transfer due to tic update
-// Wait event 5/2
-// Read back changes
-// Update player shield
-// Write player changes
-// Record transfer due to GPU event
-// Submit transfer 1/2 and compute 1/2
-
-// Player : Candy (4 max)
-// Player shoot : Candy (280 max)
-// Candy shoot : Player, Candy (100 max)
-// Special candy shoot (or bonus) : Player (128 max)
-// Candy : Player, Candy shoot, Player shoot (512 max)
-
-// Player -> check collision candy shoot and special candy shoot
-// Candy -> check if alive, then check collision with player, candy shoot and player shoot
-// Player : 4x228 dispatch 1x1 to 4x1 (shifted by 284)
-// Candy : 4x384 dispatch 1x1 to 128x1
-// Update : 1024 dispatch 1
-// Double shoot power if single player
-
 #define BEG_PLAYER 0
 #define BEG_PLAYER_SHOOT 4
 #define BEG_CANDY_SHOOT 284
@@ -150,11 +95,12 @@ public:
     GPUEntityMgr(const GPUEntityMgr &cpy) = delete;
     GPUEntityMgr &operator=(const GPUEntityMgr &src) = delete;
 
+    void init(); // must be called after creating GPUDisplay instance
     void start(void (*update)(void *, GPUEntityMgr &), void (*updatePlayer)(void *, GPUEntityMgr &), void *data);
     void limitFramerate(bool _limit) {limit = _limit;}
     void pause() {active = false;}
     void unpause() {active = true;}
-    void stop() {alive = false;}
+    void stop() {alive = false; active = true;}
 
     // Require index buffer pattern 0 1 2 0 1 3
     SubBuffer &getVertexBuffer() {return gpuVertices;}

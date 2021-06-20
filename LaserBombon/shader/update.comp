@@ -38,16 +38,25 @@ layout(binding=1, set=1, std430) buffer writeonly EntityStatus {
 void main()
 {
     if (entities[gl_GlobalInvocationID.x].alive) {
-        entities[gl_GlobalInvocationID.x].health = (abs(entities[gl_GlobalInvocationID.x].pos.x) > 1.03125) ? -1 : entities[gl_GlobalInvocationID.x].health;
+        vec2 pos = entities[gl_GlobalInvocationID.x].pos;
+        pos *= pos;
+        entities[gl_GlobalInvocationID.x].health = (max(pos.x, pos.y) > 1.125) ? -1 : entities[gl_GlobalInvocationID.x].health;
         readback[gl_GlobalInvocationID.x].health = entities[gl_GlobalInvocationID.x].health;
         entities[gl_GlobalInvocationID.x].alive = (entities[gl_GlobalInvocationID.x].health >= 0);
-        entities[gl_GlobalInvocationID.x].pos += entities[gl_GlobalInvocationID.x].vel;
-        entityVertex[gl_GlobalInvocationID.x].pos1 = (entities[gl_GlobalInvocationID.x].alive) ? (entities[gl_GlobalInvocationID.x].pos - entities[gl_GlobalInvocationID.x].size) : vec2(100, 100);
-        if (!entities[gl_GlobalInvocationID.x].alive) {
+        entities[gl_GlobalInvocationID.x].pos.x += entities[gl_GlobalInvocationID.x].vel.x;
+        if (entities[gl_GlobalInvocationID.x].alive) {
+            if (entities[gl_GlobalInvocationID.x].vel.y > 1) {
+                float valy = (entities[gl_GlobalInvocationID.x & 1].alive) ? entities[gl_GlobalInvocationID.x & 1].pos.y : entities[1 - (gl_GlobalInvocationID.x & 1)].pos.y;
+                entities[gl_GlobalInvocationID.x].pos.y += clamp(valy - entities[gl_GlobalInvocationID.x].pos.y, entities[gl_GlobalInvocationID.x].vel.x, -entities[gl_GlobalInvocationID.x].vel.x);
+            } else {
+                entities[gl_GlobalInvocationID.x].pos.y += entities[gl_GlobalInvocationID.x].vel.y;
+            }
+        } else {
             readback[gl_GlobalInvocationID.x].posX = entities[gl_GlobalInvocationID.x].pos.x;
             readback[gl_GlobalInvocationID.x].posY = entities[gl_GlobalInvocationID.x].pos.y;
-            entities[gl_GlobalInvocationID.x].pos.x += 100;
+            entities[gl_GlobalInvocationID.x].pos.y += 100;
         }
+        entityVertex[gl_GlobalInvocationID.x].pos1 = entities[gl_GlobalInvocationID.x].pos - entities[gl_GlobalInvocationID.x].size;
     } else {
         if (entities[gl_GlobalInvocationID.x].inserted) {
             entities[gl_GlobalInvocationID.x].inserted = false;

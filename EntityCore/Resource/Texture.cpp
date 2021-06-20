@@ -134,7 +134,7 @@ void Texture::detach()
     }
 }
 
-bool Texture::use(VkCommandBuffer cmd)
+bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
 {
     if (!onGPU) {
         if (createImage()) {
@@ -147,6 +147,13 @@ bool Texture::use(VkCommandBuffer cmd)
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
         vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        if (includeTransition) {
+            barrier.srcAccessMask = barrier.dstAccessMask;
+            barrier.oldLayout = barrier.newLayout;
+            barrier.dstAccessMask = 0;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        }
         return true;
     }
     if (cmd == VK_NULL_HANDLE) {

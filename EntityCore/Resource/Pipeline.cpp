@@ -36,7 +36,7 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     rasterizer.depthBiasSlopeFactor = 1.0f; // Optionnel
 
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // Possibilité d'interrompre les liaisons entre les vertices pour les modes _STRIP
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 

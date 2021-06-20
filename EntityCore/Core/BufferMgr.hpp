@@ -26,6 +26,8 @@ public:
     void invalidate(SubBuffer &subBuffer);
     void invalidate(const std::vector<SubBuffer> &subBuffers);
     static void setUniformOffsetAlignment(int alignment) {uniformOffsetAlignment = alignment;}
+    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst);
+    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size);
 private:
     void releaseBuffer(); // Release next buffer in stack
     static void startMainloop(BufferMgr *self);

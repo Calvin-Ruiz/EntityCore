@@ -11,7 +11,7 @@
 #include "EntityCore/Resource/PipelineLayout.hpp"
 #include "EntityCore/Resource/ComputePipeline.hpp"
 #include "EntityCore/Resource/SyncEvent.hpp"
-#include "EntityLib/Core/EntityLib.hpp"
+#include "EntityLib.hpp"
 #include "GPUEntityMgr.hpp"
 #include <cstring>
 #include <chrono>
@@ -21,11 +21,9 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     entityMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(EntityData) * END_ALL);
     vertexMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(EntityVertexGroup) * END_ALL);
     readbackMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_CACHED_BIT, sizeof(EntityState) * END_ALL);
-    entityPushBuffer = localBuffer.acquireBuffer(sizeof(EntityData) * 1024);
     readbackBuffer = readbackMgr->acquireBuffer(sizeof(EntityState) * 1024);
     gpuEntities = entityMgr->acquireBuffer(sizeof(EntityData) * 1024);
     gpuVertices = vertexMgr->acquireBuffer(sizeof(EntityVertexGroup) * 1024);
-    entityPush = (EntityData *) localBuffer.getPtr(entityPushBuffer);
     readback = (EntityState *) readbackMgr->getPtr(readbackBuffer);
     if (vkmgr.getComputeQueues().size() > 0) {
         computeQueue = vkmgr.getComputeQueues()[0];
@@ -67,8 +65,17 @@ GPUEntityMgr::~GPUEntityMgr()
 {
     stop();
     updater->join();
+    vkDestroyCommandPool(vkmgr.refDevice, computePool, nullptr);
+    vkDestroyCommandPool(vkmgr.refDevice, transferPool, nullptr);
+    localBuffer.releaseBuffer(entityPushBuffer);
     delete[] syncExt;
     delete[] syncInt;
+}
+
+void GPUEntityMgr::init()
+{
+    entityPushBuffer = localBuffer.acquireBuffer(sizeof(EntityData) * 1024);
+    entityPush = (EntityData *) localBuffer.getPtr(entityPushBuffer);
 }
 
 void GPUEntityMgr::buildCompute()
@@ -162,7 +169,7 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
 {
     resetAll();
 
-    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/60);
+    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/50);
     bool prevLimit = limit;
     auto clock = std::chrono::system_clock::now();
 

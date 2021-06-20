@@ -31,9 +31,9 @@ public:
     // Depth buffer
     void setupClear(int id, float value);
     // Add dependency between actual layer and next layer
-    void addDependency(VkPipelineStageFlagBits srcStage, VkPipelineStageFlagBits dstStage, VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess, bool framebufferLocal = true);
+    void addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Add dependency inside this layer
-    void addSelfDependency(VkPipelineStageFlagBits srcStage, VkPipelineStageFlagBits dstStage, VkAccessFlagBits srcAccess, VkAccessFlagBits dstAccess);
+    void addSelfDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess);
     // Bind input attachment to use
     void bindInput(int id, VkImageLayout layout);
     // Bind color attachment to use
@@ -51,10 +51,10 @@ public:
 
     // ===== USE ===== //
     void bind(int bindID, VkFramebuffer frameBuffer, VkRect2D renderArea);
-    inline void begin(int bindID, VkCommandBuffer cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
+    inline void begin(int bindID, VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
         vkCmdBeginRenderPass(cmd, infos + bindID, content);
     }
-    inline void next(int, VkCommandBuffer cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
+    inline void next(VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
         vkCmdNextSubpass(cmd, content);
     }
     //! Don't use it outside of EntityCore/Core

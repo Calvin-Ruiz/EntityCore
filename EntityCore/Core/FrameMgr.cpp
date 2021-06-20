@@ -35,6 +35,13 @@ void FrameMgr::bind(int id, Texture &texture)
     views[id] = texture.getView();
 }
 
+void FrameMgr::bind(int id, VkImageView &v)
+{
+    if (id >= views.size())
+        views.resize(id + 1);
+    views[id] = v;
+}
+
 bool FrameMgr::build(bool alwaysRecord, bool useSecondary, bool staticSecondary)
 {
     info.attachmentCount = views.size();

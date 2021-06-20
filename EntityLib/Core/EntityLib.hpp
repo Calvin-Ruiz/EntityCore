@@ -16,7 +16,12 @@
 class VulkanMgr;
 class Texture;
 class BufferMgr;
+class RenderMgr;
+class FrameMgr;
+
 struct EntityData;
+
+#define WIN_SIZE_SCALING 2
 
 class EntityLib {
 public:
@@ -25,20 +30,30 @@ public:
     EntityLib(const EntityLib &cpy) = delete;
     EntityLib &operator=(const EntityLib &src) = delete;
 
-    BufferMgr &getLocalBuffer() const {return *localBuffer;}
     void loadFragment(int idx, int texX1, int texY1, int texX2, int texY2, int shield, int damage, int width, int height, unsigned char flag = 0);
-    EntityData &getFragment(int idx, int x, int y, int velX, int velY);
+    EntityData &getFragment(int idx);
+    EntityData &getFragment(int idx, int x, int y, int velX, int velY = 0);
+    EntityData &dropFragment(int idx, float x, float y, float velX, float velY = 0);
+    void setFragmentPos(EntityData &entity, int x, int y);
+
+    BufferMgr &getLocalBuffer() {return *localBuffer;}
+    Texture &getEntityMap() {return *entityMap;}
+    RenderMgr &getRender() {return *renderMgr;}
+    std::vector<std::unique_ptr<FrameMgr>> &getFrames() {return frames;}
+    std::vector<unsigned char> flags;
+    const float worldScaleX;
+    const float worldScaleY;
 private:
     std::vector<EntityData> fragments;
     std::unique_ptr<BufferMgr> localBuffer;
     std::unique_ptr<Texture> entityMap;
-    std::unique_ptr<VulkanMgr> master;
+    std::unique_ptr<RenderMgr> renderMgr;
+    std::vector<std::unique_ptr<FrameMgr>> frames;
     SDL_Window *window;
     int mapWidth, mapHeight;
-    const float worldScaleX;
-    const float worldScaleY;
     float mapScaleX;
     float mapScaleY;
+    std::unique_ptr<VulkanMgr> master;
 };
 
 #endif /* ENTITYLIB_HPP_ */
