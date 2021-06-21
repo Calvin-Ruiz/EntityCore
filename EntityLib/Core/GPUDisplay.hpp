@@ -82,7 +82,7 @@ public:
     void start();
     void pause(); // To switch to another graphical api
     void unpause();
-    void stop() {alive = false; active = true;}
+    void stop();
 
     JaugeVertex *getJaugePtr() {return jaugePtr;}
 
@@ -90,7 +90,7 @@ public:
     std::string header1 = "Score ";
     std::string header2 = "Level ";
     char sep1 = '/';
-    char sep2 = '|';
+    std::string sep2 = " - ";
     bool section2 = false;
     long score1 = 0;
     long score1Max = 0;

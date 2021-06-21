@@ -74,7 +74,6 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
 GPUEntityMgr::~GPUEntityMgr()
 {
     stop();
-    updater->join();
     vkQueueWaitIdle(computeQueue);
     vkDestroyCommandPool(vkmgr.refDevice, computePool, nullptr);
     vkDestroyCommandPool(vkmgr.refDevice, transferPool, nullptr);
@@ -83,6 +82,15 @@ GPUEntityMgr::~GPUEntityMgr()
     delete[] syncInt;
     vkDestroyFence(vkmgr.refDevice, fences[0], nullptr);
     vkDestroyFence(vkmgr.refDevice, fences[1], nullptr);
+}
+
+void GPUEntityMgr::stop()
+{
+    if (alive) {
+        alive = false;
+        active = true;
+        updater->join();
+    }
 }
 
 void GPUEntityMgr::init()
@@ -226,8 +234,8 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
             clock += delay;
             std::this_thread::sleep_until(clock);
         } else {
-            clock += delayOverride;
-            std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x20 speed)
+            // clock += delayOverride;
+            // std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x20 speed)
         }
         while (!syncExt[!frameparity].isSet())
             std::this_thread::yield();

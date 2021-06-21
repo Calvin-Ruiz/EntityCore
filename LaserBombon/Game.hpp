@@ -15,6 +15,7 @@
 class EntityLib;
 class GPUDisplay;
 class GPUEntityMgr;
+class Tracer;
 
 struct EntityData;
 struct EntityState;
@@ -235,7 +236,7 @@ public:
 
     void init();
     void mainloop();
-    void load(int slot, int playerCount = 1);
+    void load(int slot, int playerCount = 2);
 private:
     void save();
     void gameStart();
@@ -258,6 +259,7 @@ private:
     Player &getClosest(short idx);
     std::unique_ptr<GPUDisplay> display;
     std::unique_ptr<GPUEntityMgr> compute;
+    std::unique_ptr<Tracer> tracer;
     std::shared_ptr<EntityLib> core;
     std::random_device rdevice;
     std::uniform_int_distribution<int> bonusDist {0, 700};

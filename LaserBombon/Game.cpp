@@ -8,6 +8,7 @@
 #include "EntityLib/Core/EntityLib.hpp"
 #include "EntityLib/Core/GPUDisplay.hpp"
 #include "EntityLib/Core/GPUEntityMgr.hpp"
+#include "EntityLib/Tools/Tracer.hpp"
 #include <fstream>
 #include <cmath>
 #include <algorithm>
@@ -37,6 +38,28 @@ Game::Game(const std::string &name, uint32_t version, int width, int height)
     compute = std::make_unique<GPUEntityMgr>(core);
     display = std::make_unique<GPUDisplay>(core, *compute);
     compute->init();
+    tracer = std::make_unique<Tracer>(100, 64);
+    tracer->emplace(Trace::CHAR, &player1.alive, "player1", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.energy, "ENERGY", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.energyMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.energyRate, "rate", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.shield, "SHIELD", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.shieldMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.shieldRate, "rate", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.coolant, "COOLANT", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.coolantMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player1.coolantRate, "rate", nullptr);
+    tracer->emplace(Trace::CHAR, &player2.alive, "player2", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.energy, "ENERGY", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.energyMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.energyRate, "rate", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.shield, "SHIELD", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.shieldMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.shieldRate, "rate", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.coolant, "COOLANT", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.coolantMax, "max", nullptr);
+    tracer->emplace(Trace::FLOAT, &player2.coolantRate, "rate", nullptr);
+    tracer->emplace(Trace::FLOAT, &difficultyCoef, "ScMult", nullptr);
 }
 
 Game::~Game()
@@ -85,7 +108,7 @@ void Game::init()
     core->loadFragment(AERODYNAMIC, 32, 80, 48, 96, 1, 1, 48, 40, F_PLAYER);
     core->loadFragment(OPTIMAL, 48, 80, 64, 96, 1, 1, 48, 40, F_PLAYER);
     core->loadFragment(ENERGISED, 64, 80, 80, 96, 1, 1, 48, 40, F_PLAYER);
-    core->loadFragment(BOOSTED, 80, 80, 96, 96, 1, 1, 48, 48, F_PLAYER);
+    core->loadFragment(BOOSTED, 80, 80, 96, 96, 1, 1, 48, 40, F_PLAYER);
     core->loadFragment(LASER, 0, 96, 16, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(LASER2, 16, 96, 32, 112, 30, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT0, 32, 96, 48, 112, 1, 1, 0, 0, F_OTHER);
@@ -277,12 +300,14 @@ void Game::gameStart()
 
     display->unpause();
     compute->start((void (*)(void *, GPUEntityMgr &)) &updateS, (void (*)(void *, GPUEntityMgr &)) &updatePlayerS, this);
+    tracer->start();
 }
 
 void Game::gameEnd()
 {
     if (level > maxLevel)
         maxLevel = level;
+    tracer->stop();
     compute->stop();
     display->pause();
     save();
@@ -311,8 +336,13 @@ void Game::spawn(GPUEntityMgr &engine)
                 case FISH1:
                     engine.pushCandy(F_CANDY) = core->getFragment(FISH1 + (localPos & 3), 1000, localPos, -vel, 2048);
                     break;
-                default:
-                    engine.pushCandy(F_CANDY) = core->getFragment(spawnability[i].first + (localPos & 3), 1000, localPos, -vel);
+                case BOMB1:
+                    engine.pushCandy(F_CANDY) = core->getFragment(BOMB1 + (localPos & 3), 1000, localPos, -vel);
+                    break;
+                case CANDY1:
+                    engine.pushCandy(F_CANDY) = core->getFragment(CANDY1 + (localPos & 3), 1000, localPos, -vel);
+                    break;
+                default:;
             }
         }
     }
@@ -369,6 +399,14 @@ void Game::updatePlayer(Player &p, int idx)
         p.coolant -= p.moveHeatCost;
         p.x += p.velX * p.moveSpeed;
         p.y += p.velY * p.moveSpeed;
+        if (p.x < 20)
+            p.x = 20;
+        if (p.x > 520)
+            p.x = 520;
+        if (p.y < 24)
+            p.y = 24;
+        if (p.y > 936)
+            p.y = 936;
     }
     if (p.coolant < p.coolantMax)
         p.coolant += p.coolantRate;

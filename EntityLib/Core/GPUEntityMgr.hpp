@@ -100,7 +100,7 @@ public:
     void limitFramerate(bool _limit) {limit = _limit;}
     void pause() {active = false;}
     void unpause() {active = true;}
-    void stop() {alive = false; active = true;}
+    void stop();
 
     // Require index buffer pattern 0 1 2 0 1 3
     SubBuffer &getVertexBuffer() {return gpuVertices;}

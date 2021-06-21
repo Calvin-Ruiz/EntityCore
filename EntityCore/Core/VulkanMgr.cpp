@@ -91,7 +91,7 @@ VulkanMgr::~VulkanMgr()
 {
     isAlive = false;
     vkDeviceWaitIdle(device);
-    std::cout << "Release resources\n";
+    putLog("Release resources", LogType::INFO);
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
@@ -321,7 +321,7 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
     for (auto index : graphicsQueueFamilyIndex) {
         maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
         for (int j = 0; j < maxQueues; j++) {
-            std::cout << "Create graphicQueue\n";
+            putLog("Create graphicQueue", LogType::INFO);
             vkGetDeviceQueue(device, index, j, &tmpQueue);
             graphicsQueues.push_back(tmpQueue);
         }
@@ -337,7 +337,7 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
     for (auto index : presentQueueFamilyIndex) {
         maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
         for (int j = 0; j < maxQueues; j++) {
-            std::cout << "Create presentQueue\n";
+            putLog("Create presentQueue", LogType::INFO);
             vkGetDeviceQueue(device, index, j, &tmpQueue);
             presentQueues.push_back(tmpQueue);
         }

@@ -76,7 +76,6 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
 GPUDisplay::~GPUDisplay()
 {
     stop();
-    updater->join();
     vkQueueWaitIdle(graphicQueue);
     TTF_CloseFont(myFont);
     TTF_Quit();
@@ -84,6 +83,15 @@ GPUDisplay::~GPUDisplay()
     vkDestroyFence(vkmgr.refDevice, fences[0], nullptr);
     vkDestroyFence(vkmgr.refDevice, fences[1], nullptr);
     vkDestroyFence(vkmgr.refDevice, fences[2], nullptr);
+}
+
+void GPUDisplay::stop()
+{
+    if (alive) {
+        alive = false;
+        active = true;
+        updater->join();
+    }
 }
 
 void GPUDisplay::start()
@@ -132,8 +140,7 @@ void GPUDisplay::mainloop()
         s.push_back(sep1);
         s += EntityLib::toText(score1Max);
         if (section2) {
-            s.push_back(sep2);
-            s += EntityLib::toText(score2Max);
+            s += sep2 + EntityLib::toText(score2Max);
             s.push_back(sep1);
             s += EntityLib::toText(score2Max);
         }
