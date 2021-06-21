@@ -66,6 +66,9 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     vkAllocateCommandBuffers(vkmgr.refDevice, &allocInfo, cmds + 1);
     vkAllocateCommandBuffers(vkmgr.refDevice, &allocInfo, cmds + 3);
     buildCompute();
+    VkFenceCreateInfo fenceInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
+    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences);
+    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + 1);
 }
 
 GPUEntityMgr::~GPUEntityMgr()
@@ -77,6 +80,8 @@ GPUEntityMgr::~GPUEntityMgr()
     localBuffer.releaseBuffer(entityPushBuffer);
     delete[] syncExt;
     delete[] syncInt;
+    vkDestroyFence(vkmgr.refDevice, fences[0], nullptr);
+    vkDestroyFence(vkmgr.refDevice, fences[1], nullptr);
 }
 
 void GPUEntityMgr::init()
@@ -159,7 +164,9 @@ void GPUEntityMgr::resetAll()
         initDep = false;
     }
     vkEndCommandBuffer(cmd);
-    vkQueueSubmit(computeQueue, 1, sinfo + frameparity, VK_NULL_HANDLE);
+    vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
+    vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
+    vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
     frameparity = !frameparity;
     regionsBase.clear();
 }
@@ -210,7 +217,9 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         vkCmdCopyBuffer(cmd, entityPushBuffer.buffer, gpuEntities.buffer, regions.size(), regions.data());
         syncInt[frameparity].srcDependency(cmd);
         vkEndCommandBuffer(cmd);
-        vkQueueSubmit(computeQueue, 1, sinfo + frameparity, VK_NULL_HANDLE);
+        vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
+        vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
+        vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
         frameparity = !frameparity;
     }
     pidx = BEG_PLAYER;

@@ -145,6 +145,7 @@ private:
     VkQueue computeQueue;
     VkCommandBuffer cmds[4]; // Transfer 1, Compute 1, Transfer 2, Compute 2
     VkCommandBuffer cmd;
+    VkFence fences[2];
     VkSubmitInfo sinfo[2] {{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 2, cmds, 0, nullptr},
                            {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, nullptr, 2, cmds + 2, 0, nullptr}};
     VkCommandBufferBeginInfo begInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
