@@ -19,8 +19,11 @@
 GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr::instance), localBuffer(master->getLocalBuffer()), master(master)
 {
     entityMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(EntityData) * END_ALL);
+    entityMgr->setName("Entity datas");
     vertexMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(EntityVertexGroup) * END_ALL);
+    vertexMgr->setName("Entity vertices");
     readbackMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_CACHED_BIT, sizeof(EntityState) * END_ALL);
+    readbackMgr->setName("ReadBack buffer");
     readbackBuffer = readbackMgr->acquireBuffer(sizeof(EntityState) * 1024);
     gpuEntities = entityMgr->acquireBuffer(sizeof(EntityData) * 1024);
     gpuVertices = vertexMgr->acquireBuffer(sizeof(EntityVertexGroup) * 1024);
@@ -196,8 +199,8 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
             prevLimit = limit;
         }
         if (limit) {
-            std::this_thread::sleep_until(clock);
             clock += delay;
+            std::this_thread::sleep_until(clock);
         }
         while (!syncExt[frameparity].isSet())
             std::this_thread::yield();

@@ -57,9 +57,11 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     jaugeVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
     jaugeVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
     vertexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(ImageVertex)*6*3 + sizeof(JaugeVertex)*(4*((1+1)*2+1)+6));
+    vertexBufferMgr->setName("Graphic objects");
     imageVertexBuffer = std::unique_ptr<VertexBuffer>(imageVertexArray->createBuffer(0, 6*3, vertexBufferMgr.get()));
     jaugeVertexBuffer = std::unique_ptr<VertexBuffer>(jaugeVertexArray->createBuffer(0, 4*((1+1)*2+1)+6, vertexBufferMgr.get()));
     indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*(1024+10));
+    indexBufferMgr->setName("Index buffer");
     jaugeIndexBuffer = indexBufferMgr->acquireBuffer(2*6*10);
     entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*1024);
 
@@ -128,9 +130,7 @@ void GPUDisplay::mainloop()
             s.push_back(sep1);
             s += EntityLib::toText(score2Max);
         }
-        s += header2 + std::to_string(level1);
-        s.push_back(sep1);
-        s += std::to_string(level1Max);
+        SDL_FillRect(scoreboardSurface, NULL, 0);
         SDL_Color color={240,240,240,0};
     	SDL_Surface *text = TTF_RenderUTF8_Blended(myFont, s.c_str(), color);
         SDL_Rect tmp;
@@ -138,7 +138,15 @@ void GPUDisplay::mainloop()
         tmp.y=1;
         tmp.w=text->w;
         tmp.h=text->h;
-        SDL_FillRect(scoreboardSurface, NULL, UINT32_MAX);
+        SDL_BlitSurface(text, NULL, scoreboardSurface, &tmp);
+        SDL_FreeSurface(text);
+        s = header2 + std::to_string(level1);
+        s.push_back(sep1);
+        s += std::to_string(level1Max);
+        text = TTF_RenderUTF8_Blended(myFont, s.c_str(), color);
+        tmp.y+=tmp.h;
+        tmp.w=text->w;
+        tmp.h=text->h;
         SDL_BlitSurface(text, NULL, scoreboardSurface, &tmp);
         SDL_FreeSurface(text);
 
@@ -161,6 +169,7 @@ void GPUDisplay::mainloop()
 void GPUDisplay::submitResources()
 {
     auto tmpMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 1024*1024);
+    tmpMgr->setName("Temporary staging buffer");
     background = std::make_unique<Texture>(vkmgr, *tmpMgr, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "background.png");
     background->init();
     VkCommandBufferBeginInfo beginInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
@@ -256,10 +265,10 @@ void GPUDisplay::submitResources()
     background->detach();
     jaugeStaging = localBuffer.acquireBuffer(sizeof(JaugeVertex)*9*2);
     jaugePtr = (JaugeVertex *) localBuffer.getPtr(jaugeStaging);
-    myFont = TTF_OpenFont("textures/font.ttf", 24);
+    myFont = TTF_OpenFont("textures/font.ttf", 32);
     scoreboard = std::make_unique<Texture>(vkmgr, localBuffer, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "scoreboard");
     // load empty surface
-    scoreboard->init(68, 240);
+    scoreboard->init(240, 68);
     scoreboardSurface = scoreboard->createSDLSurface();
     // SyncEvent tmpEvt;
     // tmpEvt.imageBarrier(*scoreboard, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);

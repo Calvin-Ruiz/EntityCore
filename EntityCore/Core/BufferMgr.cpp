@@ -216,3 +216,8 @@ void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int r
 
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }
+
+void BufferMgr::setName(const std::string &name)
+{
+    master.setObjectName(buffer, VK_OBJECT_TYPE_BUFFER, name.c_str());
+}

@@ -25,6 +25,7 @@ public:
     // Make the changes from the device visible
     void invalidate(SubBuffer &subBuffer);
     void invalidate(const std::vector<SubBuffer> &subBuffers);
+    void setName(const std::string &name);
     static void setUniformOffsetAlignment(int alignment) {uniformOffsetAlignment = alignment;}
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst);
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size);

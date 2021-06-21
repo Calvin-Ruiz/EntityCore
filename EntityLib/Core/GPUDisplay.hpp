@@ -88,7 +88,7 @@ public:
 
     // No time for better
     std::string header1 = "Score ";
-    std::string header2 = "\nLevel ";
+    std::string header2 = "Level ";
     char sep1 = '/';
     char sep2 = '|';
     bool section2 = false;

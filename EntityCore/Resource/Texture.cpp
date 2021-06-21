@@ -153,6 +153,7 @@ SDL_Surface *Texture::createSDLSurface()
         #endif
         SDL_Surface *ret = SDL_CreateRGBSurfaceFrom(mgr.getPtr(staging), info.extent.width, info.extent.height, 32, 4*info.extent.width, rmask, gmask, bmask, amask);
         sdlSurface = true;
+        return ret;
     } else {
         return nullptr;
     }

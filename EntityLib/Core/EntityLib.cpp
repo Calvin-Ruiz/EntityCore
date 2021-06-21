@@ -20,6 +20,7 @@ EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int he
     window = SDL_CreateWindow(AppName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN|SDL_WINDOW_SHOWN);
     master = std::make_unique<VulkanMgr>(AppName, appVersion, window, width, height, 64, enableDebugLayers, drawLogs, saveLogs, "cache/");
     localBuffer = std::make_unique<BufferMgr>(*master, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 128*1024);
+    localBuffer->setName("Dynamic staging buffer");
     Texture::setTextureDir("./textures/");
     entityMap = std::make_unique<Texture>(*master, *localBuffer, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "entityMap.png");
     entityMap->init();
