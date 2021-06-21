@@ -198,7 +198,7 @@ void VulkanMgr::initDevice(const char *AppName, uint32_t appVersion, SDL_Window 
     hasLayer = _hasLayer;
 
     // initialize the vk::ApplicationInfo structure
-    vk::ApplicationInfo applicationInfo( AppName, appVersion, "EntityCore", 1, VK_API_VERSION_1_2);
+    vk::ApplicationInfo applicationInfo(AppName, appVersion, "EntityCore", 1, VK_API_VERSION_1_1);
 
     // initialize the vk::InstanceCreateInfo
     vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, hasLayer ? validationLayers.size() : 0, validationLayers.data(), instanceExtension.size(), instanceExtension.data());
@@ -221,6 +221,18 @@ void VulkanMgr::initDevice(const char *AppName, uint32_t appVersion, SDL_Window 
             if (pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
                 break;
             }
+        }
+    }
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+    for (const auto& extension : availableExtensions) {
+        if (extension.extensionName == std::string("VK_KHR_synchronization2")) {
+            SyncEvent::enable();
+            deviceExtension.push_back("VK_KHR_synchronization2");
+            break;
         }
     }
 }
@@ -270,13 +282,13 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
     VkPhysicalDeviceFeatures supportedDeviceFeatures;
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);
 
-    deviceFeatures.geometryShader = supportedDeviceFeatures.geometryShader;
-    deviceFeatures.tessellationShader = supportedDeviceFeatures.tessellationShader;
+    // deviceFeatures.geometryShader = supportedDeviceFeatures.geometryShader;
+    // deviceFeatures.tessellationShader = supportedDeviceFeatures.tessellationShader;
     deviceFeatures.samplerAnisotropy = supportedDeviceFeatures.samplerAnisotropy;
     deviceFeatures.sampleRateShading = supportedDeviceFeatures.sampleRateShading;
-    deviceFeatures.multiDrawIndirect = supportedDeviceFeatures.multiDrawIndirect;
-    deviceFeatures.wideLines = supportedDeviceFeatures.wideLines;
-    deviceFeatures.shaderFloat64 = supportedDeviceFeatures.shaderFloat64;
+    // deviceFeatures.multiDrawIndirect = supportedDeviceFeatures.multiDrawIndirect;
+    // deviceFeatures.wideLines = supportedDeviceFeatures.wideLines;
+    // deviceFeatures.shaderFloat64 = supportedDeviceFeatures.shaderFloat64;
     deviceFeatures.vertexPipelineStoresAndAtomics = supportedDeviceFeatures.vertexPipelineStoresAndAtomics;
     displayEnabledFeaturesInfo();
 
@@ -420,7 +432,7 @@ void VulkanMgr::initSwapchain(int width, int height)
 
     vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, nullptr);
     swapChainImages.resize(finalImageCount);
-    vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, swapChainImages.data() + finalImageCount);
+    vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, swapChainImages.data());
 }
 
 VkImageView VulkanMgr::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)

@@ -14,6 +14,8 @@
 #include <thread>
 #include <vector>
 #include "EntityCore/SubBuffer.hpp"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 #define JB1 0.5,  0.5, 0.5,  0.125
 #define JB2 0.25, 1,   0.25, 0.125
@@ -83,6 +85,20 @@ public:
     void stop() {alive = false; active = true;}
 
     JaugeVertex *getJaugePtr() {return jaugePtr;}
+
+    // No time for better
+    std::string header1 = "Score ";
+    std::string header2 = "\nLevel ";
+    char sep1 = '/';
+    char sep2 = '|';
+    bool section2 = false;
+    long score1 = 0;
+    long score1Max = 0;
+    long score2 = 0;
+    long score2Max = 0;
+    int level1 = 0;
+    int level1Max = 0;
+
 private:
     void mainloop();
     void submitResources();
@@ -123,6 +139,8 @@ private:
     VkSemaphore semaphores[6];
     VkCommandPool cmdPool;
     VkCommandBuffer cmds[3];
+    TTF_Font *myFont;
+    SDL_Surface *scoreboardSurface;
 
     uint32_t imageIdx = 0;
     const VkPipelineStageFlags semaphoreStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

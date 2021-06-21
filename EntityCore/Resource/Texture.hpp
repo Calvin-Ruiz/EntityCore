@@ -5,6 +5,7 @@
 #include "EntityCore/SubBuffer.hpp"
 #include "EntityCore/SubMemory.hpp"
 #include <string>
+#include <SDL2/SDL.h>
 
 class VulkanMgr;
 class BufferMgr;
@@ -27,6 +28,9 @@ public:
     void unuse();
     //! Create texture on RAM with undefined content
     void createSurface();
+    //! Create texture on RAM with undefined content and bind it to an new SDL_Surface
+    //! Note : the SDL_Surface must be externally destroyed before detaching or destroying this texture
+    SDL_Surface *createSDLSurface();
     //! Release texture on RAM, assuming the last transfer to GPU has complete
     void detach();
     //! Acquire pointer to staging memory
@@ -62,6 +66,7 @@ private:
     std::string name;
     bool onCPU = false;
     bool onGPU = false;
+    bool sdlSurface = false;
 };
 
 #endif /* end of include guard: TEXTURE_HPP */

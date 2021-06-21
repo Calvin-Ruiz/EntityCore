@@ -110,3 +110,49 @@ void EntityLib::setFragmentPos(EntityData &entity, int x, int y)
     entity.posX = x * worldScaleX * 2 - 1;
     entity.posY = y * worldScaleY * 2 - 1;
 }
+
+std::string EntityLib::toText(long nbr)
+{
+    std::string str;
+
+    if (nbr < 0) {
+        nbr = -nbr;
+        str = "-";
+    }
+    if (nbr < 10000) {
+        return str + std::to_string(nbr);
+    }
+    const unsigned char ranks[] = {'k', 'M', 'G', 'T'};
+    unsigned char rank = 0;
+    while (nbr >= 100000) {
+        ++rank;
+        nbr /= 1000;
+    }
+    unsigned char cut = 0;
+    while (nbr >= 1000) {
+        ++cut;
+        nbr /= 10;
+    }
+    std::string tmp = std::to_string(nbr);
+    switch (cut) {
+        case 0:
+            str += tmp;
+            str.push_back(ranks[rank]);
+            break;
+        case 1:
+            str.push_back(tmp[0]);
+            str.push_back('.');
+            str.push_back(tmp[1]);
+            str.push_back(tmp[2]);
+            str.push_back(ranks[rank + 1]);
+            break;
+        case 2:
+            str.push_back(tmp[0]);
+            str.push_back(tmp[1]);
+            str.push_back('.');
+            str.push_back(tmp[2]);
+            str.push_back(ranks[rank + 1]);
+            break;
+    }
+    return str;
+}

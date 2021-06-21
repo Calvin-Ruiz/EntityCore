@@ -63,6 +63,7 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     jaugeIndexBuffer = indexBufferMgr->acquireBuffer(2*6*10);
     entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*1024);
 
+    TTF_Init();
     submitResources();
     initCommands();
 }
@@ -71,6 +72,9 @@ GPUDisplay::~GPUDisplay()
 {
     stop();
     updater->join();
+    TTF_CloseFont(myFont);
+    TTF_Quit();
+    SDL_FreeSurface(scoreboardSurface);
 }
 
 void GPUDisplay::start()
@@ -95,7 +99,9 @@ void GPUDisplay::unpause()
 
 void GPUDisplay::mainloop()
 {
+    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/150); // Limit to x3 base compute time
     shield.lock();
+    auto clock = std::chrono::system_clock::now() + delay;
     while (alive) {
         auto res = vkAcquireNextImageKHR(vkmgr.refDevice, swapchain, UINT32_MAX, semaphores[switcher], VK_NULL_HANDLE, &imageIdx);
         switch (res) {
@@ -112,11 +118,36 @@ void GPUDisplay::mainloop()
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 continue;
         }
+
+        std::string s = header1 + EntityLib::toText(score1);
+        s.push_back(sep1);
+        s += EntityLib::toText(score1Max);
+        if (section2) {
+            s.push_back(sep2);
+            s += EntityLib::toText(score2Max);
+            s.push_back(sep1);
+            s += EntityLib::toText(score2Max);
+        }
+        s += header2 + std::to_string(level1);
+        s.push_back(sep1);
+        s += std::to_string(level1Max);
+        SDL_Color color={240,240,240,0};
+    	SDL_Surface *text = TTF_RenderUTF8_Blended(myFont, s.c_str(), color);
+        SDL_Rect tmp;
+        tmp.x=2;
+        tmp.y=1;
+        tmp.w=text->w;
+        tmp.h=text->h;
+        SDL_FillRect(scoreboardSurface, NULL, UINT32_MAX);
+        SDL_BlitSurface(text, NULL, scoreboardSurface, &tmp);
+        SDL_FreeSurface(text);
+
         sinfo[imageIdx].pWaitSemaphores = semaphores + switcher;
         vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, VK_NULL_HANDLE);
         vkQueuePresentKHR(graphicQueue, presentInfo + imageIdx);
         if (active) {
-            std::this_thread::yield();
+            std::this_thread::sleep_until(clock);
+            clock = std::chrono::system_clock::now() + delay;
         } else {
             shield.unlock();
             std::this_thread::yield();
@@ -225,8 +256,19 @@ void GPUDisplay::submitResources()
     background->detach();
     jaugeStaging = localBuffer.acquireBuffer(sizeof(JaugeVertex)*9*2);
     jaugePtr = (JaugeVertex *) localBuffer.getPtr(jaugeStaging);
+    myFont = TTF_OpenFont("textures/font.ttf", 24);
     scoreboard = std::make_unique<Texture>(vkmgr, localBuffer, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "scoreboard");
+    // load empty surface
     scoreboard->init(68, 240);
+    scoreboardSurface = scoreboard->createSDLSurface();
+    // SyncEvent tmpEvt;
+    // tmpEvt.imageBarrier(*scoreboard, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
+    // tmpEvt.build();
+    // tmpEvt.placeBarrier(cmds[1]);
+    // vkEndCommandBuffer(cmds[1]);
+    // sInfo.pCommandBuffers = cmds + 1;
+    // vkQueueSubmit(graphicQueue, 1, &sInfo, VK_NULL_HANDLE);
+    // vkQueueWaitIdle(graphicQueue);
     vkResetCommandPool(vkmgr.refDevice, cmdPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 }
 
@@ -270,12 +312,14 @@ void GPUDisplay::initCommands()
         tmpSync2.placeBarrier(cmd);
         BufferMgr::copy(cmd, jaugeStaging, jaugeVertexBuffer->get());
         tmpSync.placeBarrier(cmd);
+        scoreboard->use(cmd);
         renderMgr.begin(i, cmd);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePipeline->get());
         vkCmdBindVertexBuffers(cmd, 0, 1, &imageVertexBuffer->get().buffer, (VkDeviceSize *) &imageVertexBuffer->get().offset);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, bgSet->get(), 0, nullptr);
         vkCmdDraw(cmd, 6, 1, 0, 0);
-        // Draw scoreboard here
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, sbSet->get(), 0, nullptr);
+        vkCmdDraw(cmd, 6, 1, 6, 0);
 
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, entityPipeline->get());
         vkCmdBindVertexBuffers(cmd, 0, 1, &imageVertexBuffer->get().buffer, (VkDeviceSize *) &imageVertexBuffer->get().offset);

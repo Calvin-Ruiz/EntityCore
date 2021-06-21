@@ -266,6 +266,7 @@ void Game::gameStart()
     initPlayer(player1, 0);
     if (nbPlayer == 2)
         initPlayer(player2, 1);
+    display->section2 = (nbPlayer == 2);
 
     display->unpause();
     compute->start((void (*)(void *, GPUEntityMgr &)) &updateS, (void (*)(void *, GPUEntityMgr &)) &updatePlayerS, this);
@@ -337,6 +338,12 @@ void Game::update(GPUEntityMgr &engine)
         someone = true;
     }
     ++tic;
+    display->score1Max = player1.saved.maxScore;
+    display->score2Max = player2.saved.maxScore;
+    display->score1 = player1.score;
+    display->score2 = player2.score;
+    display->level1 = level;
+    display->level1Max = maxLevel;
 }
 
 void Game::updatePlayer(Player &p, int idx)
@@ -646,6 +653,12 @@ void Game::updatePlayerState(Player &p, int i)
     if (newShield != p.lastHealth) {
         if (newShield < 0) {
             p.alive = false;
+            p.score -= p.score / generatorList[p.saved.generator].deathLossRatio;
+            if (p.score < p.saved.maxScore) {
+                p.score = p.saved.maxScore;
+            } else {
+                p.saved.maxScore = p.score;
+            }
             // play death sound
             return;
         }
@@ -690,8 +703,11 @@ void Game::load(int slot, int playerCount)
     if (file) {
         file.read((char *) &maxLevel, 9);
         file.read((char *) &player1, 17);
-        if (nbPlayer == 2)
+        player1.score = player1.saved.maxScore;
+        if (nbPlayer == 2) {
             file.read((char *) &player2, 17);
+            player2.score = player2.saved.maxScore;
+        }
     } else {
         std::cout << "Slot not found, creating one\n";
         nbPlayer = playerCount;

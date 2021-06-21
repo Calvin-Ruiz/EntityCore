@@ -43,6 +43,8 @@ public:
     std::vector<unsigned char> flags;
     const float worldScaleX;
     const float worldScaleY;
+
+    static std::string toText(long nbr);
 private:
     std::vector<EntityData> fragments;
     std::unique_ptr<BufferMgr> localBuffer;

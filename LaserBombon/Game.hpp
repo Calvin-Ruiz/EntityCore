@@ -247,6 +247,7 @@ private:
     void updatePlayerState(Player &p, int idx);
     void shoot(Player &p);
     void useSpecial(Player &p);
+    static std::string toText(long nbr);
     static void updateS(Game *self, GPUEntityMgr &engine) {
         self->update(engine);
     }

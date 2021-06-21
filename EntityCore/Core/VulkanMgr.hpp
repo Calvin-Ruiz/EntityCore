@@ -131,7 +131,7 @@ private:
     bool isDeviceSuitable(VkPhysicalDevice pDevice);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
     std::vector<const char *> instanceExtension = {"VK_KHR_surface", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME};
-    std::vector<const char *> deviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_push_descriptor", "VK_EXT_conditional_rendering", "VK_KHR_synchronization2"};
+    std::vector<const char *> deviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
     bool hasLayer;
     static bool isAlive;

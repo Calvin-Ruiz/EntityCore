@@ -129,10 +129,31 @@ void Texture::unuse()
 void Texture::createSurface()
 {
     if (!onCPU) {
-        VkDeviceSize size = into.extent.width * into.extent.height * nbChannels * elemSize;
+        VkDeviceSize size = info.extent.width * info.extent.height * nbChannels * elemSize;
         staging = mgr.acquireBuffer(size);
-        mgr.releaseBuffer(staging);
         onCPU = true;
+    }
+}
+
+SDL_Surface *Texture::createSDLSurface()
+{
+    createSurface();
+    if (onCPU) {
+        #if SDL_BYTEORDER == SDL_BIG_ENDIAN
+            const unsigned int rmask = 0xff000000;
+            const unsigned int gmask = 0x00ff0000;
+            const unsigned int bmask = 0x0000ff00;
+            const unsigned int amask = 0x000000ff;
+        #else // little endian, like x86
+            const unsigned int rmask = 0x000000ff;
+            const unsigned int gmask = 0x0000ff00;
+            const unsigned int bmask = 0x00ff0000;
+            const unsigned int amask = 0xff000000;
+        #endif
+        SDL_Surface *ret = SDL_CreateRGBSurfaceFrom(mgr.getPtr(staging), info.extent.width, info.extent.height, 32, 4*info.extent.width, rmask, gmask, bmask, amask);
+        sdlSurface = true;
+    } else {
+        return nullptr;
     }
 }
 
@@ -149,22 +170,23 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
     if (!onGPU) {
         if (createImage()) {
             master.putLog("Created image support for '" + name + "'", LogType::DEBUG);
+            if (cmd != VK_NULL_HANDLE && onCPU) {
+                VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
+                vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+                if (includeTransition) {
+                    barrier.srcAccessMask = barrier.dstAccessMask;
+                    barrier.oldLayout = barrier.newLayout;
+                    barrier.dstAccessMask = 0;
+                    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+                }
+                return true;
+            }
         } else {
             return false;
         }
-    } else if (cmd != VK_NULL_HANDLE && onCPU) {
-        VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
-        vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-        if (includeTransition) {
-            barrier.srcAccessMask = barrier.dstAccessMask;
-            barrier.oldLayout = barrier.newLayout;
-            barrier.dstAccessMask = 0;
-            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-        }
-        return true;
     }
     if (cmd == VK_NULL_HANDLE) {
         master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::DEBUG);
@@ -174,7 +196,15 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         master.putLog("Can't upload '" + name + "' datas : not stored in RAM", LogType::WARNING);
         return true;
     }
+    if (sdlSurface) {
+        VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
     VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
     vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    if (sdlSurface) {
+        VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
     return true;
 }

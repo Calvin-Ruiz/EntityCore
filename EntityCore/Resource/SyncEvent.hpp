@@ -44,11 +44,15 @@ public:
     // Pipeline barrier
     void placeBarrier(VkCommandBuffer &cmd);
     static void setupPFN(VkInstance instance);
+    static void enable() {enabled = true;}
 private:
+    VkPipelineStageFlags compatConvStage(VkPipelineStageFlags2KHR stage);
+    VkAccessFlags compatConvAccess(VkAccessFlags2KHR access);
     static PFN_vkCmdSetEvent2KHR ptr_vkCmdSetEvent2KHR;
     static PFN_vkCmdWaitEvents2KHR ptr_vkCmdWaitEvents2KHR;
     static PFN_vkCmdResetEvent2KHR ptr_vkCmdResetEvent2KHR;
     static PFN_vkCmdPipelineBarrier2KHR ptr_vkCmdPipelineBarrier2KHR;
+    static bool enabled;
     VulkanMgr *master = nullptr;
     VkEvent event = VK_NULL_HANDLE;
     VkDependencyInfoKHR dep;
@@ -57,6 +61,13 @@ private:
     std::vector<VkImageMemoryBarrier2KHR> image;
     std::vector<VkEvent> multiEvent;
     std::vector<VkDependencyInfoKHR> multiDep;
+
+    VkPipelineStageFlags compatSrc = 0;
+    VkPipelineStageFlags compatDst = 0;
+    std::vector<VkMemoryBarrier> compatGlobal;
+    std::vector<VkBufferMemoryBarrier> compatBuffers;
+    std::vector<VkImageMemoryBarrier> compatImage;
+    std::vector<SyncEvent *> compatMulti;
 };
 
 #endif /* SYNCEVENT_HPP_ */
