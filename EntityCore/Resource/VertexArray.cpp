@@ -31,7 +31,7 @@ bool VertexArray::createBindingEntry(uint32_t stride, VkVertexInputRate type)
         master.putLog("Alignment with value " + std::to_string(alignment) + " must be a multiple of stride with value " + std::to_string(stride), LogType::WARNING);
         return false;
     }
-    bindingDesc.push_back({binding++, stride, type});
+    bindingDesc.push_back({++binding, stride, type});
     size = stride;
     location = 0;
     offset = 0;

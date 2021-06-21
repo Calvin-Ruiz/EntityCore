@@ -274,6 +274,7 @@ void GPUDisplay::submitResources()
 
 void GPUDisplay::initCommands()
 {
+    Pipeline::setShaderDir("./shader/");
     bgSet->bindTexture(*background, 0);
     entitySet->bindTexture(entityMap, 0);
     sbSet->bindTexture(*scoreboard, 0);
@@ -306,6 +307,7 @@ void GPUDisplay::initCommands()
     tmpSync.bufferBarrier(jaugeVertexBuffer->get(), VK_PIPELINE_STAGE_2_COPY_BIT_KHR, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR);
     tmpSync.build();
     VkCommandBufferBeginInfo beginInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};
+    VkDeviceSize tmpOff;
     for (int i = 0; i < 3; ++i) {
         VkCommandBuffer cmd = cmds[i];
         vkBeginCommandBuffer(cmd, &beginInfo);
@@ -315,20 +317,23 @@ void GPUDisplay::initCommands()
         scoreboard->use(cmd);
         renderMgr.begin(i, cmd);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePipeline->get());
-        vkCmdBindVertexBuffers(cmd, 0, 1, &imageVertexBuffer->get().buffer, (VkDeviceSize *) &imageVertexBuffer->get().offset);
+        tmpOff = imageVertexBuffer->get().offset;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &imageVertexBuffer->get().buffer, &tmpOff);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, bgSet->get(), 0, nullptr);
         vkCmdDraw(cmd, 6, 1, 0, 0);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, sbSet->get(), 0, nullptr);
         vkCmdDraw(cmd, 6, 1, 6, 0);
 
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, entityPipeline->get());
-        vkCmdBindVertexBuffers(cmd, 0, 1, &imageVertexBuffer->get().buffer, (VkDeviceSize *) &imageVertexBuffer->get().offset);
+        tmpOff = entityVertexBuffer.offset;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &entityVertexBuffer.buffer, &tmpOff);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, entitySet->get(), 0, nullptr);
         vkCmdBindIndexBuffer(cmd, entityIndexBuffer.buffer, entityIndexBuffer.offset, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(cmd, 6*1024, 1, 0, 0, 0);
 
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, jaugePipeline->get());
-        vkCmdBindVertexBuffers(cmd, 0, 1, &jaugeVertexBuffer->get().buffer, (VkDeviceSize *) &jaugeVertexBuffer->get().offset);
+        tmpOff = jaugeVertexBuffer->get().offset;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &jaugeVertexBuffer->get().buffer, &tmpOff);
         vkCmdBindIndexBuffer(cmd, jaugeIndexBuffer.buffer, jaugeIndexBuffer.offset, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(cmd, 6*10, 1, 0, 0, 0);
         vkCmdEndRenderPass(cmd);

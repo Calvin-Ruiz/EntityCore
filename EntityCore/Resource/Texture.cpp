@@ -24,6 +24,7 @@ Texture::Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, con
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     info.queueFamilyIndexCount = 0;
     info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    info.samples = VK_SAMPLE_COUNT_1_BIT;
 }
 
 bool Texture::init(int nbChannels, bool mipmap)

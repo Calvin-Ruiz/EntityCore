@@ -45,6 +45,10 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     syncInt[1].bufferBarrier(gpuEntities, VK_PIPELINE_STAGE_2_COPY_BIT_KHR, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR);
     syncInt[2].bufferBarrier(gpuEntities, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR);
     syncInt[3].bufferBarrier(gpuEntities, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR);
+    for (int i = 0; i < 2; ++i)
+        syncExt[i].build();
+    for (int i = 0; i < 4; ++i)
+        syncInt[i].build();
     syncInt[0].combineDstDependencies(syncInt[3]);
     syncInt[1].combineDstDependencies(syncInt[2]);
 
@@ -121,7 +125,7 @@ void GPUEntityMgr::buildCompute()
         syncExt[i].srcDependency(cmd);
         syncInt[2].placeBarrier(cmd);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, collidePipeline->get());
-        vkCmdDispatchBase(cmd, 128, 0, 0, 128, 1, 1);
+        vkCmdDispatchBase(cmd, 256, 0, 0, 256, 1, 1);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pcollidePipeline->get());
         vkCmdDispatch(cmd, 1, 1, 1);
         syncInt[i | 2].srcDependency(cmd);

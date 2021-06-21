@@ -141,11 +141,13 @@ void Game::mainloop()
                 switch (event.type) {
                     case SDL_QUIT:
                         alive = false;
+                        notQuitting = false;
                         break;
                     case SDL_KEYDOWN:
                         switch (event.key.keysym.scancode) {
                             case SDL_SCANCODE_F4:
                                 alive = false;
+                                notQuitting = false;
                                 break;
                             case SDL_SCANCODE_ESCAPE:
                             case SDL_SCANCODE_Z:

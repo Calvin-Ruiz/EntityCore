@@ -2,7 +2,7 @@
 #extension GL_ARB_compute_shader : require
 layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
-layout(binding=0, std430) buffer EntityData {
+struct Se {
     vec2 pos;
     vec2 vel;
     int health;
@@ -12,9 +12,13 @@ layout(binding=0, std430) buffer EntityData {
     vec2 tex2;
     bool alive;
     bool inserted;
-} entities[1024];
+};
 
-layout(binding=0, set=1, std430) buffer writeonly EntityVertexGroup {
+layout(binding=0, std430) buffer EntityData {
+    Se e[1024];
+} entities;
+
+struct Sv {
     vec2 pos1;
     vec2 cst1;
     vec2 tex1;
@@ -27,54 +31,66 @@ layout(binding=0, set=1, std430) buffer writeonly EntityVertexGroup {
     vec2 pos4;
     vec2 cst4;
     vec2 tex4;
-} entityVertex[1024];
+};
 
-layout(binding=1, set=1, std430) buffer writeonly EntityStatus {
+layout(binding=0, set=1, std430) buffer writeonly EntityVertexGroup {
+    Sv v[1024];
+} entityVertex;
+
+struct Ss {
     float posX;
     float posY;
     int health;
-} readback[1024];
+};
+
+layout(binding=1, set=1, std430) buffer writeonly EntityStatus {
+    Ss s[1024];
+} readback;
+
+#define self entities.e[gl_GlobalInvocationID.x]
+#define disp entityVertex.v[gl_GlobalInvocationID.x]
+#define ret readback.s[gl_GlobalInvocationID.x]
 
 void main()
 {
-    if (entities[gl_GlobalInvocationID.x].alive) {
-        vec2 pos = entities[gl_GlobalInvocationID.x].pos;
+    if (self.alive) {
+        vec2 pos = self.pos;
         pos *= pos;
-        entities[gl_GlobalInvocationID.x].health = (max(pos.x, pos.y) > 1.125) ? -1 : entities[gl_GlobalInvocationID.x].health;
-        readback[gl_GlobalInvocationID.x].health = entities[gl_GlobalInvocationID.x].health;
-        entities[gl_GlobalInvocationID.x].alive = (entities[gl_GlobalInvocationID.x].health >= 0);
-        entities[gl_GlobalInvocationID.x].pos.x += entities[gl_GlobalInvocationID.x].vel.x;
-        if (entities[gl_GlobalInvocationID.x].alive) {
-            if (entities[gl_GlobalInvocationID.x].vel.y > 1) {
-                float valy = (entities[gl_GlobalInvocationID.x & 1].alive) ? entities[gl_GlobalInvocationID.x & 1].pos.y : entities[1 - (gl_GlobalInvocationID.x & 1)].pos.y;
-                entities[gl_GlobalInvocationID.x].pos.y += clamp(valy - entities[gl_GlobalInvocationID.x].pos.y, entities[gl_GlobalInvocationID.x].vel.x, -entities[gl_GlobalInvocationID.x].vel.x);
+        self.health = (max(pos.x, pos.y) > 1.125) ? -1 : self.health;
+        ret.health = self.health;
+        self.alive = (self.health >= 0);
+        self.pos.x += self.vel.x;
+        if (self.alive) {
+            if (self.vel.y > 1) {
+                float valy = (entities.e[gl_GlobalInvocationID.x & 1].alive) ? entities.e[gl_GlobalInvocationID.x & 1].pos.y : entities.e[1 - (gl_GlobalInvocationID.x & 1)].pos.y;
+                self.pos.y += clamp(valy - self.pos.y, self.vel.x, -self.vel.x);
             } else {
-                entities[gl_GlobalInvocationID.x].pos.y += entities[gl_GlobalInvocationID.x].vel.y;
+                self.pos.y += self.vel.y;
             }
         } else {
-            readback[gl_GlobalInvocationID.x].posX = entities[gl_GlobalInvocationID.x].pos.x;
-            readback[gl_GlobalInvocationID.x].posY = entities[gl_GlobalInvocationID.x].pos.y;
-            entities[gl_GlobalInvocationID.x].pos.y += 100;
+            ret.posX = self.pos.x;
+            ret.posY = self.pos.y;
+            self.pos.y += 100;
         }
-        entityVertex[gl_GlobalInvocationID.x].pos1 = entities[gl_GlobalInvocationID.x].pos - entities[gl_GlobalInvocationID.x].size;
+        disp.pos1 = self.pos - self.size;
     } else {
-        if (entities[gl_GlobalInvocationID.x].inserted) {
-            entities[gl_GlobalInvocationID.x].inserted = false;
-            entities[gl_GlobalInvocationID.x].alive = true;
-            entityVertex[gl_GlobalInvocationID.x].cst1.y = 1;
-            entityVertex[gl_GlobalInvocationID.x].cst2 = entityVertex[gl_GlobalInvocationID.x].cst3 = entityVertex[gl_GlobalInvocationID.x].cst4 = vec2(0, 0);
-            vec2 size = entities[gl_GlobalInvocationID.x].size;
-            entityVertex[gl_GlobalInvocationID.x].pos1 = entities[gl_GlobalInvocationID.x].pos - size;
+        if (self.inserted) {
+            self.inserted = false;
+            self.alive = true;
+            disp.cst1.y = 1;
+            disp.cst2 = disp.cst3 = disp.cst4 = vec2(0, 0);
+            vec2 size = self.size;
+            disp.pos1 = self.pos - size;
             size *= 2;
-            entityVertex[gl_GlobalInvocationID.x].pos2 = size;
-            entityVertex[gl_GlobalInvocationID.x].cst1.x = entityVertex[gl_GlobalInvocationID.x].pos3.x = entityVertex[gl_GlobalInvocationID.x].pos4.y = 0;
-            entityVertex[gl_GlobalInvocationID.x].pos3.y = -size.y;
-            entityVertex[gl_GlobalInvocationID.x].pos4.x = -size.x;
-            readback[gl_GlobalInvocationID.x].health = entities[gl_GlobalInvocationID.x].health;
-            entityVertex[gl_GlobalInvocationID.x].tex1.x = entityVertex[gl_GlobalInvocationID.x].tex4.x = entities[gl_GlobalInvocationID.x].tex1.x;
-            entityVertex[gl_GlobalInvocationID.x].tex1.y = entityVertex[gl_GlobalInvocationID.x].tex3.y = entities[gl_GlobalInvocationID.x].tex1.y;
-            entityVertex[gl_GlobalInvocationID.x].tex2.x = entityVertex[gl_GlobalInvocationID.x].tex3.x = entities[gl_GlobalInvocationID.x].tex2.x;
-            entityVertex[gl_GlobalInvocationID.x].tex2.y = entityVertex[gl_GlobalInvocationID.x].tex4.y = entities[gl_GlobalInvocationID.x].tex2.y;
+            disp.pos2 = size;
+            disp.cst1.x = disp.pos3.x = disp.pos4.y = 0;
+            disp.pos3.y = -size.y;
+            disp.pos4.x = -size.x;
+            ret.health = self.health;
+            disp.tex1.x = disp.tex4.x = self.tex1.x;
+            disp.tex1.y = disp.tex3.y = self.tex1.y;
+            disp.tex2.x = disp.tex3.x = self.tex2.x;
+            disp.tex2.y = disp.tex4.y = self.tex2.y;
         }
     }
 }

@@ -168,7 +168,7 @@ VkPipelineStageFlags SyncEvent::compatConvStage(VkPipelineStageFlags2KHR stage)
     VkPipelineStageFlags ret = stage & 0x0001ffff;
 
     if (stage & VK_PIPELINE_STAGE_2_COPY_BIT_KHR)
-        stage |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        ret |= VK_PIPELINE_STAGE_TRANSFER_BIT;
     if (stage & ~(VK_PIPELINE_STAGE_2_COPY_BIT_KHR | 0x0001ffff))
         master->putLog("Unhandled pipeline stage compatibility conversion", LogType::ERROR);
     return ret;
@@ -178,9 +178,9 @@ VkAccessFlags SyncEvent::compatConvAccess(VkAccessFlags2KHR access)
 {
     VkAccessFlags ret = access & 0x0001ffff;
     if (access & VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR)
-        access |= VK_ACCESS_SHADER_READ_BIT;
+        ret |= VK_ACCESS_SHADER_READ_BIT;
     if (access & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR)
-        access |= VK_ACCESS_SHADER_WRITE_BIT;
+        ret |= VK_ACCESS_SHADER_WRITE_BIT;
     if (access & ~(VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR | 0x0001ffff))
         master->putLog("Unhandled access compatibility conversion", LogType::ERROR);
     return ret;

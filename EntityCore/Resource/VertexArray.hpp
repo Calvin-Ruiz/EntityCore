@@ -33,7 +33,7 @@ private:
     VulkanMgr &master;
     std::vector<VkVertexInputBindingDescription> bindingDesc;
     std::vector<VkVertexInputAttributeDescription> attributeDesc;
-    uint32_t binding = 0;
+    uint32_t binding = UINT32_MAX;
     int size = 0;
     uint32_t location = 0;
     uint32_t offset = 0;
