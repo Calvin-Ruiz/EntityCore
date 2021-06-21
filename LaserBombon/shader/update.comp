@@ -56,7 +56,7 @@ void main()
     if (self.alive) {
         vec2 pos = self.pos;
         pos *= pos;
-        self.health = (max(pos.x, pos.y) > 1.125) ? -1 : self.health;
+        self.health = (max(pos.x, pos.y) > 1.25) ? -1 : self.health;
         ret.health = self.health;
         self.alive = (self.health >= 0);
         self.pos.x += self.vel.x;
@@ -72,20 +72,21 @@ void main()
             ret.posY = self.pos.y;
             self.pos.y += 100;
         }
+        vec2 size = vec2(self.size.x, -self.size.y);
         disp.pos1 = self.pos - self.size;
+        disp.pos2 = self.pos + self.size;
+        disp.pos3 = self.pos + size;
+        disp.pos4 = self.pos - size;
     } else {
         if (self.inserted) {
             self.inserted = false;
             self.alive = true;
-            disp.cst1.y = 1;
-            disp.cst2 = disp.cst3 = disp.cst4 = vec2(0, 0);
-            vec2 size = self.size;
-            disp.pos1 = self.pos - size;
-            size *= 2;
-            disp.pos2 = size;
-            disp.cst1.x = disp.pos3.x = disp.pos4.y = 0;
-            disp.pos3.y = -size.y;
-            disp.pos4.x = -size.x;
+            vec2 size = vec2(self.size.x, -self.size.y);
+            disp.pos1 = self.pos - self.size;
+            disp.pos2 = self.pos + self.size;
+            disp.pos3 = self.pos + size;
+            disp.pos4 = self.pos - size;
+            disp.cst1 = disp.cst2 = disp.cst3 = disp.cst4 = vec2(0, 1);
             ret.health = self.health;
             disp.tex1.x = disp.tex4.x = self.tex1.x;
             disp.tex1.y = disp.tex3.y = self.tex1.y;

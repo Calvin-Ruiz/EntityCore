@@ -75,6 +75,7 @@ GPUEntityMgr::~GPUEntityMgr()
 {
     stop();
     updater->join();
+    vkQueueWaitIdle(computeQueue);
     vkDestroyCommandPool(vkmgr.refDevice, computePool, nullptr);
     vkDestroyCommandPool(vkmgr.refDevice, transferPool, nullptr);
     localBuffer.releaseBuffer(entityPushBuffer);
@@ -160,6 +161,8 @@ void GPUEntityMgr::resetAll()
     }
     // Record a transfer command which reset everything
     cmd = cmds[frameparity << 1];
+    vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
+    vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
     vkBeginCommandBuffer(cmd, &begInfo);
     VkBufferCopy tmp = {(VkDeviceSize) entityPushBuffer.offset, 0, END_ALL*sizeof(EntityData)};
     vkCmdCopyBuffer(cmd, entityPushBuffer.buffer, gpuEntities.buffer, 1, &tmp);
@@ -169,8 +172,6 @@ void GPUEntityMgr::resetAll()
         initDep = false;
     }
     vkEndCommandBuffer(cmd);
-    vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
-    vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
     vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
     frameparity = !frameparity;
     regionsBase.clear();
@@ -195,10 +196,13 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
     resetAll();
 
     auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/50);
+    auto delayOverride = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/1000);
     bool prevLimit = limit;
     auto clock = std::chrono::system_clock::now();
 
+    int cnt = 0;
     while (alive) {
+        vkmgr.putLog(std::string("Compute Cycle ") + std::to_string(cnt++), LogType::INFO);
         while (!active) {
             std::this_thread::yield();
             clock = std::chrono::system_clock::now();
@@ -207,6 +211,8 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         regions.resize(regionsBase.size());
         memcpy(regions.data(), regionsBase.data(), regionsBase.size() * sizeof(VkBufferCopy));
         lastPush = 0;
+        vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
+        vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
         vkBeginCommandBuffer(cmd, &begInfo);
         syncExt[!frameparity].dstDependency(cmd);
 
@@ -219,8 +225,11 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         if (limit) {
             clock += delay;
             std::this_thread::sleep_until(clock);
+        } else {
+            clock += delayOverride;
+            std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x20 speed)
         }
-        while (!syncExt[frameparity].isSet())
+        while (!syncExt[!frameparity].isSet())
             std::this_thread::yield();
 
         updateChanges(); // Read back changes
@@ -228,8 +237,6 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         vkCmdCopyBuffer(cmd, entityPushBuffer.buffer, gpuEntities.buffer, regions.size(), regions.data());
         syncInt[frameparity].srcDependency(cmd);
         vkEndCommandBuffer(cmd);
-        vkWaitForFences(vkmgr.refDevice, 1, fences + frameparity, VK_TRUE, UINT32_MAX);
-        vkResetFences(vkmgr.refDevice, 1, fences + frameparity);
         vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
         frameparity = !frameparity;
     }
@@ -241,10 +248,19 @@ void GPUEntityMgr::updateChanges()
     readbackMgr->invalidate(readbackBuffer);
     nbDead = 0;
     for (int i = 0; i < END_ALL; ++i) {
-        if (attachment[i].alive && readback[i].health < 0) {
-            attachment[i].alive = false;
-            deadFlags[nbDead].first = i;
-            deadFlags[nbDead++].second = attachment[i].flag;
+        switch (attachment[i].alive) {
+            case 2:
+                attachment[i].alive = 1;
+                break;
+            case 1:
+                if (readback[i].health < 0) {
+                    vkmgr.putLog("Destroyed " + std::to_string(i), LogType::INFO);
+                    attachment[i].alive = false;
+                    deadFlags[nbDead].first = i;
+                    deadFlags[nbDead++].second = attachment[i].flag;
+                }
+                break;
+            default:;
         }
     }
     psidx = BEG_PLAYER_SHOOT;
@@ -261,7 +277,7 @@ EntityData &GPUEntityMgr::pushPlayerShoot(unsigned char flag)
             continue;
         }
         attachment[psidx].flag = flag;
-        attachment[psidx].alive = true;
+        attachment[psidx].alive = 2;
         pushRegion(psidx);
         return entityPush[psidx++];
     }
@@ -277,7 +293,7 @@ EntityData &GPUEntityMgr::pushCandyShoot(unsigned char flag)
             continue;
         }
         attachment[csidx].flag = flag;
-        attachment[csidx].alive = true;
+        attachment[csidx].alive = 2;
         pushRegion(csidx);
         return entityPush[csidx++];
     }
@@ -293,7 +309,7 @@ EntityData &GPUEntityMgr::pushBonus(unsigned char flag)
             continue;
         }
         attachment[bidx].flag = flag;
-        attachment[bidx].alive = true;
+        attachment[bidx].alive = 2;
         pushRegion(bidx);
         return entityPush[bidx++];
     }
@@ -309,7 +325,7 @@ EntityData &GPUEntityMgr::pushCandy(unsigned char flag)
             continue;
         }
         attachment[cidx].flag = flag;
-        attachment[cidx].alive = true;
+        attachment[cidx].alive = 2;
         pushRegion(cidx);
         return entityPush[cidx++];
     }

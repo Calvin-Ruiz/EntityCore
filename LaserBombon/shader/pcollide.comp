@@ -27,7 +27,7 @@ void main()
         const uint y = gl_GlobalInvocationID.y + 284;
         vec2 tmp = (self.pos - other.pos) / (self.size + other.size);
         tmp *= tmp;
-        if (tmp.x + tmp.y > 1) {
+        if (tmp.x + tmp.y < 1) {
             atomicAdd(other.health, -1);
             atomicAdd(self.health, other.damage);
         }

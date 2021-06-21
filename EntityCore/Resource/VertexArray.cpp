@@ -48,7 +48,7 @@ bool VertexArray::addInput(VkFormat format, bool used)
     size -= subSize;
     if (used)
         attributeDesc.push_back({location++, binding, format, offset});
-    offset += size;
+    offset += subSize;
     return true;
 }
 

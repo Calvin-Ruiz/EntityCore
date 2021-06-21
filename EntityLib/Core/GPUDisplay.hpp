@@ -17,19 +17,21 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#define JB1 0.5,  0.5, 0.5,  0.125
-#define JB2 0.25, 1,   0.25, 0.125
+#define JB1 0.5,  0.5, 0.5,  0.25
+#define JB2 0.25, 1,   0.25, 0.25
 
-#define J1 1, 0.5, 0, 0.25
-#define J2 0, 1,   1, 0.25
-#define J3 0, 0,   1, 0.25
-#define J4 1, 0,   0, 0.25
+#define J1 1, 0.5, 0, 0.5
+#define J2 0, 1,   1, 0.5
+#define J3 0, 0,   1, 0.5
+#define J4 1, 0,   0, 0.5
 
 #define JD 0, 0, 0, 1
 #define JRZ 0, 0, 0, 0
 #define JR 0, 0
 
-#define JPUT(pos, fill, down) \
+#define JSET(idx, val) jaugePtr[idx * 4] = jaugePtr[1 + idx * 4] = jaugePtr[2 + idx * 4] = jaugePtr[3 + idx * 4] = val
+
+#define JINIT() \
 *(jaugeIdxTmpPtr++) = pos; \
 *(jaugeIdxTmpPtr++) = fill; \
 *(jaugeIdxTmpPtr++) = down; \
@@ -57,8 +59,6 @@ class VertexBuffer;
 struct JaugeVertex {
     float x;
     float y;
-    float z;
-    float w;
     float r;
     float g;
     float b;
@@ -131,7 +131,6 @@ private:
     std::unique_ptr<Texture> background;
     std::unique_ptr<Texture> scoreboard; // 68x240
 
-    SubBuffer jaugeIndexBuffer;
     SubBuffer entityIndexBuffer;
     SubBuffer jaugeStaging;
     JaugeVertex *jaugePtr;

@@ -40,60 +40,65 @@ Game::Game(const std::string &name, uint32_t version, int width, int height)
 }
 
 Game::~Game()
-{}
+{
+    display->unpause();
+    display.reset();
+    compute.reset();
+    core.reset();
+}
 
 void Game::init()
 {
     core->loadFragment(LASERIFIER, 32, 128, 96, 148, 1, 1, 0, 0, F_OTHER);
-    core->loadFragment(MIEL0, 0, 0, 16, 16, 6, 1, 0, 0, F_CANDY);
-    core->loadFragment(MIEL1, 16, 0, 32, 16, 8, 1, 0, 0, F_MIEL1);
-    core->loadFragment(MIEL2, 32, 0, 48, 16, 10, 1, 0, 0, F_MIEL2);
-    core->loadFragment(MIEL3, 48, 0, 64, 16, 12, 1, 0, 0, F_MIEL3);
-    core->loadFragment(MIEL4, 64, 0, 80, 16, 14, 1, 0, 0, F_MIEL4);
-    core->loadFragment(MIEL5, 80, 0, 96, 16, 16, 1, 0, 0, F_MIEL5);
-    core->loadFragment(LINE1, 0, 16, 16, 32, 2, 1, 0, 0, F_LINE);
-    core->loadFragment(LINE2, 16, 16, 32, 32, 2, 1, 0, 0, F_LINE);
-    core->loadFragment(LINE3, 32, 16, 48, 32, 2, 1, 0, 0, F_LINE);
-    core->loadFragment(LINE4, 48, 16, 64, 32, 2, 1, 0, 0, F_LINE);
-    core->loadFragment(MULTICOLOR, 64, 16, 80, 32, 2, 1, 0, 0, F_MULTICOLOR);
-    core->loadFragment(CHOCOLAT, 80, 16, 96, 32, 1000000, 2, 0, 0, F_OTHER);
-    core->loadFragment(CANDY1, 0, 32, 16, 48, 1, 1, 0, 0, F_CANDY);
-    core->loadFragment(CANDY2, 16, 32, 32, 48, 1, 1, 0, 0, F_CANDY);
-    core->loadFragment(CANDY3, 32, 32, 48, 48, 1, 1, 0, 0, F_CANDY);
-    core->loadFragment(CANDY4, 48, 32, 64, 48, 1, 1, 0, 0, F_CANDY);
-    core->loadFragment(BOMB1, 0, 48, 16, 64, 5, 1, 0, 0, F_CANDY);
-    core->loadFragment(BOMB2, 16, 48, 32, 64, 5, 1, 0, 0, F_CANDY);
-    core->loadFragment(BOMB3, 32, 48, 48, 64, 5, 1, 0, 0, F_CANDY);
-    core->loadFragment(BOMB4, 48, 48, 64, 64, 5, 1, 0, 0, F_CANDY);
-    core->loadFragment(BLOCK1, 64, 32, 80, 48, 600, 1, 0, 0, F_BLOCK);
-    core->loadFragment(BLOCK2, 80, 32, 96, 48, 600, 1, 0, 0, F_BLOCK);
-    core->loadFragment(BLOCK3, 64, 48, 80, 64, 600, 1, 0, 0, F_BLOCK);
-    core->loadFragment(BLOCK4, 80, 48, 96, 64, 600, 1, 0, 0, F_BLOCK);
-    core->loadFragment(FISH1, 0, 64, 16, 72, 2, 1, 0, 0, F_CANDY);
-    core->loadFragment(FISH2, 16, 72, 32, 72, 2, 1, 0, 0, F_CANDY);
-    core->loadFragment(FISH3, 0, 64, 16, 80, 2, 1, 0, 0, F_CANDY);
-    core->loadFragment(FISH4, 16, 72, 32, 80, 2, 1, 0, 0, F_CANDY);
-    core->loadFragment(BIG_LASER, 32, 64, 64, 80, 7, 1, 0, 0, F_OTHER);
+    core->loadFragment(MIEL0, 0, 0, 16, 16, 6, 1, 32, 32, F_CANDY);
+    core->loadFragment(MIEL1, 16, 0, 32, 16, 8, 1, 32, 32, F_MIEL1);
+    core->loadFragment(MIEL2, 32, 0, 48, 16, 10, 1, 32, 32, F_MIEL2);
+    core->loadFragment(MIEL3, 48, 0, 64, 16, 12, 1, 32, 32, F_MIEL3);
+    core->loadFragment(MIEL4, 64, 0, 80, 16, 14, 1, 32, 32, F_MIEL4);
+    core->loadFragment(MIEL5, 80, 0, 96, 16, 16, 1, 32, 32, F_MIEL5);
+    core->loadFragment(LINE1, 0, 16, 16, 32, 2, 1, 32, 32, F_LINE);
+    core->loadFragment(LINE2, 16, 16, 32, 32, 2, 1, 32, 32, F_LINE);
+    core->loadFragment(LINE3, 32, 16, 48, 32, 2, 1, 32, 32, F_LINE);
+    core->loadFragment(LINE4, 48, 16, 64, 32, 2, 1, 32, 32, F_LINE);
+    core->loadFragment(MULTICOLOR, 64, 16, 80, 32, 2, 1, 32, 32, F_MULTICOLOR);
+    core->loadFragment(CHOCOLAT, 80, 16, 96, 32, 1000000, 2, 32, 32, F_OTHER);
+    core->loadFragment(CANDY1, 0, 32, 16, 48, 1, 1, 32, 32, F_CANDY);
+    core->loadFragment(CANDY2, 16, 32, 32, 48, 1, 1, 32, 32, F_CANDY);
+    core->loadFragment(CANDY3, 32, 32, 48, 48, 1, 1, 32, 32, F_CANDY);
+    core->loadFragment(CANDY4, 48, 32, 64, 48, 1, 1, 32, 32, F_CANDY);
+    core->loadFragment(BOMB1, 0, 48, 16, 64, 5, 1, 32, 32, F_CANDY);
+    core->loadFragment(BOMB2, 16, 48, 32, 64, 5, 1, 32, 32, F_CANDY);
+    core->loadFragment(BOMB3, 32, 48, 48, 64, 5, 1, 32, 32, F_CANDY);
+    core->loadFragment(BOMB4, 48, 48, 64, 64, 5, 1, 32, 32, F_CANDY);
+    core->loadFragment(BLOCK1, 64, 32, 80, 48, 600, 1, 32, 32, F_BLOCK);
+    core->loadFragment(BLOCK2, 80, 32, 96, 48, 600, 1, 32, 32, F_BLOCK);
+    core->loadFragment(BLOCK3, 64, 48, 80, 64, 600, 1, 32, 32, F_BLOCK);
+    core->loadFragment(BLOCK4, 80, 48, 96, 64, 600, 1, 32, 32, F_BLOCK);
+    core->loadFragment(FISH1, 0, 64, 16, 72, 2, 1, 32, 24, F_CANDY);
+    core->loadFragment(FISH2, 16, 72, 32, 80, 2, 1, 32, 24, F_CANDY);
+    core->loadFragment(FISH3, 0, 64, 16, 72, 2, 1, 32, 24, F_CANDY);
+    core->loadFragment(FISH4, 16, 72, 32, 80, 2, 1, 32, 24, F_CANDY);
+    core->loadFragment(BIG_LASER, 32, 64, 64, 80, 7, 1, 32, 16, F_OTHER);
     core->loadFragment(BIG_LASER2, 64, 64, 96, 80, 100, 4, 64, 32, F_OTHER);
-    core->loadFragment(CLASSIC, 0, 80, 16, 96, 1, 1, 0, 0, F_PLAYER);
-    core->loadFragment(BETTER, 16, 80, 32, 96, 1, 1, 0, 0, F_PLAYER);
-    core->loadFragment(AERODYNAMIC, 32, 80, 48, 96, 1, 1, 0, 0, F_PLAYER);
-    core->loadFragment(OPTIMAL, 48, 80, 64, 96, 1, 1, 0, 0, F_PLAYER);
-    core->loadFragment(ENERGISED, 64, 80, 80, 96, 1, 1, 0, 0, F_PLAYER);
-    core->loadFragment(BOOSTED, 80, 80, 96, 96, 1, 1, 0, 0, F_PLAYER);
+    core->loadFragment(CLASSIC, 0, 80, 16, 96, 1, 1, 48, 40, F_PLAYER);
+    core->loadFragment(BETTER, 16, 80, 32, 96, 1, 1, 48, 40, F_PLAYER);
+    core->loadFragment(AERODYNAMIC, 32, 80, 48, 96, 1, 1, 48, 40, F_PLAYER);
+    core->loadFragment(OPTIMAL, 48, 80, 64, 96, 1, 1, 48, 40, F_PLAYER);
+    core->loadFragment(ENERGISED, 64, 80, 80, 96, 1, 1, 48, 40, F_PLAYER);
+    core->loadFragment(BOOSTED, 80, 80, 96, 96, 1, 1, 48, 48, F_PLAYER);
     core->loadFragment(LASER, 0, 96, 16, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(LASER2, 16, 96, 32, 112, 30, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT0, 32, 96, 48, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT1, 48, 96, 64, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT2, 64, 96, 80, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT3, 80, 96, 96, 112, 1, 1, 0, 0, F_OTHER);
-    core->loadFragment(BONUS0, 0, 112, 8, 120, 1, 0, 0, 0, F_PIECE_1);
-    core->loadFragment(BONUS1, 8, 112, 16, 120, 1, 0, 0, 0, F_PIECE_5);
-    core->loadFragment(BONUS2, 16, 112, 24, 120, 1, 0, 0, 0, F_PIECE_10);
-    core->loadFragment(BONUS3, 24, 112, 32, 120, 1, 0, 0, 0, F_PIECE_25);
-    core->loadFragment(BONUS4, 32, 112, 48, 120, 1, 0, 0, 0, F_SHIELD_BOOST);
-    core->loadFragment(BONUS5, 0, 120, 16, 128, 1, 0, 0, 0, F_SPECIAL_BOOST);
-    core->loadFragment(BONUS6, 16, 120, 32, 128, 1, 0, 0, 0, F_COOLANT_BOOST);
+    core->loadFragment(BONUS0, 0, 112, 8, 120, 1, 0, 16, 16, F_PIECE_1);
+    core->loadFragment(BONUS1, 8, 112, 16, 120, 1, 0, 16, 16, F_PIECE_5);
+    core->loadFragment(BONUS2, 16, 112, 24, 120, 1, 0, 16, 16, F_PIECE_10);
+    core->loadFragment(BONUS3, 24, 112, 32, 120, 1, 0, 16, 16, F_PIECE_25);
+    core->loadFragment(BONUS4, 32, 112, 48, 120, 1, 0, 32, 16, F_SHIELD_BOOST);
+    core->loadFragment(BONUS5, 0, 120, 16, 128, 1, 0, 32, 16, F_SPECIAL_BOOST);
+    core->loadFragment(BONUS6, 16, 120, 32, 128, 1, 0, 32, 16, F_COOLANT_BOOST);
     core->loadFragment(BLASTER, 32, 120, 48, 128, 2, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLATANT, 48, 112, 64, 128, 1, 1, 0, 0, F_ECLATANT);
     core->loadFragment(PROTECTO, 64, 112, 80, 128, 4, 1, 0, 0, F_OTHER);
@@ -125,7 +130,7 @@ void Game::init()
     circle[14] = diag;
     circle[15] = bdiag;
     player1.ptr = display->getJaugePtr();
-    player2.ptr = player1.ptr + 9;
+    player2.ptr = player1.ptr + 20;
 }
 
 void Game::mainloop()
@@ -261,7 +266,7 @@ void Game::gameStart()
     someone = true;
     first = true;
     level = std::max(1, maxLevel - 7);
-    candyTypeProbScale = (level < 4) ? 1 : level * 0.08 + 0.68;
+    candyTypeProbScale = (level < 4) ? 1 : level * 0.07 + 0.72;
     difficultyCoef = pow((float) level, 1.7f);
     tic = 0;
 
@@ -283,28 +288,8 @@ void Game::gameEnd()
     save();
 }
 
-void Game::update(GPUEntityMgr &engine)
+void Game::spawn(GPUEntityMgr &engine)
 {
-    someone = false;
-    if (first) {
-        first = false;
-        if (player1.alive) {
-            auto &tmp = core->getFragment(player1.vesselAspect, player1.x, player1.y, 0, 0);
-            tmp.health = player1.lastHealth;
-            compute->pushPlayer(0) = tmp;
-        }
-        if (player2.alive) {
-            auto &tmp = core->getFragment(player2.vesselAspect, player2.x, player2.y, 0, 0);
-            tmp.health = player2.lastHealth;
-            compute->pushPlayer(1) = tmp;
-        }
-    }
-    if (tic == 1500) { // 30s
-        tic = 0;
-        level += 1;
-        difficultyCoef = pow((float) level, 1.7f);
-        candyTypeProbScale = (level < 4) ? 1 : level * 0.07 + 0.72;
-    }
     if (!(tic & 15)) {
         for (int i = (level < 4 ? level : 2 + level / 2); i > 0; --i) {
             int rdm = percentDist(rdevice) / candyTypeProbScale;
@@ -324,13 +309,37 @@ void Game::update(GPUEntityMgr &engine)
                     engine.pushCandy(F_BLOCK) = core->getFragment(BLOCK1 + (localPos & 3), 1000, localPos, -vel);
                     break;
                 case FISH1:
-                    engine.pushCandy() = core->getFragment(FISH1 + (localPos & 3), 1000, localPos, -vel, 2048);
+                    engine.pushCandy(F_CANDY) = core->getFragment(FISH1 + (localPos & 3), 1000, localPos, -vel, 2048);
                     break;
                 default:
-                    engine.pushCandy() = core->getFragment(spawnability[i].first + (localPos & 3), 1000, localPos, -vel);
+                    engine.pushCandy(F_CANDY) = core->getFragment(spawnability[i].first + (localPos & 3), 1000, localPos, -vel);
             }
         }
     }
+}
+
+void Game::update(GPUEntityMgr &engine)
+{
+    someone = false;
+    if (first) {
+        if (player1.alive) {
+            auto &tmp = core->getFragment(player1.vesselAspect, player1.x, player1.y, 0, 0);
+            tmp.health = player1.lastHealth;
+            compute->pushPlayer(0) = tmp;
+        }
+        if (player2.alive) {
+            auto &tmp = core->getFragment(player2.vesselAspect, player2.x, player2.y, 0, 0);
+            tmp.health = player2.lastHealth;
+            compute->pushPlayer(1) = tmp;
+        }
+    }
+    if (tic == 1500) { // 30s
+        tic = 0;
+        level += 1;
+        difficultyCoef = pow((float) level, 1.7f);
+        candyTypeProbScale = (level < 4) ? 1 : level * 0.07 + 0.72;
+    }
+    // spawn(engine);
     if (player1.alive) {
         updatePlayer(player1, 0);
         someone = true;
@@ -350,6 +359,7 @@ void Game::update(GPUEntityMgr &engine)
 
 void Game::updatePlayer(Player &p, int idx)
 {
+    spawn(*compute);
     if (p.energy < p.energyMax && p.coolant >= p.energyHeatCost) {
         p.energy += p.energyRate;
         p.coolant -= p.energyRate;
@@ -377,8 +387,8 @@ void Game::updatePlayer(Player &p, int idx)
             p.boost = false;
     }
     // update position
-    p.posX = p.x * core->worldScaleX * 2 - 1;
-    p.posY = p.y * core->worldScaleX * 2 - 1;
+    p.posX = p.x * core->worldScaleX - 1;
+    p.posY = p.y * core->worldScaleY - 1;
 
     if (!(tic % ((p.saved.weapon == 4) ? 2 : 10)) && p.shooting)
         shoot(p);
@@ -391,19 +401,22 @@ void Game::updatePlayer(Player &p, int idx)
     tmp.posX = p.posX;
     float y = tmp.posY = p.posY;
     tmp.health = p.lastHealth;
-    y -= 0.0333333333333333;
-    p.ptr[0].x = p.ptr[1].x = p.ptr[2].x = p.ptr[3].x = p.ptr[4].x = p.posX - 0.025;
-    p.ptr[0].y = p.ptr[1].y = y;
-    y += 0.0041666666666666;
-    p.ptr[2].y = y;
-    y += 0.0041666666666666;
-    p.ptr[3].y = y;
-    y += 0.0041666666666666;
-    p.ptr[4].y = y;
-    p.ptr[5].y = (p.energy > p.energyMax) ? p.energy / p.energyMax * 0.05 : 0.05;
-    p.ptr[6].y = (p.shield > 0) ? p.shield / p.shieldMax * 0.05 : 0;
-    p.ptr[7].y = (p.coolant < p.coolantMax) ? ((p.coolant > 0) ? p.coolant / p.coolantMax * 0.05 : 0) : 0.05;
-    p.ptr[8].y = (p.special < p.specialMax) ? p.special / p.specialMax * 0.05 : 0.05;
+    p.ptr[0].x = p.ptr[2].x = p.ptr[4].x = p.ptr[6].x = p.ptr[8].x = p.ptr[10].x = p.ptr[12].x = p.ptr[14].x = p.ptr[16].x = p.ptr[18].x = p.posX - 0.05;
+    y -= 0.0333333333333333 * 3;
+    p.ptr[0].y = p.ptr[3].y = p.ptr[4].y = p.ptr[7].y = y;
+    y += 0.0041666666666667 * 2.1;
+    p.ptr[5].y = p.ptr[6].y = p.ptr[8].y = p.ptr[11].y = y;
+    y += 0.0041666666666667 * 2.1;
+    p.ptr[9].y = p.ptr[10].y = p.ptr[12].y = p.ptr[15].y = y;
+    y += 0.0041666666666667 * 2.1;
+    p.ptr[13].y = p.ptr[14].y = p.ptr[16].y = p.ptr[19].y = y;
+    y += 0.0041666666666667 * 2.1;
+    p.ptr[17].y = p.ptr[18].y = p.ptr[1].y = p.ptr[2].y = y;
+    p.ptr[1].x = p.ptr[3].x = p.posX - 0.05 + 0.1;
+    p.ptr[5].x = p.ptr[7].x = p.posX - 0.05 + ((p.energy > p.energyMax) ? p.energy / p.energyMax * 0.1 : 0.1);
+    p.ptr[9].x = p.ptr[11].x = p.posX - 0.05 + ((p.shield > 0) ? p.shield / p.shieldMax * 0.1 : 0);
+    p.ptr[13].x = p.ptr[15].x = p.posX - 0.05 + ((p.coolant < p.coolantMax) ? ((p.coolant > 0) ? p.coolant / p.coolantMax * 0.1 : 0) : 0.1);
+    p.ptr[17].x = p.ptr[19].x = p.posX - 0.05 + ((p.special < p.specialMax) ? p.special / p.specialMax * 0.1 : 0.1);
 }
 
 void Game::shoot(Player &p)
@@ -522,8 +535,12 @@ void Game::useSpecial(Player &p)
 
 void Game::updatePlayer(GPUEntityMgr &engine)
 {
-    updatePlayerState(player1, 0);
-    updatePlayerState(player2, 1);
+    if (first) {
+        first = false;
+    } else {
+        updatePlayerState(player1, 0);
+        updatePlayerState(player2, 1);
+    }
     for (int i = engine.nbDead; i-- > 0;) {
         switch (engine.deadFlags[i].second) {
             case F_OTHER:
@@ -737,8 +754,8 @@ void Game::save()
 
 void Game::initPlayer(Player &p, int idx)
 {
-    p.x = 540 * (idx + 1) / (nbPlayer + 1);
-    p.y = 48;
+    p.x = 48;
+    p.y = 540 * (idx + 1) / (nbPlayer + 1);
     auto &v = vesselList[p.saved.vessel];
     auto &g = generatorList[p.saved.generator];
     auto &r = recoolerList[p.saved.recooler];

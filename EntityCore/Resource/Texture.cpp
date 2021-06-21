@@ -171,7 +171,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
 {
     if (!onGPU) {
         if (createImage()) {
-            master.putLog("Created image support for '" + name + "'", LogType::DEBUG);
+            master.putLog("Created image support for '" + name + "'", LogType::INFO);
             if (cmd != VK_NULL_HANDLE && onCPU) {
                 VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
                 vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -191,7 +191,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         }
     }
     if (cmd == VK_NULL_HANDLE) {
-        master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::DEBUG);
+        master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::INFO);
         return true;
     }
     if (!onCPU) {

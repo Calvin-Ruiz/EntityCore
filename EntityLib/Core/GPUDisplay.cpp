@@ -48,21 +48,20 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     entityVertexArray->createBindingEntry(sizeof(float) * 6);
     entityVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
     entityVertexArray->addInput(VK_FORMAT_R32G32_SFLOAT);
-    imageVertexArray = std::make_unique<VertexArray>(vkmgr, sizeof(JaugeVertex));
+    imageVertexArray = std::make_unique<VertexArray>(vkmgr, sizeof(ImageVertex)); // no need for alignment because bound undependently
     imageVertexArray->createBindingEntry(sizeof(ImageVertex));
     imageVertexArray->addInput(VK_FORMAT_R32G32_SFLOAT);
     imageVertexArray->addInput(VK_FORMAT_R32G32_SFLOAT);
-    jaugeVertexArray = std::make_unique<VertexArray>(vkmgr, sizeof(JaugeVertex));
+    jaugeVertexArray = std::make_unique<VertexArray>(vkmgr, sizeof(JaugeVertex));// no need for alignment because bound undependently
     jaugeVertexArray->createBindingEntry(sizeof(JaugeVertex));
+    jaugeVertexArray->addInput(VK_FORMAT_R32G32_SFLOAT);
     jaugeVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
-    jaugeVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
-    vertexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(ImageVertex)*6*3 + sizeof(JaugeVertex)*(4*((1+1)*2+1)+6));
+    vertexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(ImageVertex)*6*3 + sizeof(JaugeVertex)*(4*10));
     vertexBufferMgr->setName("Graphic objects");
     imageVertexBuffer = std::unique_ptr<VertexBuffer>(imageVertexArray->createBuffer(0, 6*3, vertexBufferMgr.get()));
-    jaugeVertexBuffer = std::unique_ptr<VertexBuffer>(jaugeVertexArray->createBuffer(0, 4*((1+1)*2+1)+6, vertexBufferMgr.get()));
-    indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*(1024+10));
+    jaugeVertexBuffer = std::unique_ptr<VertexBuffer>(jaugeVertexArray->createBuffer(0, 4*10, vertexBufferMgr.get()));
+    indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*1024);
     indexBufferMgr->setName("Index buffer");
-    jaugeIndexBuffer = indexBufferMgr->acquireBuffer(2*6*10);
     entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*1024);
 
     TTF_Init();
@@ -78,6 +77,7 @@ GPUDisplay::~GPUDisplay()
 {
     stop();
     updater->join();
+    vkQueueWaitIdle(graphicQueue);
     TTF_CloseFont(myFont);
     TTF_Quit();
     SDL_FreeSurface(scoreboardSurface);
@@ -96,13 +96,13 @@ void GPUDisplay::start()
 
 void GPUDisplay::pause()
 {
-    shield.lock();
     active = false;
+    shield.lock();
+    active = true;
 }
 
 void GPUDisplay::unpause()
 {
-    active = true;
     shield.unlock();
 }
 
@@ -167,7 +167,8 @@ void GPUDisplay::mainloop()
             clock = std::chrono::system_clock::now() + delay;
         } else {
             shield.unlock();
-            std::this_thread::yield();
+            while (!active)
+                std::this_thread::yield();
             shield.lock();
         }
         switcher = (switcher + 1) % 3;
@@ -185,40 +186,6 @@ void GPUDisplay::submitResources()
     vkBeginCommandBuffer(cmds[0], &beginInfo);
     entityMap.use(cmds[0], true);
     background->use(cmds[0], true);
-    SubBuffer jaugeTmp = tmpMgr->acquireBuffer(sizeof(JaugeVertex)*(4*((1+1)*2+1)+6));
-    JaugeVertex *jaugeTmpPtr = (JaugeVertex *) tmpMgr->getPtr(jaugeTmp);
-    {
-        int i = 0; // -0.025 x -0.0333333 y | 0.05 for 100% .00416666666666 for 4-pixel
-        jaugeTmpPtr[i++] = JaugeVertex({JD, JB1});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J1});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J2});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J3});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J4});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J1});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J2});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J3});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J4});
-
-        jaugeTmpPtr[i++] = JaugeVertex({JD, JB2});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J1});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J2});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J3});
-        jaugeTmpPtr[i++] = JaugeVertex({JD, J4});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J1});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J2});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J3});
-        jaugeTmpPtr[i++] = JaugeVertex({JRZ, J4});
-
-        jaugeTmpPtr[i++] = JaugeVertex({0, .004166666666666666666666, JR, J1});
-        jaugeTmpPtr[i++] = JaugeVertex({0, .004166666666666666666666, JR, J2});
-        jaugeTmpPtr[i++] = JaugeVertex({0, .004166666666666666666666, JR, J3});
-        jaugeTmpPtr[i++] = JaugeVertex({0, .004166666666666666666666, JR, J4});
-        jaugeTmpPtr[i++] = JaugeVertex({0, .016666666666666666666666, JR, JB1});
-        jaugeTmpPtr[i++] = JaugeVertex({0, .016666666666666666666666, JR, JB2});
-        jaugeTmpPtr[i++] = JaugeVertex({0.05, 0, JR, JB1});
-        jaugeTmpPtr[i++] = JaugeVertex({0.05, 0, JR, JB2});
-    }
-    BufferMgr::copy(cmds[0], jaugeTmp, jaugeVertexBuffer->get());
     SubBuffer imageTmp = tmpMgr->acquireBuffer(sizeof(ImageVertex)*6*3);
     ImageVertex *imageTmpPtr = (ImageVertex *) tmpMgr->getPtr(imageTmp);
     {
@@ -238,22 +205,6 @@ void GPUDisplay::submitResources()
         imageTmpPtr[i++] = ImageVertex({-0.5, -0.6, 1, 1});
     }
     BufferMgr::copy(cmds[0], imageTmp, imageVertexBuffer->get());
-    SubBuffer jaugeIdxTmp = tmpMgr->acquireBuffer(2*6*10);
-    unsigned short *jaugeIdxTmpPtr = (unsigned short *) tmpMgr->getPtr(jaugeIdxTmp);
-    {
-        // Jauges : posBG pos1 pos2 pos3 pos4 fill1 fill2 fill3 fill4 [same p2] down1 down2 down3 down4 downBG1 downBG2 fillBG1 fillBG2
-        JPUT(0, 24, 22);
-        JPUT(9, 25, 23);
-        JPUT(1, 5, 18);
-        JPUT(2, 6, 19);
-        JPUT(3, 7, 20);
-        JPUT(4, 8, 21);
-        JPUT(10, 14, 18);
-        JPUT(11, 15, 19);
-        JPUT(12, 16, 20);
-        JPUT(13, 17, 21);
-    }
-    BufferMgr::copy(cmds[0], jaugeIdxTmp, jaugeIndexBuffer);
     SubBuffer entityIdxTmp = tmpMgr->acquireBuffer(2*6*1024);
     unsigned short *entityIdxTmpPtr = (unsigned short *) tmpMgr->getPtr(entityIdxTmp);
     for (int i = 0; i < 1024*4; i += 4) {
@@ -272,8 +223,20 @@ void GPUDisplay::submitResources()
 
     entityMap.detach();
     background->detach();
-    jaugeStaging = localBuffer.acquireBuffer(sizeof(JaugeVertex)*9*2);
+    jaugeStaging = localBuffer.acquireBuffer(sizeof(JaugeVertex)*4*10);
     jaugePtr = (JaugeVertex *) localBuffer.getPtr(jaugeStaging);
+    {
+        JSET(0, JaugeVertex({0, 0, JB1}));
+        JSET(1, JaugeVertex({0, 0, J1}));
+        JSET(2, JaugeVertex({0, 0, J2}));
+        JSET(3, JaugeVertex({0, 0, J3}));
+        JSET(4, JaugeVertex({0, 0, J4}));
+        JSET(5, JaugeVertex({0, 0, JB2}));
+        JSET(6, JaugeVertex({0, 0, J1}));
+        JSET(7, JaugeVertex({0, 0, J2}));
+        JSET(8, JaugeVertex({0, 0, J3}));
+        JSET(9, JaugeVertex({0, 0, J4}));
+    }
     myFont = TTF_OpenFont("textures/font.ttf", 32);
     scoreboard = std::make_unique<Texture>(vkmgr, localBuffer, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "scoreboard");
     // load empty surface
@@ -352,7 +315,6 @@ void GPUDisplay::initCommands()
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, jaugePipeline->get());
         tmpOff = jaugeVertexBuffer->get().offset;
         vkCmdBindVertexBuffers(cmd, 0, 1, &jaugeVertexBuffer->get().buffer, &tmpOff);
-        vkCmdBindIndexBuffer(cmd, jaugeIndexBuffer.buffer, jaugeIndexBuffer.offset, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(cmd, 6*10, 1, 0, 0, 0);
         vkCmdEndRenderPass(cmd);
         vkEndCommandBuffer(cmd);

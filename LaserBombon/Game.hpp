@@ -160,8 +160,8 @@ struct WeaponAttributes {
 struct GeneratorAttributes {
     std::string name;
     int cost;
-    float energyRate;
     float energyCapacity;
+    float energyRate;
     int deathLossRatio;
 };
 
@@ -247,6 +247,7 @@ private:
     void updatePlayerState(Player &p, int idx);
     void shoot(Player &p);
     void useSpecial(Player &p);
+    void spawn(GPUEntityMgr &engine);
     static std::string toText(long nbr);
     static void updateS(Game *self, GPUEntityMgr &engine) {
         self->update(engine);
@@ -260,13 +261,13 @@ private:
     std::shared_ptr<EntityLib> core;
     std::random_device rdevice;
     std::uniform_int_distribution<int> bonusDist {0, 700};
-    std::uniform_int_distribution<int> candyPosDist {20, 560};
+    std::uniform_int_distribution<int> candyPosDist {20, 520};
     std::uniform_real_distribution<float> normDist {0.f, 1.f};
     std::uniform_real_distribution<float> percentDist {0.f, 100.f};
     int level = 1;
     int maxLevel = 1;
     unsigned int recursion = 0;
-    unsigned char nbPlayer = 1;
+    unsigned char nbPlayer = 2;
     bool alive = false;
     bool first = false;
     bool notQuitting = true;

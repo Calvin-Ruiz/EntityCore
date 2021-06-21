@@ -12,7 +12,7 @@
 #include "EntityCore/Core/FrameMgr.hpp"
 #include "EntityCore/Resource/Texture.hpp"
 
-EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int height, bool enableDebugLayers, bool drawLogs, bool saveLogs) : worldScaleX(1.f / width), worldScaleY(1.f / height)
+EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int height, bool enableDebugLayers, bool drawLogs, bool saveLogs) : worldScaleX(2.f / width), worldScaleY(2.f / height)
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
     width *= WIN_SIZE_SCALING;
@@ -51,6 +51,11 @@ EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int he
 
 EntityLib::~EntityLib()
 {
+    localBuffer.reset();
+    entityMap.reset();
+    renderMgr.reset();
+    frames.clear();
+    master.reset();
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
@@ -68,12 +73,12 @@ void EntityLib::loadFragment(int idx, int texX1, int texY1, int texX2, int texY2
         height = texY2 - texY1;
     tmp.health = shield - 1;
     tmp.damage = -damage;
-    tmp.sizeX = width * worldScaleX;
-    tmp.sizeY = height * worldScaleY;
-    tmp.texX1 = texX1 * mapScaleX + 0.0001f;
-    tmp.texY1 = texY1 * mapScaleY + 0.0001f;
-    tmp.texX2 = texX2 * mapScaleX - 0.0002f;
-    tmp.texY2 = texY2 * mapScaleY - 0.0002f;
+    tmp.sizeX = width * worldScaleX / 2;
+    tmp.sizeY = height * worldScaleY / 2;
+    tmp.texX1 = texX1 * mapScaleX + 0.001f;
+    tmp.texY1 = texY1 * mapScaleY + 0.001f;
+    tmp.texX2 = texX2 * mapScaleX - 0.002f;
+    tmp.texY2 = texY2 * mapScaleY - 0.002f;
     tmp.aliveNow = VK_FALSE;
     tmp.newlyInserted = VK_TRUE;
     flags[idx] = flag;
@@ -88,8 +93,8 @@ EntityData &EntityLib::getFragment(int idx, int x, int y, int velX, int velY)
 {
     auto &tmp = fragments[idx];
 
-    tmp.posX = x * worldScaleX * 2 - 1;
-    tmp.posY = y * worldScaleY * 2 - 1;
+    tmp.posX = x * worldScaleX - 1;
+    tmp.posY = y * worldScaleY - 1;
     tmp.velX = velX * worldScaleX;
     tmp.velY = velY * worldScaleY;
     return tmp;
@@ -108,8 +113,8 @@ EntityData &EntityLib::dropFragment(int idx, float x, float y, float velX, float
 
 void EntityLib::setFragmentPos(EntityData &entity, int x, int y)
 {
-    entity.posX = x * worldScaleX * 2 - 1;
-    entity.posY = y * worldScaleY * 2 - 1;
+    entity.posX = x * worldScaleX - 1;
+    entity.posY = y * worldScaleY - 1;
 }
 
 std::string EntityLib::toText(long nbr)

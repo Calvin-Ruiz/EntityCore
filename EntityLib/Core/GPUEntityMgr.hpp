@@ -85,7 +85,7 @@ struct EntityState {
 
 struct EntityAttachment {
     unsigned char flag;
-    bool alive;
+    char alive;
 };
 
 class GPUEntityMgr {
