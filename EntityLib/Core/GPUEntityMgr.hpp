@@ -152,6 +152,7 @@ private:
     SyncEvent *syncExt; // [2]
     SyncEvent *syncInt; // [4] with 1 merged with 3 and 2 merged with 4
     unsigned char frameparity = 0;
+    bool vertexInitialized = false;
     EntityAttachment attachment[1024];
     // 0-3 PLAYER | 4-283 PLAYER SHOOT | 284-383 CANDY SHOOT | 384-511 BONUS/SPECIAL_CANDY_SHOOT | 512-1023 CANDY
     int pidx = BEG_PLAYER;

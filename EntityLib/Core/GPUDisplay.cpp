@@ -68,6 +68,10 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     TTF_Init();
     submitResources();
     initCommands();
+    VkFenceCreateInfo fenceInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
+    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences);
+    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + 1);
+    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + 2);
 }
 
 GPUDisplay::~GPUDisplay()
@@ -77,6 +81,9 @@ GPUDisplay::~GPUDisplay()
     TTF_CloseFont(myFont);
     TTF_Quit();
     SDL_FreeSurface(scoreboardSurface);
+    vkDestroyFence(vkmgr.refDevice, fences[0], nullptr);
+    vkDestroyFence(vkmgr.refDevice, fences[1], nullptr);
+    vkDestroyFence(vkmgr.refDevice, fences[2], nullptr);
 }
 
 void GPUDisplay::start()
@@ -151,7 +158,9 @@ void GPUDisplay::mainloop()
         SDL_FreeSurface(text);
 
         sinfo[imageIdx].pWaitSemaphores = semaphores + switcher;
-        vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, VK_NULL_HANDLE);
+        vkWaitForFences(vkmgr.refDevice, 1, fences + imageIdx, VK_TRUE, UINT32_MAX);
+        vkResetFences(vkmgr.refDevice, 1, fences + imageIdx);
+        vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, fences[imageIdx]);
         vkQueuePresentKHR(graphicQueue, presentInfo + imageIdx);
         if (active) {
             std::this_thread::sleep_until(clock);
@@ -222,11 +231,11 @@ void GPUDisplay::submitResources()
         imageTmpPtr[i++] = ImageVertex({1, 1, 1, 1});
 
         imageTmpPtr[i++] = ImageVertex({-1, -1, 0, 0});
-        imageTmpPtr[i++] = ImageVertex({-0.75, -1, 1, 0});
-        imageTmpPtr[i++] = ImageVertex({-0.75, -0.5, 1, 1});
+        imageTmpPtr[i++] = ImageVertex({-0.5, -1, 1, 0});
+        imageTmpPtr[i++] = ImageVertex({-0.5, -0.6, 1, 1});
         imageTmpPtr[i++] = ImageVertex({-1, -1, 0, 0});
-        imageTmpPtr[i++] = ImageVertex({-1, -0.5, 0, 1});
-        imageTmpPtr[i++] = ImageVertex({-0.75, -0.5, 1, 1});
+        imageTmpPtr[i++] = ImageVertex({-1, -0.6, 0, 1});
+        imageTmpPtr[i++] = ImageVertex({-0.5, -0.6, 1, 1});
     }
     BufferMgr::copy(cmds[0], imageTmp, imageVertexBuffer->get());
     SubBuffer jaugeIdxTmp = tmpMgr->acquireBuffer(2*6*10);

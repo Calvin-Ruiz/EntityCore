@@ -147,11 +147,16 @@ void GPUEntityMgr::resetAll()
     csidx = BEG_CANDY_SHOOT;
     bidx = BEG_BONUS;
     cidx = BEG_CANDY;
-    for (int i = 0; i < END_ALL; ++i) {
-        attachment[i].alive = false;
-        entityPush[i].health = -1;
-        entityPush[i].aliveNow = VK_TRUE;
-        entityPush[i].newlyInserted = VK_FALSE;
+    if (vertexInitialized) {
+        for (int i = 0; i < END_ALL; ++i) {
+            attachment[i].alive = false;
+            entityPush[i].health = -1;
+            entityPush[i].aliveNow = VK_TRUE;
+            entityPush[i].newlyInserted = VK_FALSE;
+        }
+    } else {
+        for (int i = 0; i < END_ALL; ++i)
+            entityPush[i] = EntityData({0, 0, 0, 0, -1, -1, 0.01, 0.01, 0, 0, 0, 0, VK_FALSE, VK_TRUE});
     }
     // Record a transfer command which reset everything
     cmd = cmds[frameparity << 1];
@@ -169,6 +174,12 @@ void GPUEntityMgr::resetAll()
     vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
     frameparity = !frameparity;
     regionsBase.clear();
+    if (!vertexInitialized) {
+        vertexInitialized = true;
+        vkQueueWaitIdle(computeQueue);
+        resetAll();
+        vkQueueWaitIdle(computeQueue);
+    }
 }
 
 void GPUEntityMgr::start(void (*update)(void *, GPUEntityMgr &), void (*updatePlayer)(void *, GPUEntityMgr &), void *data)

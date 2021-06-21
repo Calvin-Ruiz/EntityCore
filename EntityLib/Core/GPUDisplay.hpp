@@ -137,6 +137,7 @@ private:
     JaugeVertex *jaugePtr;
     VkQueue graphicQueue;
     VkSemaphore semaphores[6];
+    VkFence fences[3];
     VkCommandPool cmdPool;
     VkCommandBuffer cmds[3];
     TTF_Font *myFont;
