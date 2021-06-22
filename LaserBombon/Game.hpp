@@ -22,12 +22,12 @@ struct EntityState;
 struct JaugeVertex;
 
 #define BONUS_EFFECT \
-p.special += 0.2; \
-p.coolant += 200; \
-p.shield += 0.0625; \
-if (p.shield > p.shieldMax) { \
-    p.special += p.shield - p.shieldMax; \
-    p.shield = p.shieldMax; \
+p->special += 0.2; \
+p->coolant += 200; \
+p->shield += 0.0625; \
+if (p->shield > p->shieldMax) { \
+    p->special += p->shield - p->shieldMax; \
+    p->shield = p->shieldMax; \
 } \
 continue
 
@@ -256,7 +256,7 @@ private:
     static void updatePlayerS(Game *self, GPUEntityMgr &engine) {
         self->updatePlayer(engine);
     }
-    Player &getClosest(short idx);
+    Player *getClosest(short idx);
     std::unique_ptr<GPUDisplay> display;
     std::unique_ptr<GPUEntityMgr> compute;
     std::unique_ptr<Tracer> tracer;

@@ -128,7 +128,7 @@ std::string EntityLib::toText(long nbr)
     if (nbr < 10000) {
         return str + std::to_string(nbr);
     }
-    const unsigned char ranks[] = {'k', 'M', 'G', 'T'};
+    const unsigned char ranks[] = {' ', 'k', 'M', 'G', 'T'};
     unsigned char rank = 0;
     while (nbr >= 100000) {
         ++rank;

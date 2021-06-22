@@ -140,7 +140,7 @@ void GPUDisplay::mainloop()
         s.push_back(sep1);
         s += EntityLib::toText(score1Max);
         if (section2) {
-            s += sep2 + EntityLib::toText(score2Max);
+            s += sep2 + EntityLib::toText(score2);
             s.push_back(sep1);
             s += EntityLib::toText(score2Max);
         }

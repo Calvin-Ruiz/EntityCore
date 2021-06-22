@@ -64,6 +64,7 @@ Game::Game(const std::string &name, uint32_t version, int width, int height)
 
 Game::~Game()
 {
+    std::cout << "\e_" << std::flush;
     display->unpause();
     display.reset();
     compute.reset();
@@ -300,14 +301,14 @@ void Game::gameStart()
 
     display->unpause();
     compute->start((void (*)(void *, GPUEntityMgr &)) &updateS, (void (*)(void *, GPUEntityMgr &)) &updatePlayerS, this);
-    tracer->start();
+    // tracer->start();
 }
 
 void Game::gameEnd()
 {
     if (level > maxLevel)
         maxLevel = level;
-    tracer->stop();
+    // tracer->stop();
     compute->stop();
     display->pause();
     save();
@@ -399,14 +400,14 @@ void Game::updatePlayer(Player &p, int idx)
         p.coolant -= p.moveHeatCost;
         p.x += p.velX * p.moveSpeed;
         p.y += p.velY * p.moveSpeed;
-        if (p.x < 20)
-            p.x = 20;
-        if (p.x > 520)
-            p.x = 520;
-        if (p.y < 24)
-            p.y = 24;
-        if (p.y > 936)
-            p.y = 936;
+        if (p.x < 24)
+            p.x = 24;
+        if (p.x > 936)
+            p.x = 936;
+        if (p.y < 20)
+            p.y = 20;
+        if (p.y > 500)
+            p.y = 500;
     }
     if (p.coolant < p.coolantMax)
         p.coolant += p.coolantRate;
@@ -585,53 +586,67 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 continue;
             case F_PIECE_1:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.score += 1 * difficultyCoef;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                p->score += 1 * difficultyCoef;
                 BONUS_EFFECT;
             }
             case F_PIECE_5:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.score += 5 * difficultyCoef;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                p->score += 5 * difficultyCoef;
                 BONUS_EFFECT;
             }
             case F_PIECE_10:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.score += 10 * difficultyCoef;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                p->score += 10 * difficultyCoef;
                 BONUS_EFFECT;
             }
             case F_PIECE_25:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.score += 25 * difficultyCoef;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                p->score += 25 * difficultyCoef;
                 BONUS_EFFECT;
             }
             case F_SHIELD_BOOST:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                if (p.shield >= p.shieldMax) {
-                    p.score += 100 * difficultyCoef;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                if (p->shield >= p->shieldMax) {
+                    p->score += 100 * difficultyCoef;
                 } else {
-                    p.shield = 2 + p.shieldMax / 2;
-                    p.energy = p.energyMax;
+                    p->shield = 2 + p->shieldMax / 2;
+                    p->energy = p->energyMax;
                 }
                 BONUS_EFFECT;
             }
             case F_SPECIAL_BOOST:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.shield += p.shieldMax / 6;
-                p.energy = p.energyMax;
-                p.special = p.specialMax;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+                p->shield += p->shieldMax / 6;
+                p->energy = p->energyMax;
+                p->special = p->specialMax;
                 BONUS_EFFECT;
             }
             case F_COOLANT_BOOST:
             {
-                auto &p = getClosest(engine.deadFlags[i].first);
-                p.shield += p.shieldMax / 6;
-                p.energy = p.energyMax;
-                p.coolant = p.coolantRate * 500;
+                auto p = getClosest(engine.deadFlags[i].first);
+                if (!p)
+                    continue;
+            p->shield += p->shieldMax / 6;
+                p->energy = p->energyMax;
+                p->coolant = p->coolantRate * 500;
                 BONUS_EFFECT;
             }
             case F_PLAYER:
@@ -721,6 +736,7 @@ void Game::updatePlayerState(Player &p, int i)
         }
         // play shield sound
         p.shield -= newShield - p.lastHealth;
+        std::cout << "Damage : " << newShield - p.lastHealth << "\n";
     }
     if (p.shield < p.shieldMax / 5 && p.highPOverclocker) {
         float loc_recover = std::min({p.shieldMax/5.f - p.shield, p.special/1.5f, p.coolant/5000.f});
@@ -731,25 +747,24 @@ void Game::updatePlayerState(Player &p, int i)
     p.lastHealth = (int) p.shield + 1;
 }
 
-Player &Game::getClosest(short idx)
+Player *Game::getClosest(short idx)
 {
-    if (player1.alive && player2.alive) {
-        auto &readback = compute->readEntity(idx);
-        float x1 = readback.deadX;
-        float y1 = readback.deadY;
-        float x2 = x1;
-        float y2 = y1;
-        x1 -= player1.posX;
-        y1 -= player1.posY;
-        x2 -= player2.posX;
-        y2 -= player2.posY;
-        x1 *= x1;
-        y1 *= y1;
-        x2 *= x2;
-        y2 *= y2;
-        return (x1 + y1 <= x2 + y2) ? player1 : player2;
+    auto &readback = compute->readEntity(idx);
+    const float x1 = readback.deadX;
+    const float y1 = readback.deadY;
+    if (player1.alive) {
+        const float x2 = (x1 - player1.posX) / ((48 + 16 + player1.moveSpeed) * core->worldScaleX / 2);
+        const float y2 = (y1 - player1.posY) / ((40 + 8 + player1.moveSpeed) * core->worldScaleY / 2);
+        if (x2 * x2 + y2 * y2 <= 1)
+            return &player1;
     }
-    return (player1.alive) ? player1 : player2;
+    if (player2.alive) {
+        const float x2 = (x1 - player2.posX) / ((48 + 16 + player2.moveSpeed) * core->worldScaleX / 2);
+        const float y2 = (y1 - player2.posY) / ((40 + 8 + player2.moveSpeed) * core->worldScaleY / 2);
+        if (x2 * x2 + y2 * y2 <= 1)
+            return &player2;
+    }
+    return nullptr;
 }
 
 void Game::load(int slot, int playerCount)

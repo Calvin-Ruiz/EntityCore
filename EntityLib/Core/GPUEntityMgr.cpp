@@ -239,6 +239,7 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         }
         while (!syncExt[!frameparity].isSet())
             std::this_thread::yield();
+        vkWaitForFences(vkmgr.refDevice, 1, fences + (!frameparity), VK_TRUE, UINT32_MAX);
 
         updateChanges(); // Read back changes
         updatePlayer(data, *this); // Update player shield // Record transfer due to GPU event // Write player changes
