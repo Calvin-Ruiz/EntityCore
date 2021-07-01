@@ -723,9 +723,6 @@ void Game::updatePlayerState(Player &p, int i)
     const int newShield = compute->readPlayer(i).health;
     if (newShield != p.lastHealth) {
         if (newShield < 0) {
-            std::cout << "Player " << i << " dead\n";
-            std::cout << "Health of " << newShield << " previously " << p.lastHealth << "\n";
-            std::cout << "Dead at (" << compute->readPlayer(i).deadX << ", " << compute->readPlayer(i).deadY << ")\n";
             p.alive = false;
             p.score -= p.score / generatorList[p.saved.generator].deathLossRatio;
             if (p.score < p.saved.maxScore) {
