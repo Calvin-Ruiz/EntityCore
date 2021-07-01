@@ -239,6 +239,7 @@ public:
     void init();
     void mainloop();
     void load(int slot, int playerCount = 2);
+    bool openMenu(int type);
 private:
     void save();
     void gameStart();
@@ -272,7 +273,7 @@ private:
     int level = 1;
     int maxLevel = 1;
     unsigned int recursion = 0;
-    unsigned char nbPlayer = 2;
+    unsigned char nbPlayer = 0;
     bool alive = false;
     bool first = false;
     bool notQuitting = true;
@@ -282,29 +283,23 @@ private:
     float difficultyCoef;
     float candyTypeProbScale;
     float circle[16];
-    const int startScore = 8500; // Start equipment value
-    const float recursionBaseScoreRatio = 0.0625;
-    float recursionGainFactor = 1; // 0.75 for 2-players
     int tic = 0;
     int usedSlot;
     const int width;
     const int height;
-
+public:
     // Configurations
+    const int startScore = 8500; // Start equipment value
+    const float recursionBaseScoreRatio = 0.0625;
+    float recursionGainFactor = 1; // 0.75 for 2-players
     // pair of (entity/spawn chance)
-    std::pair<unsigned char, unsigned char> spawnability[6] {{BLOCK1, 1}, {LINE1, 7}, {MULTICOLOR, 3}, {BOMB1, 10}, {FISH1, 4}, {CANDY1, 75}};
-    WeaponAttributes weaponList[5] {{"laser", 500, 23}, {"blaster", 800, 16}, {"wave", 1200, 18}, {"eclatant", 3000, 25}, {"laserifier", 20000, 60}};
-    VesselAttributes vesselList[6] {{"classic", 1000, 2, 2, CLASSIC}, {"better", 4000, 3, 3, BETTER}, {"aerodynamic", 6000, 3, 1, AERODYNAMIC}, {"energised", 10000, 5, 12, ENERGISED}, {"optimal", 32000, 5, 2, OPTIMAL}, {"boosted", 56000, 10, 30, BOOSTED}};
-    GeneratorAttributes generatorList[6] {{"minimal", 500, 1200, 3, 50}, {"basic", 3000, 200, 5, 30}, {"good", 10000, 600, 20, 20}, {"highly_performant", 34000, 3000, 100, 10}, {"excellent", 96000, 10000, 500, 5}, {"perfect", 600000, 30000, 3000, 4}};
-    RecoolerAttributes recoolerList[10] {{"vent", 2000, 4, 100}, {"advanced vent", 4000, 8, 120}, {"simple water-cooling", 10000, 18, 1000}, {"water-based Closed-Loop Recooling System", 20000, 35, 2000}, {"coolant-based CLRS", 50000, 140, 10000}, {"heat exchanger", 120000, 270, 12000}, {"uncredible heat exchanger", 250000, 450, 18000}, {"heat-to-ray", 800000, 600, 300000}, {"hellium fission", 2400000, 1200, 1800000}, {"Xtreme Hellium Fission", 30000000, 2000, 3000000}};
-    ShieldAttributes shieldList[11] {{"better than nothing", 2000, 0.00025, 1, 0.625, 2.5}, {"maybe good", 4000, 0.0005, 2, 1.25, 5}, {"the stainless steel shield !", 8000, 0.001, 4, 2.5, 10}, {"auto-cleanable upgraded shield", 16000, 0.002, 8, 5, 20}, {"micro-technology shield", 32000, 0.004, 16, 10, 40}, {"electro-pulsed forcefield", 64000, 0.008, 32, 20, 80}, {"microfusion shield system", 128000, 0.016, 64, 40, 160}, {"quantum-based shield system", 256000, 0.04, 24, 100, 400}, {"multi-dimensionnal quantum-shield system", 512000, 0.08, 32, 200, 800}, {"useless shield", 1024000, 0.1, 40, 250, 1000}, {"The UseLess Shield !", 2048000, 0.12, 48, 300, 1200}};
-    SpecialWeaponAttributes specialList[10] {{"None", "Nothing", 0, 0}, {"big_laser", "powerfull", 3000, 20},
-    {"protecto", "destroy candies at proximity of you in all directions\nIt's my favorite special weapon in OpenTyrian", 6000, 10},
-    {"mini_transperseur", "unstoppable", 10000, 12}, {"transperseur", "unstoppable", 15000, 20}, {"super_transperseur", "unstoppable", 100000, 30},
-    {"Shield Booster", "Convert special point into shield energy at 50 units/s\nThis effect end when out of special point", 3000000, 0},
-    {"Enhanced Shield Booster", "Convert special point into shield energy at 50 units/s\nThis effect end when out of special point\nEnabled when shield is getting low", 10000000, 0},
-    {"HighP Shield Overclocker", "Convert special point into shield energy to maintain 20% shield energy\nProduce 5k heat and consume 1.5 special_point for each shield point generated", 25000000, 0},
-    {"Universal converter", "HighP Shield Overclocker functionnality\nconvert special point into coolant to maintain 25% coolant with 1:25k ratio\nconvert energy over 100% into special point at 20k:1 ratio\nIncrease special point limit from 100 to 160\nSpecial points over 150 are immediately consumed\n", 50000000, 0}};
+    static const std::pair<unsigned char, unsigned char> spawnability[6];
+    static const WeaponAttributes weaponList[5];
+    static const VesselAttributes vesselList[6];
+    static const GeneratorAttributes generatorList[6];
+    static const RecoolerAttributes recoolerList[10];
+    static const ShieldAttributes shieldList[11];
+    static const SpecialWeaponAttributes specialList[10];
 };
 
 #endif /* GAME_HPP_ */
