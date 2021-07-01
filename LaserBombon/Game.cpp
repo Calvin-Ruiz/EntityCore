@@ -115,8 +115,8 @@ void Game::init()
     core->loadFragment(ECLAT1, 48, 96, 64, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT2, 64, 96, 80, 112, 1, 1, 0, 0, F_OTHER);
     core->loadFragment(ECLAT3, 80, 96, 96, 112, 1, 1, 0, 0, F_OTHER);
-    core->loadFragment(BONUS0, 0, 112, 8, 120, 1, 0, 16, 16, F_PIECE_1);
-    core->loadFragment(BONUS1, 8, 112, 16, 120, 1, 0, 16, 16, F_PIECE_5);
+    core->loadFragment(BONUS0, 8, 112, 16, 120, 1, 0, 16, 16, F_PIECE_5);
+    core->loadFragment(BONUS1, 0, 112, 8, 120, 1, 0, 16, 16, F_PIECE_1);
     core->loadFragment(BONUS2, 16, 112, 24, 120, 1, 0, 16, 16, F_PIECE_10);
     core->loadFragment(BONUS3, 24, 112, 32, 120, 1, 0, 16, 16, F_PIECE_25);
     core->loadFragment(BONUS4, 32, 112, 48, 120, 1, 0, 32, 16, F_SHIELD_BOOST);
@@ -606,6 +606,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Piece 1\n";
                 p->score += 1 * difficultyCoef;
                 BONUS_EFFECT;
             }
@@ -614,6 +615,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Piece 5\n";
                 p->score += 5 * difficultyCoef;
                 BONUS_EFFECT;
             }
@@ -622,6 +624,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Piece 10\n";
                 p->score += 10 * difficultyCoef;
                 BONUS_EFFECT;
             }
@@ -630,6 +633,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Piece 25\n";
                 p->score += 25 * difficultyCoef;
                 BONUS_EFFECT;
             }
@@ -638,6 +642,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Shield boost\n";
                 if (p->shield >= p->shieldMax) {
                     p->score += 100 * difficultyCoef;
                 } else {
@@ -651,6 +656,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Special boost\n";
                 p->shield += p->shieldMax / 6;
                 p->energy = p->energyMax;
                 p->special = p->specialMax;
@@ -661,6 +667,7 @@ void Game::updatePlayer(GPUEntityMgr &engine)
                 auto p = getClosest(engine.deadFlags[i].first);
                 if (!p)
                     continue;
+                // std::cout << "Coolant boost\n";
             p->shield += p->shieldMax / 6;
                 p->energy = p->energyMax;
                 p->coolant = p->coolantRate * 500;
@@ -775,14 +782,14 @@ Player *Game::getClosest(short idx)
     const float x1 = readback.deadX;
     const float y1 = readback.deadY;
     if (player1.alive) {
-        const float x2 = (x1 - player1.posX) / ((48 + 16 + player1.moveSpeed) * core->worldScaleX / 2);
-        const float y2 = (y1 - player1.posY) / ((40 + 8 + player1.moveSpeed) * core->worldScaleY / 2);
+        const float x2 = (x1 - player1.posX) / ((24 + 16 + player1.moveSpeed) * core->worldScaleX);
+        const float y2 = (y1 - player1.posY) / ((20 + 8 + player1.moveSpeed) * core->worldScaleY);
         if (x2 * x2 + y2 * y2 <= 1)
             return &player1;
     }
     if (player2.alive) {
-        const float x2 = (x1 - player2.posX) / ((48 + 16 + player2.moveSpeed) * core->worldScaleX / 2);
-        const float y2 = (y1 - player2.posY) / ((40 + 8 + player2.moveSpeed) * core->worldScaleY / 2);
+        const float x2 = (x1 - player2.posX) / ((24 + 16 + player2.moveSpeed) * core->worldScaleX);
+        const float y2 = (y1 - player2.posY) / ((20 + 8 + player2.moveSpeed) * core->worldScaleY);
         if (x2 * x2 + y2 * y2 <= 1)
             return &player2;
     }
