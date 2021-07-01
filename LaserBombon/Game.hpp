@@ -31,6 +31,8 @@ if (p->shield > p->shieldMax) { \
 } \
 continue
 
+#define RESPAWN_TIME 600
+
 enum EntityTypes : unsigned char {
     MIEL0,
     MIEL1,
@@ -249,6 +251,7 @@ private:
     void shoot(Player &p);
     void useSpecial(Player &p);
     void spawn(GPUEntityMgr &engine);
+    void revive(Player &target, Player &saver, int idx);
     static std::string toText(long nbr);
     static void updateS(Game *self, GPUEntityMgr &engine) {
         self->update(engine);

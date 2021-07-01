@@ -344,7 +344,7 @@ EntityData &GPUEntityMgr::pushCandy(unsigned char flag)
     return deft;
 }
 
-EntityData &GPUEntityMgr::pushPlayer(short idx)
+EntityData &GPUEntityMgr::pushPlayer(short idx, bool revive)
 {
     if (!(pidx & (1 << idx))) {
         pidx |= (1 << idx);
@@ -352,7 +352,11 @@ EntityData &GPUEntityMgr::pushPlayer(short idx)
         regionsBase.push_back({entityPushBuffer.offset + sizeof(EntityData) * idx, sizeof(EntityData) * idx, 5 * sizeof(float)});
         regions.push_back({entityPushBuffer.offset + sizeof(EntityData) * idx, sizeof(EntityData) * idx, sizeof(EntityData)});
     }
-    return entityPush[idx | BEG_PLAYER];
+    idx |= BEG_PLAYER;
+    if (revive) {
+        regions.push_back({entityPushBuffer.offset + sizeof(EntityData) * idx + offsetof(EntityData, aliveNow), sizeof(EntityData) * idx + offsetof(EntityData, aliveNow), sizeof(VkBool32) * 2});
+    }
+    return entityPush[idx];
 }
 
 EntityState &GPUEntityMgr::readPlayer(short idx)

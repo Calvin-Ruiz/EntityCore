@@ -111,7 +111,7 @@ public:
     EntityData &pushCandyShoot(unsigned char flag = 0);
     EntityData &pushBonus(unsigned char flag = 0);
     EntityData &pushCandy(unsigned char flag = 0);
-    EntityData &pushPlayer(short idx);
+    EntityData &pushPlayer(short idx, bool revive = false);
 
     //! Those methods and variables are only valid for read operations from updatePlayer
     EntityState &readEntity(short idx); // Read entity data at index

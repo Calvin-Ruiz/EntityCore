@@ -369,15 +369,17 @@ void Game::update(GPUEntityMgr &engine)
         difficultyCoef = pow((float) level, 1.7f);
         candyTypeProbScale = (level < 4) ? 1 : level * 0.07 + 0.72;
     }
-    // spawn(engine);
+    for (int i = nbPlayer; --i > 0; spawn(engine));
     if (player1.alive) {
         updatePlayer(player1, 0);
         someone = true;
-    }
+    } else
+        revive(player1, player2, 0);
     if (player2.alive) {
         updatePlayer(player2, 1);
         someone = true;
-    }
+    } else if (nbPlayer > 1)
+        revive(player2, player1, 1);
     ++tic;
     display->score1Max = player1.saved.maxScore;
     display->score2Max = player2.saved.maxScore;
@@ -387,9 +389,25 @@ void Game::update(GPUEntityMgr &engine)
     display->level1Max = maxLevel;
 }
 
+void Game::revive(Player &target, Player &saver, int idx)
+{
+    if (tic == RESPAWN_TIME) {
+        target.alive = saver.alive;
+        target.x = saver.x;
+        target.y = saver.y;
+        target.lastHealth = saver.lastHealth;
+        target.energy = (saver.energy >= target.energyMax) ? target.energyMax : saver.energy;
+        target.shield = (saver.shield >= target.shieldMax) ? target.shieldMax : saver.shield;
+        target.coolant = (saver.coolant >= target.coolantMax) ? target.coolantMax : saver.coolant;
+        target.special = (saver.special >= target.specialMax) ? target.specialMax : saver.special;
+        auto &tmp = core->getFragment(target.vesselAspect, target.x, target.y, 0, 0);
+        tmp.health = target.lastHealth;
+        compute->pushPlayer(idx, true) = tmp;
+    }
+}
+
 void Game::updatePlayer(Player &p, int idx)
 {
-    spawn(*compute);
     if (p.energy < p.energyMax && p.coolant >= p.energyHeatCost) {
         p.energy += p.energyRate;
         p.coolant -= p.energyRate;
@@ -723,18 +741,24 @@ void Game::updatePlayerState(Player &p, int i)
     const int newShield = compute->readPlayer(i).health;
     if (newShield != p.lastHealth) {
         if (newShield < 0) {
-            p.alive = false;
-            p.score -= p.score / generatorList[p.saved.generator].deathLossRatio;
-            if (p.score < p.saved.maxScore) {
-                p.score = p.saved.maxScore;
-            } else {
-                p.saved.maxScore = p.score;
+            if (tic != RESPAWN_TIME + 1) {
+                p.alive = false;
+                p.score -= p.score / generatorList[p.saved.generator].deathLossRatio;
+                if (p.score < p.saved.maxScore) {
+                    p.score = p.saved.maxScore;
+                } else {
+                    p.saved.maxScore = p.score;
+                }
+                p.x = -100;
+                compute->pushPlayer(i).posX = -100;
+                tic = 0;
+                // play death sound
+                return;
             }
-            // play death sound
-            return;
+        } else {
+            // play shield sound
+            p.shield += newShield - p.lastHealth;
         }
-        // play shield sound
-        p.shield += newShield - p.lastHealth;
     }
     if (p.shield < p.shieldMax / 5 && p.highPOverclocker) {
         float loc_recover = std::min({p.shieldMax/5.f - p.shield, p.special/1.5f, p.coolant/5000.f});
