@@ -156,7 +156,7 @@ private:
     bool vertexInitialized = false;
     EntityAttachment attachment[END_ALL];
     // 0-3 PLAYER | 4-283 PLAYER SHOOT | 284-383 CANDY SHOOT | 384-511 BONUS/SPECIAL_CANDY_SHOOT | 512-1023 CANDY
-    int pidx = BEG_PLAYER;
+    int pidx = 0;
     int psidx = BEG_PLAYER_SHOOT;
     int csidx = BEG_CANDY_SHOOT;
     int bidx = BEG_BONUS;

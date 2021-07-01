@@ -251,7 +251,7 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
         vkQueueSubmit(computeQueue, 1, sinfo + frameparity, fences[frameparity]);
         frameparity = !frameparity;
     }
-    pidx = BEG_PLAYER;
+    pidx = 0;
 }
 
 void GPUEntityMgr::updateChanges()
