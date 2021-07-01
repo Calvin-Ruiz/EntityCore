@@ -60,9 +60,9 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     vertexBufferMgr->setName("Graphic objects");
     imageVertexBuffer = std::unique_ptr<VertexBuffer>(imageVertexArray->createBuffer(0, 6*3, vertexBufferMgr.get()));
     jaugeVertexBuffer = std::unique_ptr<VertexBuffer>(jaugeVertexArray->createBuffer(0, 4*10, vertexBufferMgr.get()));
-    indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*1024);
+    indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*END_ALL);
     indexBufferMgr->setName("Index buffer");
-    entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*1024);
+    entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*END_ALL);
 
     TTF_Init();
     submitResources();
@@ -116,7 +116,7 @@ void GPUDisplay::unpause()
 
 void GPUDisplay::mainloop()
 {
-    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/150); // Limit to x3 base compute time
+    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/200); // Limit to x2 base compute time
     shield.lock();
     auto clock = std::chrono::system_clock::now() + delay;
     while (alive) {
@@ -212,9 +212,9 @@ void GPUDisplay::submitResources()
         imageTmpPtr[i++] = ImageVertex({-0.5, -0.6, 1, 1});
     }
     BufferMgr::copy(cmds[0], imageTmp, imageVertexBuffer->get());
-    SubBuffer entityIdxTmp = tmpMgr->acquireBuffer(2*6*1024);
+    SubBuffer entityIdxTmp = tmpMgr->acquireBuffer(2*6*END_ALL);
     unsigned short *entityIdxTmpPtr = (unsigned short *) tmpMgr->getPtr(entityIdxTmp);
-    for (int i = 0; i < 1024*4; i += 4) {
+    for (int i = 0; i < END_ALL*4; i += 4) {
         *(entityIdxTmpPtr++) = i;
         *(entityIdxTmpPtr++) = i | 1;
         *(entityIdxTmpPtr++) = i | 2;
@@ -317,7 +317,7 @@ void GPUDisplay::initCommands()
         vkCmdBindVertexBuffers(cmd, 0, 1, &entityVertexBuffer.buffer, &tmpOff);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, imagePLayout->getPipelineLayout(), 0, 1, entitySet->get(), 0, nullptr);
         vkCmdBindIndexBuffer(cmd, entityIndexBuffer.buffer, entityIndexBuffer.offset, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(cmd, 6*1024, 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmd, 6*END_ALL, 1, 0, 0, 0);
 
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, jaugePipeline->get());
         tmpOff = jaugeVertexBuffer->get().offset;

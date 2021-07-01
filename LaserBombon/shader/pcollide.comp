@@ -1,6 +1,6 @@
 #version 450
 #extension GL_ARB_compute_shader : require
-layout(local_size_x = 2, local_size_y = 228, local_size_z = 1) in;
+layout(local_size_x = 2, local_size_y = 384, local_size_z = 1) in;
 
 struct Se {
     vec2 pos;
@@ -15,16 +15,15 @@ struct Se {
 };
 
 layout(binding=0, std430) buffer EntityData {
-    Se e[1024];
+    Se e[1280];
 } entities;
 
 #define self entities.e[gl_GlobalInvocationID.x]
-#define other entities.e[y]
+#define other entities.e[gl_GlobalInvocationID.y]
 
 void main()
 {
     if (self.alive) {
-        const uint y = gl_GlobalInvocationID.y + 284;
         vec2 tmp = (self.pos - other.pos) / (self.size + other.size);
         tmp *= tmp;
         if (tmp.x + tmp.y < 1) {

@@ -8,12 +8,12 @@
 #ifndef GPUENTITYMGR_HPP_
 #define GPUENTITYMGR_HPP_
 
-#define BEG_PLAYER 0
-#define BEG_PLAYER_SHOOT 4
-#define BEG_CANDY_SHOOT 284
-#define BEG_BONUS 384
-#define BEG_CANDY 512
-#define END_ALL 1024
+#define BEG_PLAYER_SHOOT 0
+#define BEG_PLAYER 382
+#define BEG_CANDY_SHOOT 384
+#define BEG_BONUS 512
+#define BEG_CANDY 768
+#define END_ALL 1280
 
 #include <string>
 #include <memory>
@@ -114,7 +114,8 @@ public:
     EntityData &pushPlayer(short idx);
 
     //! Those methods and variables are only valid for read operations from updatePlayer
-    EntityState &readEntity(short idx); // Read entity data at index, index 0-3 are player index
+    EntityState &readEntity(short idx); // Read entity data at index
+    EntityState &readPlayer(short idx); // Read player data at index
     short nbDead = 0; // number of death this frame
     std::pair<short, unsigned char> deadFlags[1024]; // Index flag
 private:
@@ -153,7 +154,7 @@ private:
     SyncEvent *syncInt; // [4] with 1 merged with 3 and 2 merged with 4
     unsigned char frameparity = 0;
     bool vertexInitialized = false;
-    EntityAttachment attachment[1024];
+    EntityAttachment attachment[END_ALL];
     // 0-3 PLAYER | 4-283 PLAYER SHOOT | 284-383 CANDY SHOOT | 384-511 BONUS/SPECIAL_CANDY_SHOOT | 512-1023 CANDY
     int pidx = BEG_PLAYER;
     int psidx = BEG_PLAYER_SHOOT;

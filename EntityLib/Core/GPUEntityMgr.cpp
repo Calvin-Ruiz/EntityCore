@@ -24,9 +24,9 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     vertexMgr->setName("Entity vertices");
     readbackMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_MEMORY_PROPERTY_HOST_CACHED_BIT, sizeof(EntityState) * END_ALL);
     readbackMgr->setName("ReadBack buffer");
-    readbackBuffer = readbackMgr->acquireBuffer(sizeof(EntityState) * 1024);
-    gpuEntities = entityMgr->acquireBuffer(sizeof(EntityData) * 1024);
-    gpuVertices = vertexMgr->acquireBuffer(sizeof(EntityVertexGroup) * 1024);
+    readbackBuffer = readbackMgr->acquireBuffer(sizeof(EntityState) * END_ALL);
+    gpuEntities = entityMgr->acquireBuffer(sizeof(EntityData) * END_ALL);
+    gpuVertices = vertexMgr->acquireBuffer(sizeof(EntityVertexGroup) * END_ALL);
     readback = (EntityState *) readbackMgr->getPtr(readbackBuffer);
     if (vkmgr.getComputeQueues().size() > 0) {
         computeQueue = vkmgr.getComputeQueues()[0];
@@ -40,7 +40,7 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
         computeQueue = vkmgr.getGraphicQueues()[0];
     }
 
-    syncExt = new SyncEvent[2] {{&vkmgr, false}, {&vkmgr, false}};
+    syncExt = new SyncEvent[2] {{&vkmgr, true}, {&vkmgr, true}};
     syncInt = new SyncEvent[4] {{&vkmgr}, {&vkmgr}, {&vkmgr}, {&vkmgr}};
     syncExt[0].bufferBarrier(gpuEntities, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_PIPELINE_STAGE_2_COPY_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR);
     syncExt[1].bufferBarrier(gpuEntities, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_PIPELINE_STAGE_2_COPY_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR);
@@ -95,12 +95,15 @@ void GPUEntityMgr::stop()
 
 void GPUEntityMgr::init()
 {
-    entityPushBuffer = localBuffer.acquireBuffer(sizeof(EntityData) * 1024);
+    entityPushBuffer = localBuffer.acquireBuffer(sizeof(EntityData) * END_ALL);
     entityPush = (EntityData *) localBuffer.getPtr(entityPushBuffer);
 }
 
 void GPUEntityMgr::buildCompute()
 {
+    SyncEvent tmpSc;
+    tmpSc.bufferBarrier(readbackBuffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR, VK_PIPELINE_STAGE_2_HOST_BIT_KHR, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR, VK_ACCESS_2_HOST_WRITE_BIT_KHR);
+    tmpSc.build();
     setMgr = std::make_unique<SetMgr>(vkmgr, 2, 0, 0, 3);
     updatePLayout = std::make_unique<PipelineLayout>(vkmgr);
     collidePLayout = std::make_unique<PipelineLayout>(vkmgr);
@@ -127,25 +130,26 @@ void GPUEntityMgr::buildCompute()
     pcollidePipeline = std::make_unique<ComputePipeline>(vkmgr, collidePLayout.get());
     pcollidePipeline->bindShader("pcollide.comp.spv");
     pcollidePipeline->build();
-    VkDescriptorSet sets[2] {*globalSet->get(), *updateSet->get()};
     VkCommandBufferBeginInfo tmp {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};
     for (int i = 0; i < 2; ++i) {
         cmd = cmds[i * 2 | 1];
         vkBeginCommandBuffer(cmd, &tmp);
-        syncInt[i].multiDstDependency(cmd);
+        syncInt[i].multiDstDependency(cmd); // Transfer write completion and compute write completion before reading
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pcollidePipeline->get());
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, collidePLayout->getPipelineLayout(), 0, 1, globalSet->get(), 0, nullptr);
+        vkCmdDispatchBase(cmd, BEG_PLAYER/2, 1, 0, 1, 1, 1);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, collidePipeline->get());
+        vkCmdDispatchBase(cmd, BEG_CANDY/2, 0, 0, 256, 1, 1);
+        syncInt[2].placeBarrier(cmd); // Compute read after previous write completion
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, updatePipeline->get());
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, updatePLayout->getPipelineLayout(), 0, 2, sets, 0, nullptr);
-        vkCmdDispatch(cmd, 1, 1, 1);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, updatePLayout->getPipelineLayout(), 1, 1, updateSet->get(), 0, nullptr);
+        vkCmdDispatch(cmd, 2, 1, 1);
         syncInt[i].resetDependency(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR);
         syncInt[3 - i].resetDependency(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR);
         syncExt[!i].resetDependency(cmd, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR);
-        syncExt[i].srcDependency(cmd);
-        syncInt[2].placeBarrier(cmd);
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, collidePipeline->get());
-        vkCmdDispatchBase(cmd, 256, 0, 0, 256, 1, 1);
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pcollidePipeline->get());
-        vkCmdDispatch(cmd, 1, 1, 1);
-        syncInt[i | 2].srcDependency(cmd);
+        syncExt[i].srcDependency(cmd); // Transfer write after
+        tmpSc.placeBarrier(cmd); // Host sync
+        syncInt[i | 2].srcDependency(cmd); // Compute write after
         vkEndCommandBuffer(cmd);
     }
 }
@@ -203,14 +207,14 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
 {
     resetAll();
 
-    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/50);
+    auto delay = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/100);
     auto delayOverride = std::chrono::duration<int, std::ratio<1,1000000>>(1000000/1000);
     bool prevLimit = limit;
     auto clock = std::chrono::system_clock::now();
 
     int cnt = 0;
     while (alive) {
-        vkmgr.putLog(std::string("Compute Cycle ") + std::to_string(cnt++), LogType::INFO);
+        // vkmgr.putLog(std::string("Compute Cycle ") + std::to_string(cnt++), LogType::INFO);
         while (!active) {
             std::this_thread::yield();
             clock = std::chrono::system_clock::now();
@@ -234,12 +238,11 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
             clock += delay;
             std::this_thread::sleep_until(clock);
         } else {
-            // clock += delayOverride;
-            // std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x20 speed)
+            clock += delayOverride;
+            std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x10 speed)
         }
-        while (!syncExt[!frameparity].isSet())
-            std::this_thread::yield();
-
+        // while (!syncExt[!frameparity].isSet())
+        //     std::this_thread::yield();
         updateChanges(); // Read back changes
         updatePlayer(data, *this); // Update player shield // Record transfer due to GPU event // Write player changes
         vkCmdCopyBuffer(cmd, entityPushBuffer.buffer, gpuEntities.buffer, regions.size(), regions.data());
@@ -262,7 +265,7 @@ void GPUEntityMgr::updateChanges()
                 break;
             case 1:
                 if (readback[i].health < 0) {
-                    vkmgr.putLog("Destroyed " + std::to_string(i), LogType::INFO);
+                    // vkmgr.putLog("Destroyed " + std::to_string(i), LogType::INFO);
                     attachment[i].alive = false;
                     deadFlags[nbDead].first = i;
                     deadFlags[nbDead++].second = attachment[i].flag;
@@ -345,10 +348,16 @@ EntityData &GPUEntityMgr::pushPlayer(short idx)
 {
     if (!(pidx & (1 << idx))) {
         pidx |= (1 << idx);
+        idx |= BEG_PLAYER;
         regionsBase.push_back({entityPushBuffer.offset + sizeof(EntityData) * idx, sizeof(EntityData) * idx, 5 * sizeof(float)});
         regions.push_back({entityPushBuffer.offset + sizeof(EntityData) * idx, sizeof(EntityData) * idx, sizeof(EntityData)});
     }
-    return entityPush[idx];
+    return entityPush[idx | BEG_PLAYER];
+}
+
+EntityState &GPUEntityMgr::readPlayer(short idx)
+{
+    return readback[idx | BEG_PLAYER];
 }
 
 EntityState &GPUEntityMgr::readEntity(short idx)

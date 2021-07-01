@@ -10,7 +10,7 @@
 
 int main(int argc, char const *argv[])
 {
-    Game game("Laser Bombon", 1, 960, 540);
+    Game game("Laser Bombon", 1, 1280, 720);
 
     game.init();
     game.load(0);

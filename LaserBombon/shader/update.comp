@@ -1,6 +1,6 @@
 #version 450
 #extension GL_ARB_compute_shader : require
-layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 640, local_size_y = 1, local_size_z = 1) in;
 
 struct Se {
     vec2 pos;
@@ -15,7 +15,7 @@ struct Se {
 };
 
 layout(binding=0, std430) buffer EntityData {
-    Se e[1024];
+    Se e[1280];
 } entities;
 
 struct Sv {
@@ -34,7 +34,7 @@ struct Sv {
 };
 
 layout(binding=0, set=1, std430) buffer writeonly EntityVertexGroup {
-    Sv v[1024];
+    Sv v[1280];
 } entityVertex;
 
 struct Ss {
@@ -44,7 +44,7 @@ struct Ss {
 };
 
 layout(binding=1, set=1, std430) buffer writeonly EntityStatus {
-    Ss s[1024];
+    Ss s[1280];
 } readback;
 
 #define self entities.e[gl_GlobalInvocationID.x]

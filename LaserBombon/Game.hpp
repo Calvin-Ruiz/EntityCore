@@ -263,7 +263,7 @@ private:
     std::shared_ptr<EntityLib> core;
     std::random_device rdevice;
     std::uniform_int_distribution<int> bonusDist {0, 700};
-    std::uniform_int_distribution<int> candyPosDist {20, 520};
+    std::uniform_int_distribution<int> candyPosDist;
     std::uniform_real_distribution<float> normDist {0.f, 1.f};
     std::uniform_real_distribution<float> percentDist {0.f, 100.f};
     int level = 1;
@@ -284,6 +284,8 @@ private:
     float recursionGainFactor = 1; // 0.75 for 2-players
     int tic = 0;
     int usedSlot;
+    const int width;
+    const int height;
 
     // Configurations
     // pair of (entity/spawn chance)

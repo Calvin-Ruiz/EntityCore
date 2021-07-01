@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <iostream>
 
-Game::Game(const std::string &name, uint32_t version, int width, int height)
+Game::Game(const std::string &name, uint32_t version, int width, int height) : candyPosDist(20, width - 20), width(width), height(height)
 {
     bool enableDebugLayers = false;
     bool drawLogs = false;
@@ -64,7 +64,6 @@ Game::Game(const std::string &name, uint32_t version, int width, int height)
 
 Game::~Game()
 {
-    std::cout << "\e_" << std::flush;
     display->unpause();
     display.reset();
     compute.reset();
@@ -326,22 +325,22 @@ void Game::spawn(GPUEntityMgr &engine)
             const int localPos = candyPosDist(rdevice);
             switch (spawnability[j].first) {
                 case LINE1:
-                    engine.pushCandy(F_LINE) = core->getFragment(LINE1 + (localPos & 3), 1000, localPos, -vel);
+                    engine.pushCandy(F_LINE) = core->getFragment(LINE1 + (localPos & 3), width + 32, localPos, -vel);
                     break;
                 case MULTICOLOR:
-                    engine.pushCandy(F_MULTICOLOR) = core->getFragment(MULTICOLOR, 1000, localPos, -vel);
+                    engine.pushCandy(F_MULTICOLOR) = core->getFragment(MULTICOLOR, width + 32, localPos, -vel);
                     break;
                 case BLOCK1:
-                    engine.pushCandy(F_BLOCK) = core->getFragment(BLOCK1 + (localPos & 3), 1000, localPos, -vel);
+                    engine.pushCandy(F_BLOCK) = core->getFragment(BLOCK1 + (localPos & 3), width + 32, localPos, -vel);
                     break;
                 case FISH1:
-                    engine.pushCandy(F_CANDY) = core->getFragment(FISH1 + (localPos & 3), 1000, localPos, -vel, 2048);
+                    engine.pushCandy(F_CANDY) = core->getFragment(FISH1 + (localPos & 3), width + 32, localPos, -vel, 2048);
                     break;
                 case BOMB1:
-                    engine.pushCandy(F_CANDY) = core->getFragment(BOMB1 + (localPos & 3), 1000, localPos, -vel);
+                    engine.pushCandy(F_CANDY) = core->getFragment(BOMB1 + (localPos & 3), width + 32, localPos, -vel);
                     break;
                 case CANDY1:
-                    engine.pushCandy(F_CANDY) = core->getFragment(CANDY1 + (localPos & 3), 1000, localPos, -vel);
+                    engine.pushCandy(F_CANDY) = core->getFragment(CANDY1 + (localPos & 3), width + 32, localPos, -vel);
                     break;
                 default:;
             }
@@ -364,7 +363,7 @@ void Game::update(GPUEntityMgr &engine)
             compute->pushPlayer(1) = tmp;
         }
     }
-    if (tic == 1500) { // 30s
+    if (tic == 2000) { // 20s
         tic = 0;
         level += 1;
         difficultyCoef = pow((float) level, 1.7f);
@@ -402,16 +401,16 @@ void Game::updatePlayer(Player &p, int idx)
         p.y += p.velY * p.moveSpeed;
         if (p.x < 24)
             p.x = 24;
-        if (p.x > 936)
-            p.x = 936;
+        if (p.x > width - 24)
+            p.x = width - 24;
         if (p.y < 20)
             p.y = 20;
-        if (p.y > 500)
-            p.y = 500;
+        if (p.y > height - 20)
+            p.y = height - 20;
     }
     if (p.coolant < p.coolantMax)
         p.coolant += p.coolantRate;
-    if (p.shield < p.shieldMax && p.energy > (p.energyMax * 4) && p.coolant > (p.coolantMax * 8)) {
+    if (p.shield < p.shieldMax && p.energy > (p.energyMax / 4) && p.coolant > (p.coolantMax / 8)) {
         p.shield += p.shieldRate;
         p.energy -= p.shieldEnergyCost;
         p.coolant -= p.shieldHeatCost;
@@ -721,7 +720,7 @@ void Game::updatePlayerState(Player &p, int i)
 {
     if (!p.alive)
         return;
-    const int newShield = compute->readEntity(i).health;
+    const int newShield = compute->readPlayer(i).health;
     if (newShield != p.lastHealth) {
         if (newShield < 0) {
             p.alive = false;
@@ -735,8 +734,7 @@ void Game::updatePlayerState(Player &p, int i)
             return;
         }
         // play shield sound
-        p.shield -= newShield - p.lastHealth;
-        std::cout << "Damage : " << newShield - p.lastHealth << "\n";
+        p.shield += newShield - p.lastHealth;
     }
     if (p.shield < p.shieldMax / 5 && p.highPOverclocker) {
         float loc_recover = std::min({p.shieldMax/5.f - p.shield, p.special/1.5f, p.coolant/5000.f});
@@ -744,7 +742,7 @@ void Game::updatePlayerState(Player &p, int i)
         p.special -= 1.5*loc_recover;
         p.shield += loc_recover;
     }
-    p.lastHealth = (int) p.shield + 1;
+    compute->pushPlayer(i).health = p.lastHealth = (int) (p.shield + 1);
 }
 
 Player *Game::getClosest(short idx)
@@ -771,7 +769,7 @@ void Game::load(int slot, int playerCount)
 {
     usedSlot = slot;
 
-    std::ifstream file(std::string("slot") + std::to_string(slot) + ".dat", std::ifstream::binary);
+    std::ifstream file(std::string("saves/slot") + std::to_string(slot) + ".dat", std::ifstream::binary);
     if (file) {
         file.read((char *) &maxLevel, 9);
         file.read((char *) &player1, 17);
@@ -793,7 +791,7 @@ void Game::load(int slot, int playerCount)
 
 void Game::save()
 {
-    std::ofstream file(std::string("slot") + std::to_string(usedSlot) + ".dat", std::ofstream::binary);
+    std::ofstream file(std::string("saves/slot") + std::to_string(usedSlot) + ".dat", std::ofstream::binary);
 
     if (file) {
         file.write((char *) &maxLevel, 9);
@@ -808,7 +806,7 @@ void Game::save()
 void Game::initPlayer(Player &p, int idx)
 {
     p.x = 48;
-    p.y = 540 * (idx + 1) / (nbPlayer + 1);
+    p.y = height * (idx + 1) / (nbPlayer + 1);
     auto &v = vesselList[p.saved.vessel];
     auto &g = generatorList[p.saved.generator];
     auto &r = recoolerList[p.saved.recooler];

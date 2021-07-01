@@ -21,7 +21,7 @@ class FrameMgr;
 
 struct EntityData;
 
-#define WIN_SIZE_SCALING 2
+#define WIN_SIZE_SCALING 1.5
 
 class EntityLib {
 public:
