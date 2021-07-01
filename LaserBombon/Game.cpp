@@ -369,7 +369,7 @@ void Game::update(GPUEntityMgr &engine)
         difficultyCoef = pow((float) level, 1.7f);
         candyTypeProbScale = (level < 4) ? 1 : level * 0.07 + 0.72;
     }
-    for (int i = nbPlayer; --i > 0; spawn(engine));
+    for (int i = nbPlayer; i-- > 0; spawn(engine));
     if (player1.alive) {
         updatePlayer(player1, 0);
         someone = true;
