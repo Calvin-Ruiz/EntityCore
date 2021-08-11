@@ -1,5 +1,8 @@
 # EntityCore
-Vulkan-based engine used to simplify use of Vulkan and manage entities in the GPU
+Vulkan-based engine used to simplify use of Vulkan and debugging.
+
+# EntityLib
+Use EntityCore and implement management of entities by the GPU for use by LaserBombon
 
 # Requirement
 Mandatory :
