@@ -16,6 +16,9 @@ class Texture;
 
 #define MAX_FB_BIND 3
 
+/*
+* Define the RenderPass which describe framebuffer resources use and transition
+*/
 class RenderMgr {
 public:
     RenderMgr(VulkanMgr &master);

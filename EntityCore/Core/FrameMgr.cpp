@@ -42,7 +42,7 @@ void FrameMgr::bind(int id, VkImageView &v)
     views[id] = v;
 }
 
-bool FrameMgr::build(bool alwaysRecord, bool useSecondary, bool staticSecondary)
+bool FrameMgr::build(uint32_t queueFamily, bool alwaysRecord, bool useSecondary, bool staticSecondary)
 {
     info.attachmentCount = views.size();
     info.pAttachments = views.data();
@@ -52,7 +52,7 @@ bool FrameMgr::build(bool alwaysRecord, bool useSecondary, bool staticSecondary)
         return false;
     }
     builded = true;
-    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, (alwaysRecord ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : (VkCommandPoolCreateFlags) 0), (uint32_t) master.getGraphicQueueFamilyIndex()[0]};
+    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, (alwaysRecord ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : (VkCommandPoolCreateFlags) 0), queueFamily};
     vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &graphicPool);
     VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
     vkAllocateCommandBuffers(master.refDevice, &allocInfo, &mainCmd);
@@ -108,10 +108,12 @@ void FrameMgr::discardRecord()
         vkResetCommandPool(master.refDevice, secondaryPool, 0);
 }
 
-VkCommandBuffer &FrameMgr::begin(VkSubpassContents content)
+VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Texture **textures)
 {
     vkResetCommandPool(master.refDevice, graphicPool, 0);
     vkBeginCommandBuffer(mainCmd, &cmdInfo);
+    while (--nbTexture >= 0)
+        (*(textures++))->use(mainCmd);
     renderer.begin(id, mainCmd, content);
     switch (content) {
         case VK_SUBPASS_CONTENTS_INLINE:

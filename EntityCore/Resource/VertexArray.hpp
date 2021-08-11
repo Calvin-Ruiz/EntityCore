@@ -13,6 +13,11 @@ class BufferMgr;
 
 /*
 * A VertexBuffer layout to facilitate binding in pipeline
+* The stride must be a multiple of the alignment
+* If two or more VertexArray have the same alignment and use the same dedicated BufferMgr,
+* then a binding from the start of the BufferMgr allow using any VertexBuffer
+* with the VertexBuffer getOffset used as vertexOffset of the draw
+* This allow reusing Vertex binding and dynamically change the VertexBuffer used by an indirect draw
 */
 class VertexArray
 {

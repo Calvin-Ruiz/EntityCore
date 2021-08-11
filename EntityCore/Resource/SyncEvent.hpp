@@ -16,6 +16,11 @@
 class VulkanMgr;
 class Texture;
 
+/*
+* Simplify use of VkEvent and add compatibility system for advanced synchronisation
+* Note that VkEvent is a synchronisation mechanism internal to a VkQueue
+* Synchronisation between VkQueue must be done using VkSemaphore
+*/
 class SyncEvent {
 public:
     // Create SyncEvent for event dependency (and pipeline barrier)

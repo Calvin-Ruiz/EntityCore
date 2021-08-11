@@ -14,6 +14,7 @@ class VulkanMgr;
 
 /**
 *   \brief Manage SubBuffer allocation like MemoryManager
+*   There must never been concurrent access to SubBuffer memory acquired from the same BufferMgr
 */
 class BufferMgr {
 public:
@@ -21,14 +22,26 @@ public:
     ~BufferMgr();
     SubBuffer acquireBuffer(int size, bool isUniform = false);
     void releaseBuffer(SubBuffer &subBuffer);
+    // Return a pointer to
     void *getPtr(SubBuffer &subBuffer);
-    // Make the changes from the device visible
+    // Make the changes from the device visible (if host_cached)
     void invalidate(SubBuffer &subBuffer);
+    // Make the changes from the device visible (if host_cached)
     void invalidate(const std::vector<SubBuffer> &subBuffers);
+    // Make the changes from the gpu visible (if host_cached)
+    void flush(SubBuffer &subBuffer);
+    // Make the changes from the gpu visible (if host_cached)
+    void flush(const std::vector<SubBuffer> &subBuffers);
+    // Set a name to the Buffer hold by BufferMgr (visible from debug layer and nvidia nsight graphics)
     void setName(const std::string &name);
+    // internally used, set the alignment requirement for uniform
     static void setUniformOffsetAlignment(int alignment) {uniformOffsetAlignment = alignment;}
+    // Record a copy from one SubBuffer to another SubBuffer
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst);
+    // Record a copy of size octects from one SubBuffer to another SubBuffer
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size);
+    // Record a copy of size octects from one SubBuffer to another SubBuffer with an offset
+    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);
 private:
     void releaseBuffer(); // Release next buffer in stack
     static void startMainloop(BufferMgr *self);

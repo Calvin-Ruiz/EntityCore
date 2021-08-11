@@ -30,9 +30,35 @@ enum class LogType {
     ERROR
 };
 
+struct QueueFamily {
+    size_t id;
+    unsigned char capacity;
+    unsigned char size;
+    bool graphic;
+    bool compute;
+    bool transfer;
+    bool present;
+    unsigned char dedicatedGraphicCount;
+    unsigned char dedicatedComputeCount;
+    unsigned char dedicatedGraphicAndCompute;
+    unsigned char dedicatedTransferCount;
+};
+
+struct QueueRequirement {
+    unsigned char transferQueues;
+    unsigned char dedicatedGraphicQueues;
+    unsigned char dedicatedComputeQueues;
+    unsigned char dedicatedGraphicAndComputeQueues; // If not available, querry pair of graphic and compute queues
+    unsigned char dedicatedTransferQueues;
+};
+
+/*
+* Core class, manage global ressources
+* Used as base to create any vulkan ressource
+*/
 class VulkanMgr {
 public:
-    VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *window, int width = 600, int height = 600, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0");
+    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0");
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
@@ -53,13 +79,18 @@ public:
     //! Called by MemoryManager when getting low of memory,
     void releaseUnusedMemory();
 
-    //! Queues
-    const std::vector<VkQueue> &getGraphicQueues() const {return graphicsAndPresentQueues;}
-    const std::vector<VkQueue> &getComputeQueues() const {return computeQueues;}
-    const std::vector<VkQueue> &getTransferQueues() const {return transferQueues;}
-    const std::vector<size_t> &getGraphicQueueFamilyIndex() const {return graphicsAndPresentQueueFamilyIndex;}
-    const std::vector<size_t> &getComputeQueueFamilyIndex() const {return computeQueueFamilyIndex;}
-    const std::vector<size_t> &getTransferQueueFamilyIndex() const {return transferQueueFamilyIndex;}
+    // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
+    // Return the queue family from which the queue was created, or nullptr in case of failure
+    // The number of dedicated queues can be lower than expected if they are not available
+    // The number of dedicated queues can be higher than expected to fulfill the requirement of queue ability
+    // e.g. a request for 1 graphic and 1 compute queue with 1 dedicated graphic may result to 1 dedicated graphic and 1 dedicated compute if there is no graphic and compute queue available.
+    enum class QueueType {
+        GRAPHIC,
+        COMPUTE,
+        GRAPHIC_COMPUTE,
+        TRANSFER
+    };
+    const QueueFamily *acquireQueue(VkQueue &queue, QueueType type, const std::string &name = "\0");
 
     //! Others
     void putLog(const std::string &str, LogType type = LogType::INFO);
@@ -80,24 +111,18 @@ private:
     VkPhysicalDeviceFeatures deviceFeatures{};
     VkPipelineCache pipelineCache;
 
-    void initDevice(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer = false);
+    void initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer = false);
     vk::UniqueInstance vkinstance;
     vk::PhysicalDevice physicalDevice;
 
     void initWindow(SDL_Window *window);
     VkSurfaceKHR surface;
 
-    void initQueues(uint32_t nbQueues = 1);
-    std::vector<size_t> graphicsAndPresentQueueFamilyIndex;
-    std::vector<size_t> graphicsQueueFamilyIndex;
-    std::vector<size_t> computeQueueFamilyIndex;
-    std::vector<size_t> presentQueueFamilyIndex;
-    std::vector<size_t> transferQueueFamilyIndex;
-    std::vector<VkQueue> graphicsAndPresentQueues;
-    std::vector<VkQueue> graphicsQueues;
-    std::vector<VkQueue> computeQueues;
-    std::vector<VkQueue> presentQueues;
-    std::vector<VkQueue> transferQueues;
+    void initQueues(const QueueRequirement &queueRequest);
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::vector<QueueFamily> queues;
+
+    void initDevice();
     VkDevice device;
 
     void initSwapchain(int width, int height);
@@ -115,7 +140,10 @@ private:
     void initDebug(vk::InstanceCreateInfo *instanceCreateInfo);
     void startDebug();
     void destroyDebug();
-    // static void printDebug(std::ostringstream &oss, std::string identifier);
+    // Note : identifier ascii code must be included between 0x40 and 0x7e both included
+    void setDebugFunction(char identifier, void (*func)(void *self, std::ostringstream &ss)) {
+        debugFunc[identifier & 0x3f] = func;
+    }
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -136,6 +164,8 @@ private:
     bool hasLayer;
     static bool isAlive;
     bool isReady = false;
+    bool presenting;
+    void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
 };
 
 #endif

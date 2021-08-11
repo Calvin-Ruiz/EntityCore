@@ -13,8 +13,8 @@
 bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath) :
-    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs)
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath) :
+    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), presenting(window != nullptr)
 {
     assert(!isAlive); // There must be only one VulkanMgr instance
     instance = this;
@@ -24,22 +24,30 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
         logs.open("EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
     }
-    uint32_t sdl2ExtensionCount = 0;
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, nullptr))
-        std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+    if (presenting) {
+        uint32_t sdl2ExtensionCount = 0;
+        if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, nullptr))
+            std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
 
-    size_t initialSize = instanceExtension.size();
-    instanceExtension.resize(initialSize + sdl2ExtensionCount);
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
-        std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+        size_t initialSize = instanceExtension.size();
+        instanceExtension.resize(initialSize + sdl2ExtensionCount);
+        if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
+            std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+    }
 
-    initDevice(_AppName, appVersion, window, enableDebugLayers);
+    initVulkan(_AppName, appVersion, window, enableDebugLayers);
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     displayPhysicalDeviceInfo(physicalDeviceProperties);
-    initQueues(1);
-    initSwapchain(width, height);
-    createImageViews();
+    initQueues(queueRequest);
+    initDevice();
+    if (presenting) {
+        initSwapchain(width, height);
+        createImageViews();
+    } else {
+        swapChainExtent.width = width;
+        swapChainExtent.height = height;
+    }
     memoryManager = new MemoryManager(*this, chunkSize*1024*1024);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
@@ -92,11 +100,13 @@ VulkanMgr::~VulkanMgr()
     isAlive = false;
     vkDeviceWaitIdle(device);
     putLog("Release resources", LogType::INFO);
-    for (auto imageView : swapChainImageViews) {
-        vkDestroyImageView(device, imageView, nullptr);
+    if (presenting) {
+        for (auto imageView : swapChainImageViews) {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySurfaceKHR(vkinstance.get(), surface, nullptr);
     }
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
-    vkDestroySurfaceKHR(vkinstance.get(), surface, nullptr);
     if (!cachePath.empty()) {
         std::vector<char> cacheContent;
         std::vector<char> previousContent;
@@ -116,12 +126,12 @@ VulkanMgr::~VulkanMgr()
             }
         }
         if (cacheContent.size() == previousContent.size() && memcmp(cacheContent.data(), previousContent.data(), cacheContent.size()) == 0) {
+            putLog("No changes in the pipelineCache", LogType::L_DEBUG);
+        } else {
             std::ofstream t(cachePath + "pipelineCache.dat", std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             t.write(cacheContent.data(), size);
             t.close();
-            putLog("Changes detected in the pipelineCache, store them", LogType::INFO);
-        } else {
-            putLog("No changes in the pipelineCache", LogType::INFO);
+            putLog("Changes detected in the pipelineCache, store them", LogType::L_DEBUG);
         }
     }
     vkDestroyPipelineCache(device, pipelineCache, nullptr);
@@ -187,13 +197,13 @@ bool VulkanMgr::isDeviceSuitable(VkPhysicalDevice pDevice) {
     bool swapChainAdequate = false;
     if (extensionsSupported) {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(pDevice);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        swapChainAdequate = (!swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty()) || !presenting;
     }
 
     return extensionsSupported && swapChainAdequate;
 }
 
-void VulkanMgr::initDevice(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer)
+void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer)
 {
     hasLayer = _hasLayer;
 
@@ -212,7 +222,8 @@ void VulkanMgr::initDevice(const char *AppName, uint32_t appVersion, SDL_Window 
     if (hasLayer)
         startDebug();
 
-    initWindow(window);
+    if (window)
+        initWindow(window);
 
     // get a physicalDevice
     for (const auto &pDevice : vkinstance->enumeratePhysicalDevices()) {
@@ -237,48 +248,107 @@ void VulkanMgr::initDevice(const char *AppName, uint32_t appVersion, SDL_Window 
     }
 }
 
-void VulkanMgr::initQueues(uint32_t nbQueues)
+void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
 {
     // get the QueueFamilyProperties of PhysicalDevice
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-
-    // {TO CHECK} register all index into queueFamiliyProperties which supports graphics, present, or both
+    const float queuePriority[16] = {};
     size_t i = 0;
-    std::vector<float> queuePriority(nbQueues, 0.0f);
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    queues.reserve(queueFamilyProperties.size());
+    for (auto &qfp : queueFamilyProperties) {
+        VkBool32 presentSupport = presenting;
+        queues.resize(queues.size() + 1);
+        queues.back().id = i;
+        queues.back().capacity = qfp.queueCount;
+        if (presenting)
+            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+        queues.back().graphic = (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != 0;
+        queues.back().compute = (qfp.queueFlags & vk::QueueFlagBits::eCompute) != 0;
+        queues.back().transfer = (qfp.queueFlags & vk::QueueFlagBits::eTransfer) != 0;
+        queues.back().present = presentSupport;
+    }
+    unsigned char dedicatedGraphicAndCompute = queueRequest.dedicatedGraphicAndCompute;
+    unsigned char dedicatedGraphic = queueRequest.dedicatedGraphic;
+    unsigned char dedicatedCompute = queueRequest.dedicatedCompute;
+    unsigned char dedicatedTransfer = queueRequest.dedicatedTransfer;
+    for (auto &q : queues) {
+        if (q.graphic) {
+            if (q.compute) {
+                q.size = std::min(dedicatedGraphicAndCompute, q.capacity);
+                q.dedicatedGraphicAndComputeCount = q.size;
+                dedicatedGraphicAndCompute -= q.size;
+            } else {
+                q.size = std::min(dedicatedGraphic, q.capacity);
+                q.dedicatedGraphicCount = q.size;
+                dedicatedGraphic -= q.size;
+            }
+        } else {
+            if (q.compute) {
+                q.size = std::min(dedicatedCompute, q.capacity);
+                q.dedicatedComputeCount = q.size;
+                dedicatedCompute -= q.size;
+            } else if (q.transfer) {
+                q.size = std::min(dedicatedTransfer, q.capacity);
+                q.dedicatedTransferCount = q.size;
+                dedicatedTransfer -= q.size;
+            }
+        }
+    }
+    dedicatedGraphic += dedicatedGraphicAndCompute;
+    dedicatedCompute += dedicatedGraphicAndCompute;
+    // Look for missing dedicated queues, also split missing dedicated graphic and compute queue
+    char transfer = queueRequest.transferQueues;
+    for (auto &q : queues) {
+        if (q.capacity > q.size) {
+            if (q.graphic) {
+                const unsigned char extract = std::min(q.capacity - q.size, dedicatedGraphic);
+                q.size += extract;
+                q.dedicatedGraphicCount += extract;
+                dedicatedGraphic -= extract;
+            }
+            if (q.compute) {
+                const unsigned char extract = std::min(q.capacity - q.size, dedicatedCompute);
+                q.size += extract;
+                q.dedicatedComputeCount += extract;
+                dedicatedCompute -= extract;
+            }
+            if (q.transfer) {
+                const unsigned char extract = std::min(q.capacity - q.size, dedicatedTransfer);
+                q.size += extract;
+                q.dedicatedTransferCount += extract;
+                dedicatedTransfer -= extract;
+            }
+        }
+        if (q.transfer)
+            transfer -= q.size;
+    }
+    if (transfer > 0) {
+        // Look for missing transfer queues
+        for (auto &q : queues) {
+            if (q.transfer) {
+                const unsigned char extract = std::min(transfer, q.capacity - q.size);
+                q.size += extract;
+                q.dedicatedTransferCount += extract;
+                transfer -= extract;
+            }
+        }
+    }
+    // Define queue creation
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.pQueuePriorities = queuePriority.data();
+    queueCreateInfo.pQueuePriorities = queuePriority;
     queueCreateInfo.pNext = nullptr;
-
-    for (auto &qfp : queueFamilyProperties) {
-        VkBool32 presentSupport = true;
-        queueCreateInfo.queueCount = std::min(qfp.queueCount, nbQueues);
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-        if (qfp.queueFlags & vk::QueueFlagBits::eGraphics) {
-            if (presentSupport)
-                graphicsAndPresentQueueFamilyIndex.push_back(i);
-            else
-                graphicsQueueFamilyIndex.push_back(i);
-        } else if (qfp.queueFlags & vk::QueueFlagBits::eCompute)
-            computeQueueFamilyIndex.push_back(i);
-        else if (presentSupport)
-            presentQueueFamilyIndex.push_back(i);
-        else if (qfp.queueFlags & vk::QueueFlagBits::eTransfer)
-            transferQueueFamilyIndex.push_back(i);
-        else {
-            i++;
-            continue;
+    for (auto &q : queues) {
+        if (q.size) {
+            queueCreateInfo.queueCount = q.size;
+            queueCreateInfo.queueFamilyIndex = q.id;
+            queueCreateInfos.push_back(queueCreateInfo);
         }
-        // Build createInfo for this familyQueue
-        queueCreateInfo.queueFamilyIndex = i;
-        queueCreateInfos.push_back(queueCreateInfo);
-        i++;
     }
-    assert(graphicsQueueFamilyIndex.size() + graphicsAndPresentQueueFamilyIndex.size() > 0);
-    assert(presentQueueFamilyIndex.size() + graphicsAndPresentQueueFamilyIndex.size() > 0);
-    //assert(transferQueueFamilyIndex.size() > 0);
+}
 
+void VulkanMgr::initDevice()
+{
     VkPhysicalDeviceFeatures supportedDeviceFeatures;
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);
 
@@ -306,50 +376,6 @@ void VulkanMgr::initQueues(uint32_t nbQueues)
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create logical device");
-    }
-
-    int maxQueues;
-    VkQueue tmpQueue;
-    for (auto index : graphicsAndPresentQueueFamilyIndex) {
-        maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
-        putLog("Create " + std::to_string(maxQueues) + " graphic queues with present ability", LogType::INFO);
-        for (int j = 0; j < maxQueues; j++) {
-            vkGetDeviceQueue(device, index, j, &tmpQueue);
-            graphicsAndPresentQueues.push_back(tmpQueue);
-        }
-    }
-    for (auto index : graphicsQueueFamilyIndex) {
-        maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
-        for (int j = 0; j < maxQueues; j++) {
-            putLog("Create graphicQueue", LogType::INFO);
-            vkGetDeviceQueue(device, index, j, &tmpQueue);
-            graphicsQueues.push_back(tmpQueue);
-        }
-    }
-    for (auto index : computeQueueFamilyIndex) {
-        maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
-        putLog("Create " + std::to_string(maxQueues) + " compute queues", LogType::INFO);
-        for (int j = 0; j < maxQueues; j++) {
-            vkGetDeviceQueue(device, index, j, &tmpQueue);
-            computeQueues.push_back(tmpQueue);
-        }
-    }
-    for (auto index : presentQueueFamilyIndex) {
-        maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
-        for (int j = 0; j < maxQueues; j++) {
-            putLog("Create presentQueue", LogType::INFO);
-            vkGetDeviceQueue(device, index, j, &tmpQueue);
-            presentQueues.push_back(tmpQueue);
-        }
-    }
-    return; // We don't want dedicated transfer queue for laser bonbon
-    for (auto index : transferQueueFamilyIndex) {
-        maxQueues = std::min(queueFamilyProperties[index].queueCount, nbQueues);
-        putLog("Create " + std::to_string(maxQueues) + " transfer queues", LogType::INFO);
-        for (int j = 0; j < maxQueues; j++) {
-            vkGetDeviceQueue(device, index, j, &tmpQueue);
-            transferQueues.push_back(tmpQueue);
-        }
     }
 }
 
@@ -578,22 +604,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMgr::debugCallback(
                 std::string name = pCallbackData->pObjects[i].pObjectName;
                 size_t posAddress = name.find(" at ");
                 ss << "\t\t\t" << "objectName   = " << name.substr(0, posAddress) << "\n";
-                // if (posAddress != std::string::npos)
-                //     printDebug(ss, name.substr(posAddress + 4, std::string::npos));
+                if (posAddress != std::string::npos)
+                    debugFunc[identifier[posAddress + 4] & 0x3f](reinterpret_cast<void *>(std::stol(identifier.substr(posAddress + 5))), ss);
             }
         }
     }
     instance->putLog(ss.str(), LogType::LAYER);
     return VK_FALSE;
 }
-
-// void VulkanMgr::printDebug(std::ostringstream &oss, std::string identifier)
-// {
-//     long address = std::stol(identifier.substr(1, std::string::npos));
-//     switch (identifier[0]) {
-//         default:;
-//     }
-// }
 
 void VulkanMgr::setObjectName(void *handle, VkObjectType type, const std::string &name)
 {
@@ -676,4 +694,41 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
         std::cerr << header << str << std::endl;
     if (saveLogs)
         logs << header << str << std::endl;
+}
+
+const QueueFamily *VulkanMgr::acquireQueue(VkQueue &queue, VulkanMgr::QueueType type, const std::string &name)
+{
+    for (auto &q : queues) {
+        switch (type) {
+            case QueueType::GRAPHIC:
+                if (q.dedicatedGraphicCount) {
+                    --q.dedicatedGraphicCount;
+                    break;
+                }
+                continue;
+            case QueueType::COMPUTE:
+                if (q.dedicatedComputeCount) {
+                    --q.dedicatedComputeCount;
+                    break;
+                }
+                continue;
+            case QueueType::GRAPHIC_COMPUTE:
+                if (q.dedicatedGraphicAndComputeCount) {
+                    --q.dedicatedGraphicAndComputeCount;
+                    break;
+                }
+                continue;
+            case QueueType::TRANSFER:
+                if (q.dedicatedTransferCount) {
+                    --q.dedicatedTransferCount;
+                    break;
+                }
+                continue;
+        }
+        vkGetDeviceQueue(device, q.id, --q.size, &queue);
+        if (!name.empty())
+            setObjectName(queue, VK_OBJECT_TYPE_QUEUE, name);
+        return &q;
+    }
+    return nullptr;
 }

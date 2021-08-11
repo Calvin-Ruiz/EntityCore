@@ -19,7 +19,8 @@ class Set {
 public:
     //! create a Set which can be bind
     //! Do not bind anything to it while bound to commandBuffer which can be submitted
-    Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding = -1, bool initialize = true);
+    //! If not temporary, the Set memory won't be available for another Set when destroyed
+    Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding = -1, bool initialize = true, bool temporary = false);
     ~Set();
     //! Bind uniform to this set
     void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset = 0);
@@ -58,6 +59,7 @@ private:
     std::vector<uint32_t> dynamicOffsets;
     VkDescriptorSet set = VK_NULL_HANDLE;
     bool initialized = false;
+    bool temporary;
 };
 
 #endif /* end of include guard: SET_HPP */

@@ -203,6 +203,24 @@ void BufferMgr::invalidate(const std::vector<SubBuffer> &subBuffers)
     vkInvalidateMappedMemoryRanges(master.refDevice, ranges.size(), ranges.data());
 }
 
+void BufferMgr::flush(SubBuffer &subBuffer)
+{
+    VkMappedMemoryRange range {VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, memory.memory, memory.offset + subBuffer.offset, (VkDeviceSize) subBuffer.size};
+
+    vkFlushMappedMemoryRanges(master.refDevice, 1, &range);
+}
+
+void BufferMgr::flush(const std::vector<SubBuffer> &subBuffers)
+{
+    std::vector<VkMappedMemoryRange> ranges;
+
+    ranges.reserve(subBuffers.size());
+    for (const auto &b : subBuffers) {
+        ranges.push_back({VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, memory.memory, memory.offset + b.offset, (VkDeviceSize) b.size});
+    }
+    vkFlushMappedMemoryRanges(master.refDevice, ranges.size(), ranges.data());
+}
+
 void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst)
 {
     VkBufferCopy region {src.offset, dst.offset, src.size};
@@ -213,6 +231,13 @@ void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst)
 void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int range)
 {
     VkBufferCopy region {src.offset, dst.offset, range};
+
+    vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
+}
+
+void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int range, int srcOffset, int dstOffset)
+{
+    VkBufferCopy region {src.offset + srcOffset, dst.offset + dstOffset, range};
 
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }

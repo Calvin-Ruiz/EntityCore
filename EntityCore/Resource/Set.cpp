@@ -4,7 +4,7 @@
 #include "Texture.hpp"
 #include "Set.hpp"
 
-Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding, bool initialize) : master(master), mgr(mgr)
+Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding, bool initialize, bool temporary) : master(master), mgr(mgr), temporary(temporary)
 {
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = mgr.getDescriptorPool();
@@ -15,7 +15,9 @@ Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding
     }
 }
 
-Set::~Set() {}
+Set::~Set()
+{
+}
 
 void Set::init()
 {

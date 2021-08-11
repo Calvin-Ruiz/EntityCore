@@ -34,7 +34,7 @@ public:
     // alwaysRecord : record the main command every frame
     // useSecondary : enable use of subCommand
     // staticSecondary : if true, the only way to re-record a subCommand is to call discardRecord and record every subCommand again
-    bool build(bool alwaysRecord = false, bool useSecondary = false, bool staticSecondary = true);
+    bool build(uint32_t queueFamily, bool alwaysRecord = false, bool useSecondary = false, bool staticSecondary = true);
 
     // ===== USE ===== //
     // Create count subCommands and return the id of the first newly created subCommand
@@ -51,7 +51,7 @@ public:
     VkCommandBuffer getHandle(int idx) {return cmds[idx];}
 
     // Start recording
-    VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE);
+    VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE, int nbTextures = 0, Texture **textures = nullptr);
     // Next rendering layer
     void next(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE);
     // Execute command
@@ -63,6 +63,8 @@ public:
     }
     // Compile main command
     void compileMain();
+    // Get main command
+    VkCommandBuffer getMainHandle() {return mainCmd;}
     // Submit command
     void submit();
 private:
