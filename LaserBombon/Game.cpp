@@ -31,8 +31,8 @@ const SpecialWeaponAttributes Game::specialList[10] {{"None", "Nothing", 0, 0}, 
 
 Game::Game(const std::string &name, uint32_t version, int width, int height) : candyPosDist(20, width - 20), width(width), height(height)
 {
-    bool enableDebugLayers = false;
-    bool drawLogs = false;
+    bool enableDebugLayers = true;
+    bool drawLogs = true;
     bool saveLogs = false;
 
     std::ifstream config("config.txt");
