@@ -40,7 +40,7 @@ bool Menu::mainloop(int type)
             break;
         case DISMANTLE:
             texts.push_back(new MenuText(*menu));
-            texts.back()->setString(std::string("Are you sure to dismantle for research ?\nYour score, level and equipment will be resetted.\nResearch gain depend on your equipment and score.\nYou will get ") + Game::toText(master->getRecursionGain()) + "/" + Game::toText(master->getMaxedRecursionGain()) + "research points.\nAfter dismantle, your score will be of " + Game::toText(master->getScoreAfterRecursion()) + ".");
+            texts.back()->setString(std::string("Are you sure to dismantle for research ?\nYour score, level and equipment will be resetted.\nResearch gain depend on your equipment and score.\nYou will get ") + EntityLib::toText(master->getRecursionGain()) + "/" + EntityLib::toText(master->getMaxedRecursionGain()) + "research points.\nAfter dismantle, your score will be of " + EntityLib::toText(master->getScoreAfterRecursion()) + ".");
             texts.back()->addDependency({texts.back(), 0, 0.6, Align::UP, Align::DOWN});
             texts.back()->addDependency({nullptr, 0.5, 0.4, 0, Align::CENTER});
             buttons.push_back(new MenuButton(*menu, this, &backButton, "Cancel", "button.png", 0.01));
@@ -54,4 +54,17 @@ bool Menu::mainloop(int type)
             break;
     }
     return menu->mainloop(type != LOAD);
+}
+
+void Menu::backButton(void *data, MenuButton *button)
+{
+    reinterpret_cast<Menu *>(data)->menu->close();
+}
+
+void Menu::dismantleButton(void *data, MenuButton *button)
+{
+}
+
+void Menu::selectResearchPage(void *data, int pageShift, int player)
+{
 }

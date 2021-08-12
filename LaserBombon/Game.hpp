@@ -242,7 +242,6 @@ public:
     void mainloop();
     void load(int slot, int playerCount = 2);
     bool openMenu(int type);
-    static std::string toText(long nbr);
     long getRecursionGain() const;
     long getMaxedRecursionGain() const;
     void makeRecursion();
