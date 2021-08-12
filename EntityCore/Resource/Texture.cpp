@@ -9,7 +9,25 @@
 
 std::string Texture::textureDir = "./";
 
-Texture::Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name, VkFormat format, VkImageType type) : master(master), mgr(mgr), name(name)
+Texture::Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount, const std::string &name, VkImageUsageFlags usage, VkFormat format, VkImageAspectFlags aspect) : master(master), mgr(nullptr), name(name), aspect(aspect)
+{
+    info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.pNext = nullptr;
+    info.flags = 0;
+    info.imageType = VK_IMAGE_TYPE_2D;
+    info.format = format;
+    info.extent = {(uint32_t) width, (uint32_t) height, 1};
+    info.mipLevels = 1;
+    info.arrayLayers = 1;
+    info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    info.usage = usage;
+    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount = 0;
+    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    info.samples = sampleCount;
+}
+
+Texture::Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name, VkFormat format, VkImageType type) : master(master), mgr(&mgr), name(name)
 {
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;
@@ -51,10 +69,10 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
         info.mipLevels = static_cast<uint32_t>(std::log2(std::max(width, height))) + 1;
     if (content) {
         VkDeviceSize size = width * height * nbChannels * elemSize;
-        staging = mgr.acquireBuffer(size);
+        staging = mgr->acquireBuffer(size);
         onCPU = true;
         long *src = (long *) content;
-        long *dst = (long *) mgr.getPtr(staging);
+        long *dst = (long *) mgr->getPtr(staging);
         for (int i = size / sizeof(long); i > 0; --i)
             *(dst++) = *(src++);
     } else
@@ -114,7 +132,7 @@ Texture::~Texture()
 
 void *Texture::acquireStagingMemoryPtr()
 {
-    return mgr.getPtr(staging);
+    return mgr->getPtr(staging);
 }
 
 void Texture::unuse()
@@ -131,7 +149,7 @@ void Texture::createSurface()
 {
     if (!onCPU) {
         VkDeviceSize size = info.extent.width * info.extent.height * nbChannels * elemSize;
-        staging = mgr.acquireBuffer(size);
+        staging = mgr->acquireBuffer(size);
         onCPU = true;
     }
 }
@@ -151,7 +169,7 @@ SDL_Surface *Texture::createSDLSurface()
             const unsigned int bmask = 0x00ff0000;
             const unsigned int amask = 0xff000000;
         #endif
-        SDL_Surface *ret = SDL_CreateRGBSurfaceFrom(mgr.getPtr(staging), info.extent.width, info.extent.height, 32, 4*info.extent.width, rmask, gmask, bmask, amask);
+        SDL_Surface *ret = SDL_CreateRGBSurfaceFrom(mgr->getPtr(staging), info.extent.width, info.extent.height, 32, 4*info.extent.width, rmask, gmask, bmask, amask);
         sdlSurface = true;
         return ret;
     } else {
@@ -162,7 +180,7 @@ SDL_Surface *Texture::createSDLSurface()
 void Texture::detach()
 {
     if (onCPU) {
-        mgr.releaseBuffer(staging);
+        mgr->releaseBuffer(staging);
         onCPU = false;
     }
 }
@@ -191,7 +209,8 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         }
     }
     if (cmd == VK_NULL_HANDLE) {
-        master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::INFO);
+        if (onCPU)
+            master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::INFO);
         return true;
     }
     if (!onCPU) {

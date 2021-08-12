@@ -24,6 +24,7 @@ struct EntityData;
 struct QueueFamily;
 
 #define WIN_SIZE_SCALING 1.5
+#define WINDOWLESS true
 
 class EntityLib {
 public:
@@ -42,6 +43,7 @@ public:
     Texture &getEntityMap() {return *entityMap;}
     RenderMgr &getRender() {return *renderMgr;}
     std::vector<std::unique_ptr<FrameMgr>> &getFrames() {return frames;}
+    std::vector<std::unique_ptr<Texture>> frameDraw;
     std::vector<unsigned char> flags;
     const float worldScaleX;
     const float worldScaleY;

@@ -19,6 +19,7 @@
 #include "EntityCore/Resource/Texture.hpp"
 #include "EntityCore/Resource/VertexArray.hpp"
 #include "EntityCore/Resource/VertexBuffer.hpp"
+#include "EntityCore/Resource/FrameSender.hpp"
 #include <chrono>
 
 GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMgr) : vkmgr(*VulkanMgr::instance), localBuffer(master->getLocalBuffer()), entityMap(master->getEntityMap()), renderMgr(master->getRender()), frames(master->getFrames()), swapchain(vkmgr.getSwapchain()), master(master)
@@ -29,9 +30,13 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 3};
     vkAllocateCommandBuffers(vkmgr.refDevice, &allocInfo, cmds);
     graphicQueue = master->graphicQueue;
-    VkSemaphoreCreateInfo semInfo {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
-    for (int i = 0; i < 6; ++i)
-        vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores + i);
+    if (WINDOWLESS) {
+
+    } else {
+        VkSemaphoreCreateInfo semInfo {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
+        for (int i = 0; i < 6; ++i)
+            vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores + i);
+    }
 
     imagePLayout = std::make_unique<PipelineLayout>(vkmgr);
     imagePLayout->setTextureLocation(0, &PipelineLayout::DEFAULT_SAMPLER);
@@ -66,10 +71,13 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
 
     TTF_Init();
     submitResources();
-    initCommands();
-    VkFenceCreateInfo fenceInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
+    VkFenceCreateInfo fenceInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, WINDOWLESS ? 0u : VK_FENCE_CREATE_SIGNALED_BIT};
     for (int i = 0; i < 3; ++i)
         vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + i);
+    if (WINDOWLESS) {
+        sender = std::make_unique<FrameSender>(vkmgr, master->frameDraw, fences);
+    }
+    initCommands();
 }
 
 GPUDisplay::~GPUDisplay()
@@ -77,6 +85,7 @@ GPUDisplay::~GPUDisplay()
     stop();
     if (updater->joinable())
         updater->join();
+    sender = nullptr;
     vkQueueWaitIdle(graphicQueue);
     TTF_CloseFont(myFont);
     TTF_Quit();
@@ -84,8 +93,10 @@ GPUDisplay::~GPUDisplay()
     vkDestroyCommandPool(vkmgr.refDevice, cmdPool, nullptr);
     for (int i = 0; i < 3; ++i)
         vkDestroyFence(vkmgr.refDevice, fences[i], nullptr);
-    for (int i = 0; i < 6; ++i)
-        vkDestroySemaphore(vkmgr.refDevice, semaphores[i], nullptr);
+    if (!WINDOWLESS) {
+        for (int i = 0; i < 6; ++i)
+            vkDestroySemaphore(vkmgr.refDevice, semaphores[i], nullptr);
+    }
     imageVertexBuffer.reset();
     jaugeVertexBuffer.reset();
 }
@@ -125,20 +136,24 @@ void GPUDisplay::mainloop()
     shield.lock();
     auto clock = std::chrono::system_clock::now() + delay;
     while (alive) {
-        auto res = vkAcquireNextImageKHR(vkmgr.refDevice, swapchain, UINT32_MAX, semaphores[switcher], VK_NULL_HANDLE, &imageIdx);
-        switch (res) {
-            case VK_SUCCESS:
-                break;
-            case VK_SUBOPTIMAL_KHR:
-                vkmgr.putLog("Suboptimal swapchain", LogType::WARNING);
-                break;
-            case VK_TIMEOUT:
-                vkmgr.putLog("Timeout for swapchain acquire", LogType::ERROR);
-                continue;
-            default:
-                vkmgr.putLog("Invalid swapchain", LogType::ERROR);
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                continue;
+        if (WINDOWLESS) {
+            sender->acquireFrame(imageIdx);
+        } else {
+            auto res = vkAcquireNextImageKHR(vkmgr.refDevice, swapchain, UINT32_MAX, semaphores[switcher], VK_NULL_HANDLE, &imageIdx);
+            switch (res) {
+                case VK_SUCCESS:
+                    break;
+                case VK_SUBOPTIMAL_KHR:
+                    vkmgr.putLog("Suboptimal swapchain", LogType::WARNING);
+                    break;
+                case VK_TIMEOUT:
+                    vkmgr.putLog("Timeout for swapchain acquire", LogType::ERROR);
+                    continue;
+                default:
+                    vkmgr.putLog("Invalid swapchain", LogType::ERROR);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    continue;
+            }
         }
 
         std::string s = header1 + EntityLib::toText(score1);
@@ -169,11 +184,17 @@ void GPUDisplay::mainloop()
         SDL_BlitSurface(text, NULL, scoreboardSurface, &tmp);
         SDL_FreeSurface(text);
 
-        sinfo[imageIdx].pWaitSemaphores = semaphores + switcher;
-        vkWaitForFences(vkmgr.refDevice, 1, fences + imageIdx, VK_TRUE, UINT32_MAX);
-        vkResetFences(vkmgr.refDevice, 1, fences + imageIdx);
-        vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, fences[imageIdx]);
-        vkQueuePresentKHR(graphicQueue, presentInfo + imageIdx);
+        if (WINDOWLESS) {
+            vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, fences[imageIdx]);
+            sender->presentFrame(imageIdx);
+        } else {
+            sinfo[imageIdx].pWaitSemaphores = semaphores + switcher;
+            vkWaitForFences(vkmgr.refDevice, 1, fences + imageIdx, VK_TRUE, UINT32_MAX);
+            // sumbit this frame right now !
+            vkResetFences(vkmgr.refDevice, 1, fences + imageIdx);
+            vkQueueSubmit(graphicQueue, 1, sinfo + imageIdx, fences[imageIdx]);
+            vkQueuePresentKHR(graphicQueue, presentInfo + imageIdx);
+        }
         if (active) {
             std::this_thread::sleep_until(clock);
             clock = std::chrono::system_clock::now() + delay;
@@ -329,6 +350,9 @@ void GPUDisplay::initCommands()
         vkCmdBindVertexBuffers(cmd, 0, 1, &jaugeVertexBuffer->get().buffer, &tmpOff);
         vkCmdDrawIndexed(cmd, 6*10, 1, 0, 0, 0);
         vkCmdEndRenderPass(cmd);
+        if (WINDOWLESS) {
+            sender->setupReadback(cmd, i);
+        }
         vkEndCommandBuffer(cmd);
     }
 }

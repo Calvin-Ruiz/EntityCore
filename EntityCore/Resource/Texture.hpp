@@ -15,10 +15,14 @@ class BufferMgr;
 */
 class Texture {
 public:
+    // Create a framebuffer attachment
+    Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT);
+    // Create a texture
     Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
     virtual ~Texture();
     // load texture using name as filename, return true on success
     bool init(int nbChannels = 4, bool mipmap = false);
+    // load texture with custom datas
     bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
     //! Export texture to GPU, return true on success
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
@@ -54,7 +58,7 @@ private:
     bool createImage();
     static std::string textureDir;
     VulkanMgr &master;
-    BufferMgr &mgr; // Staging memory manager
+    BufferMgr *mgr; // Staging memory manager
     VkImage image;
     VkImageView view;
     SubMemory memory;

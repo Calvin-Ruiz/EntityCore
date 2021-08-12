@@ -28,28 +28,54 @@ EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int he
     mapScaleX = 1.f / mapWidth;
     mapScaleY = 1.f / mapHeight;
     renderMgr = std::make_unique<RenderMgr>(*master);
-    renderMgr->bindColor(renderMgr->attach(VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    if (WINDOWLESS) {
+        renderMgr->bindColor(renderMgr->attach(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    } else {
+        renderMgr->bindColor(renderMgr->attach(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    }
     renderMgr->addDependency(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, VK_DEPENDENCY_BY_REGION_BIT);
     renderMgr->pushLayer();
     renderMgr->addSelfDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT);
     renderMgr->addDependency(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, VK_DEPENDENCY_BY_REGION_BIT);
     renderMgr->build();
-    // init frames
-    auto tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
-    tmp->bind(0, master->getSwapchainView()[frames.size()]);
     graphicQueueFamily = master->acquireQueue(graphicQueue, VulkanMgr::QueueType::GRAPHIC, "GPUDisplay/MenuMgr");
     if (graphicQueueFamily == nullptr) {
         // This is an impossible scenario
         master->putLog("Missing graphic queue (unpossible case)", LogType::ERROR);
     }
+
+    if (WINDOWLESS) {
+        // Create color attachment
+        for (int i = 0; i < 3; ++i) {
+            frameDraw.push_back(std::make_unique<Texture>(*master, width, height, VK_SAMPLE_COUNT_1_BIT, "Color attachment " + std::to_string(i + 1), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT));
+            frameDraw.back()->use();
+        }
+    }
+
+    auto tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
+    if (WINDOWLESS) {
+        tmp->bind(0, *frameDraw[frames.size()]);
+    } else {
+        tmp->bind(0, master->getSwapchainView()[frames.size()]);
+    }
     tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
+
     tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
-    tmp->bind(0, master->getSwapchainView()[frames.size()]);
+    if (WINDOWLESS) {
+        tmp->bind(0, *frameDraw[frames.size()]);
+    } else {
+        tmp->bind(0, master->getSwapchainView()[frames.size()]);
+    }
     tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
+
     tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
-    tmp->bind(0, master->getSwapchainView()[frames.size()]);
+    if (WINDOWLESS) {
+        tmp->bind(0, *frameDraw[frames.size()]);
+    } else {
+        tmp->bind(0, master->getSwapchainView()[frames.size()]);
+    }
     tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
 }
@@ -59,6 +85,7 @@ EntityLib::~EntityLib()
     localBuffer.reset();
     entityMap.reset();
     renderMgr.reset();
+    frameDraw.clear();
     frames.clear();
     master.reset();
     SDL_DestroyWindow(window);

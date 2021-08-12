@@ -17,6 +17,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#define WINDOWLESS true
+
 #define JB1 0.5,  0.5, 0.5,  0.25
 #define JB2 0.25, 1,   0.25, 0.25
 
@@ -55,6 +57,7 @@ class SyncEvent;
 class Texture;
 class VertexArray;
 class VertexBuffer;
+class FrameSender;
 
 struct JaugeVertex {
     float x;
@@ -131,6 +134,8 @@ private:
     std::unique_ptr<Texture> background;
     std::unique_ptr<Texture> scoreboard; // 68x240
 
+    std::unique_ptr<FrameSender> sender;
+
     SubBuffer entityIndexBuffer;
     SubBuffer jaugeStaging;
     JaugeVertex *jaugePtr;
@@ -145,9 +150,9 @@ private:
     uint32_t imageIdx = 0;
     const VkPipelineStageFlags semaphoreStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo sinfo[3] {
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, nullptr, &semaphoreStage, 1, cmds, 1, semaphores + 3},
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, nullptr, &semaphoreStage, 1, cmds + 1, 1, semaphores + 4},
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, nullptr, &semaphoreStage, 1, cmds + 2, 1, semaphores + 5}
+        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, (WINDOWLESS ? 0 : 1), nullptr, &semaphoreStage, 1, cmds, (WINDOWLESS ? 0 : 1), semaphores + 3},
+        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, (WINDOWLESS ? 0 : 1), nullptr, &semaphoreStage, 1, cmds + 1, (WINDOWLESS ? 0 : 1), semaphores + 4},
+        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, (WINDOWLESS ? 0 : 1), nullptr, &semaphoreStage, 1, cmds + 2, (WINDOWLESS ? 0 : 1), semaphores + 5}
     };
     VkPresentInfoKHR presentInfo[3] {
         {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, nullptr, 1, semaphores + 3, 1, &swapchain, &imageIdx, nullptr},
