@@ -530,7 +530,7 @@ void Game::updatePlayer(Player &p, int idx)
     y += 0.0041666666666667 * 2.1;
     p.ptr[17].y = p.ptr[18].y = p.ptr[1].y = p.ptr[2].y = y;
     p.ptr[1].x = p.ptr[3].x = p.posX - 0.05 + 0.1;
-    p.ptr[5].x = p.ptr[7].x = p.posX - 0.05 + ((p.energy > p.energyMax) ? p.energy / p.energyMax * 0.1 : 0.1);
+    p.ptr[5].x = p.ptr[7].x = p.posX - 0.05 + ((p.energy < p.energyMax) ? p.energy / p.energyMax * 0.1 : 0.1);
     p.ptr[9].x = p.ptr[11].x = p.posX - 0.05 + ((p.shield > 0) ? p.shield / p.shieldMax * 0.1 : 0);
     p.ptr[13].x = p.ptr[15].x = p.posX - 0.05 + ((p.coolant < p.coolantMax) ? ((p.coolant > 0) ? p.coolant / p.coolantMax * 0.1 : 0) : 0.1);
     p.ptr[17].x = p.ptr[19].x = p.posX - 0.05 + ((p.special < p.specialMax) ? p.special / p.specialMax * 0.1 : 0.1);
@@ -547,40 +547,40 @@ void Game::shoot(Player &p)
     // play shoot sound
     switch (p.saved.weapon) {
         case 0: // laser
-        {
-            auto &e = core->getFragment(LASER);
-            const float dmg = e.damage;
-            switch (p.saved.weaponLevel) { // level go from 0 to 8 both included
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                    e.damage = -1 - p.saved.weaponLevel;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y, 7);
-                    break;
-                case 5:
-                case 6:
-                case 7:
-                    e.damage = -p.saved.weaponLevel;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y - 16, 7);
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y + 16, 7);
-                    --e.damage;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y, 7);
-                    break;
-                case 8:
-                    e.damage = -6;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y - 32, 7);
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y + 32, 7);
-                    e.damage = -7;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y - 16, 7);
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y + 16, 7);
-                    e.damage = -8;
-                    compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 32, p.y, 7);
-                    break;
+            {
+                auto &e = core->getFragment(LASER);
+                const float dmg = e.damage;
+                switch (p.saved.weaponLevel) { // level go from 0 to 8 both included
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                        e.damage = -1 - p.saved.weaponLevel;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y, 7);
+                        break;
+                    case 5:
+                    case 6:
+                    case 7:
+                        e.damage = -p.saved.weaponLevel;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y - 16, 7);
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y + 16, 7);
+                        --e.damage;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y, 7);
+                        break;
+                    case 8:
+                        e.damage = -6;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y - 32, 7);
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 24, p.y + 32, 7);
+                        e.damage = -7;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y - 16, 7);
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 28, p.y + 16, 7);
+                        e.damage = -8;
+                        compute->pushPlayerShoot() = core->getFragment(LASER, p.x + 32, p.y, 7);
+                        break;
+                }
+                e.damage = dmg;
             }
-            e.damage = dmg;
-        }
             break;
         case 1: // blaster
         {
@@ -594,17 +594,115 @@ void Game::shoot(Player &p)
             break;
         case 2: // wave
             switch (p.saved.weaponLevel) {
+                case 0:
+                case 1:
+                case 2:
+                    compute->pushPlayerShoot() = core->getFragment(WAVE + p.saved.weaponLevel, p.x + 24, p.y, 7);
+                    break;
+                case 3:
+                case 4:
+                    compute->pushPlayerShoot() = core->getFragment(WAVE + p.saved.weaponLevel - 3, p.x + 20, p.y - 26, 6, -1);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 28, p.y, 7);
+                    compute->pushPlayerShoot() = core->getFragment(WAVE + p.saved.weaponLevel - 3, p.x + 20, p.y + 26, 6, 1);
+                    break;
+                case 5:
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 20, p.y - 34, 6, -1);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 28, p.y, 7);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 20, p.y + 34, 6, 1);
+                    break;
+                case 6:
+                case 7:
+                    compute->pushPlayerShoot() = core->getFragment(WAVE + p.saved.weaponLevel - 6, p.x + 16, p.y - 60, 6, -2);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 24, p.y - 34, 7, -1);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 32, p.y, 8);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 24, p.y + 34, 7, 1);
+                    compute->pushPlayerShoot() = core->getFragment(WAVE + p.saved.weaponLevel - 6, p.x + 16, p.y + 60, 6, 2);
+                    break;
+                case 8:
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 16, p.y - 68, 6, -2);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 24, p.y - 34, 7, -1);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 32, p.y, 8);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 24, p.y + 34, 7, 1);
+                    compute->pushPlayerShoot() = core->getFragment(BIG_WAVE, p.x + 20, p.y + 68, 6, 2);
                 default:;
             }
             break;
         case 3: // eclatant
             switch (p.saved.weaponLevel) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 24, p.y, 7);
+                    break;
+                case 5:
+                case 6:
+                case 7:
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 24, p.y - 16, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 24, p.y + 16, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 28, p.y, 7);
+                    break;
+                case 8:
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 24, p.y - 32, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 24, p.y + 32, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 28, p.y - 16, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 28, p.y + 16, 7);
+                    compute->pushPlayerShoot() = core->getFragment(ECLATANT, p.x + 32, p.y, 7);
+                    break;
                 default:;
             }
             break;
         case 4: // laserifier
-            switch (p.saved.weaponLevel) {
-                default:;
+            {
+                auto &e = core->getFragment(LASERIFIER);
+                switch (p.saved.weaponLevel) {
+                    case 0:
+                        e.damage = 0;
+                        e.health = 0;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 24, p.y, 20);
+                        break;
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                        e.damage = -1;
+                        e.health = (1 << (p.saved.weaponLevel - 1)) - 1;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 24, p.y, 20);
+                        break;
+                    case 5:
+                    case 6:
+                        e.damage = -1;
+                        e.health = (1 << (p.saved.weaponLevel - 3)) - 1;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y - 25, 20);
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y + 25, 20);
+                        e.health = (1 << (p.saved.weaponLevel - 2)) - 1;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 24, p.y, 20);
+                        break;
+                    case 7:
+                        e.damage = -2;
+                        e.health = 7;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y - 25, 20);
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y + 25, 20);
+                        e.damage = -3;
+                        e.health = 11;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 24, p.y, 20);
+                        break;
+                    case 8:
+                        e.damage = -3;
+                        e.health = 5;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 12, p.y - 50, 20);
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 12, p.y + 50, 20);
+                        e.damage = -4;
+                        e.health = 7;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y - 25, 20);
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 20, p.y + 25, 20);
+                        e.damage = -6;
+                        e.health = 11;
+                        compute->pushPlayerShoot() = core->getFragment(LASERIFIER, p.x + 24, p.y, 20);
+                        break;
+                    default:;
+                }
             }
             break;
     }
@@ -618,10 +716,10 @@ void Game::useSpecial(Player &p)
         return;
     p.special -= w.specialCost;
     switch (p.saved.special) {
-        case 1:
+        case SW_BIG_LASER:
             compute->pushPlayerShoot() = core->dropFragment(BIG_LASER, p.posX, p.posY, 15);
             break;
-        case 2:
+        case SW_PROTECTO:
             compute->pushPlayerShoot() = core->dropFragment(PROTECTO, p.posX, p.posY, -1, -1);
             compute->pushPlayerShoot() = core->dropFragment(PROTECTO, p.posX, p.posY, 0, -1);
             compute->pushPlayerShoot() = core->dropFragment(PROTECTO, p.posX, p.posY, 1, -1);
@@ -631,19 +729,20 @@ void Game::useSpecial(Player &p)
             compute->pushPlayerShoot() = core->dropFragment(PROTECTO, p.posX, p.posY, -1, 1);
             compute->pushPlayerShoot() = core->dropFragment(PROTECTO, p.posX, p.posY, -1, 0);
             break;
-        case 3: // trans
+        case SW_MINI_TRANS:
             compute->pushPlayerShoot() = core->dropFragment(MINI_TRANS, p.posX, p.posY, 15);
             break;
-        case 4:
+        case SW_TRANS:
             compute->pushPlayerShoot() = core->dropFragment(TRANS, p.posX, p.posY, 15);
             break;
-        case 5:
+        case SW_SUPER_TRANS:
             compute->pushPlayerShoot() = core->dropFragment(SUPER_TRANS, p.posX, p.posY, 15);
             break;
-        case 6:
-        case 7:
+        case SW_SHIELD_BOOSTER:
+        case SW_ENHANCED_SHIELD_BOOSTER:
             p.boost = true;
-            // play shield boost sound
+            // if (p.special > 5)
+                // play shield boost sound
             break;
         default:
             break;
@@ -870,22 +969,25 @@ void Game::load(int slot, int playerCount)
 
     std::ifstream file(std::string("saves/slot") + std::to_string(slot) + ".dat", std::ifstream::binary);
     if (file) {
-        file.read((char *) &maxLevel, 9);
-        file.read((char *) &player1, 17);
+        file.read((char *) &recursion, 9);
+        file.read((char *) &player1, SIZEOF_SAVED_DATA);
         player1.score = player1.saved.maxScore;
         if (nbPlayer == 2) {
-            file.read((char *) &player2, 17);
+            file.read((char *) &player2, SIZEOF_SAVED_DATA);
             player2.score = player2.saved.maxScore;
         }
     } else {
         std::cout << "Slot not found, creating one\n";
+        recursion = 0;
+        level = 1;
+        maxLevel = level;
         nbPlayer = playerCount;
         for (int i = 0; i < nbPlayer; ++i) {
             SavedDatas &s = (i == 0) ? player1.saved : player2.saved;
-            s = SavedDatas({0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0});
+            s = SavedDatas({0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0});
         }
     }
-    recursionGainFactor = (nbPlayer == 1) ? 1 : 0.75;
+    recursionGainFactor = (nbPlayer == 1) ? 1 : 0.55;
 }
 
 void Game::save()
@@ -893,10 +995,10 @@ void Game::save()
     std::ofstream file(std::string("saves/slot") + std::to_string(usedSlot) + ".dat", std::ofstream::binary);
 
     if (file) {
-        file.write((char *) &maxLevel, 9);
-        file.write((char *) &player1, 17);
+        file.write((char *) &recursion, 9);
+        file.write((char *) &player1, SIZEOF_SAVED_DATA);
         if (nbPlayer == 2)
-            file.write((char *) &player2, 17);
+            file.write((char *) &player2, SIZEOF_SAVED_DATA);
     } else {
         std::cout << "Failed to create save\n";
     }
@@ -943,8 +1045,76 @@ void Game::initPlayer(Player &p, int idx)
 
 bool Game::openMenu(int type)
 {
-    Menu menu(this, *core, player1, player2, maxLevel, recursion, nbPlayer);
+    Menu menu(this, core, player1, player2, maxLevel, recursion, nbPlayer);
     bool ret = menu.mainloop(type);
     save();
     return ret;
+}
+
+long Game::getRecursionGain() const
+{
+    switch (nbPlayer) {
+        case 1:
+            return (vesselList[player1.saved.vessel].cost + weaponList[player1.saved.weapon].cost * (1 << player1.saved.weaponLevel) + specialList[player1.saved.special].cost + shieldList[player1.saved.shield].cost + generatorList[player1.saved.generator].cost + recoolerList[player1.saved.recooler].cost
+            - std::min(0, (int) ((startScore + recursion / recursionBaseScoreRatio) - player1.saved.maxScore))) * recursionGainFactor;
+        case 2:
+            return (vesselList[player1.saved.vessel].cost + weaponList[player1.saved.weapon].cost * (1 << player1.saved.weaponLevel) + specialList[player1.saved.special].cost + shieldList[player1.saved.shield].cost + generatorList[player1.saved.generator].cost + recoolerList[player1.saved.recooler].cost
+            + vesselList[player2.saved.vessel].cost + weaponList[player2.saved.weapon].cost * (1 << player2.saved.weaponLevel) + specialList[player2.saved.special].cost + shieldList[player2.saved.shield].cost + generatorList[player2.saved.generator].cost + recoolerList[player2.saved.recooler].cost
+             - std::min(0, (int) ((startScore + recursion / recursionBaseScoreRatio) * 2 - player1.saved.maxScore + player2.saved.maxScore))) * recursionGainFactor;
+        default:
+            return 0;
+    }
+}
+
+long Game::getMaxedRecursionGain() const
+{
+    switch (nbPlayer) {
+        case 1:
+            return (vesselList[player1.saved.vesselUnlock].cost + weaponList[player1.saved.weaponUnlock].cost * (1 << player1.saved.weaponLevelUnlock) + specialList[player1.saved.specialUnlock].cost + shieldList[player1.saved.shieldUnlock].cost + generatorList[player1.saved.generatorUnlock].cost + recoolerList[player1.saved.recoolerUnlock].cost) * recursionGainFactor;
+        case 2:
+            return (vesselList[player1.saved.vesselUnlock].cost + weaponList[player1.saved.weaponUnlock].cost * (1 << player1.saved.weaponLevelUnlock) + specialList[player1.saved.specialUnlock].cost + shieldList[player1.saved.shieldUnlock].cost + generatorList[player1.saved.generatorUnlock].cost + recoolerList[player1.saved.recoolerUnlock].cost
+            + vesselList[player2.saved.vesselUnlock].cost + weaponList[player2.saved.weaponUnlock].cost * (1 << player2.saved.weaponLevelUnlock) + specialList[player2.saved.specialUnlock].cost + shieldList[player2.saved.shieldUnlock].cost + generatorList[player2.saved.generatorUnlock].cost + recoolerList[player2.saved.recoolerUnlock].cost) * recursionGainFactor;
+        default:
+            return 0;
+    }
+}
+
+void Game::makeRecursion()
+{
+    recursion += getRecursionGain();
+    switch (nbPlayer) {
+        case 2:
+            player2.score = recursion * recursionBaseScoreRatio;
+            player2.saved.maxScore = player2.score;
+            player2.saved.vessel = 0;
+            player2.saved.weapon = 0;
+            player2.saved.weaponLevel = 0;
+            player2.saved.special = 0;
+            player2.saved.generator = 1;
+            player2.saved.shield = 0;
+            player2.saved.recooler = 0;
+            initPlayer(player2, 1);
+            [[fallthrough]];
+        case 1:
+            player1.score = recursion * recursionBaseScoreRatio;
+            player1.saved.maxScore = player1.score;
+            player1.saved.vessel = 0;
+            player1.saved.weapon = 0;
+            player1.saved.weaponLevel = 0;
+            player1.saved.special = 0;
+            player1.saved.generator = 1;
+            player1.saved.shield = 0;
+            player1.saved.recooler = 0;
+            initPlayer(player1, 0);
+            [[fallthrough]];
+        default:
+            maxLevel = 1;
+            level = maxLevel;
+            tic = 0;
+    }
+}
+
+long Game::getScoreAfterRecursion() const
+{
+    return (recursion + getRecursionGain()) * recursionBaseScoreRatio;
 }

@@ -175,7 +175,8 @@ struct RecoolerAttributes {
     float recoolingCapacity;
 };
 
-struct SavedDatas { // 17
+#define SIZEOF_SAVED_DATA 18
+struct SavedDatas {
     unsigned int maxScore;
     unsigned char vessel;
     unsigned char weapon;
@@ -186,6 +187,7 @@ struct SavedDatas { // 17
     unsigned char recooler;
     unsigned char vesselUnlock;
     unsigned char weaponUnlock;
+    unsigned char weaponLevelUnlock;
     unsigned char specialUnlock;
     unsigned char generatorUnlock;
     unsigned char shieldUnlock;
@@ -199,7 +201,7 @@ struct Player {
     int y;
     int velX; // 0
     int velY; // 0
-    int score;
+    unsigned int score;
     int lastHealth;
     float moveSpeed;
     float moveEnergyCost;
@@ -240,6 +242,11 @@ public:
     void mainloop();
     void load(int slot, int playerCount = 2);
     bool openMenu(int type);
+    static std::string toText(long nbr);
+    long getRecursionGain() const;
+    long getMaxedRecursionGain() const;
+    void makeRecursion();
+    long getScoreAfterRecursion() const;
 private:
     void save();
     void gameStart();
@@ -253,7 +260,6 @@ private:
     void useSpecial(Player &p);
     void spawn(GPUEntityMgr &engine);
     void revive(Player &target, Player &saver, int idx);
-    static std::string toText(long nbr);
     static void updateS(Game *self, GPUEntityMgr &engine) {
         self->update(engine);
     }
@@ -270,9 +276,9 @@ private:
     std::uniform_int_distribution<int> candyPosDist;
     std::uniform_real_distribution<float> normDist {0.f, 1.f};
     std::uniform_real_distribution<float> percentDist {0.f, 100.f};
-    int level = 1;
-    int maxLevel = 1;
     unsigned int recursion = 0;
+    unsigned short level = 1;
+    unsigned short maxLevel = 1;
     unsigned char nbPlayer = 0;
     bool alive = false;
     bool first = false;
@@ -291,7 +297,7 @@ public:
     // Configurations
     const int startScore = 8500; // Start equipment value
     const float recursionBaseScoreRatio = 0.0625;
-    float recursionGainFactor = 1; // 0.75 for 2-players
+    float recursionGainFactor = 1; // 0.55 for 2-players --> +10% recursion point
     // pair of (entity/spawn chance)
     static const std::pair<unsigned char, unsigned char> spawnability[6];
     static const WeaponAttributes weaponList[5];

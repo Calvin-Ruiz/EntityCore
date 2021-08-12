@@ -62,7 +62,7 @@ void main()
         self.pos.x += self.vel.x;
         if (self.alive) {
             if (self.vel.y > 1) {
-                float valy = (entities.e[gl_GlobalInvocationID.x & 1].alive) ? entities.e[gl_GlobalInvocationID.x & 1].pos.y : entities.e[1 - (gl_GlobalInvocationID.x & 1)].pos.y;
+                float valy = (entities.e[gl_GlobalInvocationID.x & 1 | 382].alive) ? entities.e[gl_GlobalInvocationID.x & 1 | 382].pos.y : entities.e[383 - (gl_GlobalInvocationID.x & 1)].pos.y;
                 self.pos.y += clamp(valy - self.pos.y, self.vel.x, -self.vel.x);
             } else {
                 self.pos.y += self.vel.y;
