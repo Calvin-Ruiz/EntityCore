@@ -126,12 +126,12 @@ VulkanMgr::~VulkanMgr()
             }
         }
         if (cacheContent.size() == previousContent.size() && memcmp(cacheContent.data(), previousContent.data(), cacheContent.size()) == 0) {
-            putLog("No changes in the pipelineCache", LogType::L_DEBUG);
+            putLog("No changes in the pipelineCache", LogType::DEBUG);
         } else {
             std::ofstream t(cachePath + "pipelineCache.dat", std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
             t.write(cacheContent.data(), size);
             t.close();
-            putLog("Changes detected in the pipelineCache, store them", LogType::L_DEBUG);
+            putLog("Changes detected in the pipelineCache, store them", LogType::DEBUG);
         }
     }
     vkDestroyPipelineCache(device, pipelineCache, nullptr);
@@ -262,9 +262,9 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
         queues.back().capacity = qfp.queueCount;
         if (presenting)
             vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
-        queues.back().graphic = (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != 0;
-        queues.back().compute = (qfp.queueFlags & vk::QueueFlagBits::eCompute) != 0;
-        queues.back().transfer = (qfp.queueFlags & vk::QueueFlagBits::eTransfer) != 0;
+        queues.back().graphic = (qfp.queueFlags & vk::QueueFlagBits::eGraphics) ? 1 : 0;
+        queues.back().compute = (qfp.queueFlags & vk::QueueFlagBits::eCompute) ? 1 : 0;
+        queues.back().transfer = (qfp.queueFlags & vk::QueueFlagBits::eTransfer) ? 1 : 0;
         queues.back().present = presentSupport;
     }
     unsigned char dedicatedGraphicAndCompute = queueRequest.dedicatedGraphicAndCompute;
@@ -297,23 +297,23 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
     dedicatedGraphic += dedicatedGraphicAndCompute;
     dedicatedCompute += dedicatedGraphicAndCompute;
     // Look for missing dedicated queues, also split missing dedicated graphic and compute queue
-    char transfer = queueRequest.transferQueues;
+    char transfer = queueRequest.transfer;
     for (auto &q : queues) {
         if (q.capacity > q.size) {
             if (q.graphic) {
-                const unsigned char extract = std::min(q.capacity - q.size, dedicatedGraphic);
+                const unsigned char extract = std::min((unsigned char) (q.capacity - q.size), dedicatedGraphic);
                 q.size += extract;
                 q.dedicatedGraphicCount += extract;
                 dedicatedGraphic -= extract;
             }
             if (q.compute) {
-                const unsigned char extract = std::min(q.capacity - q.size, dedicatedCompute);
+                const unsigned char extract = std::min((unsigned char) (q.capacity - q.size), dedicatedCompute);
                 q.size += extract;
                 q.dedicatedComputeCount += extract;
                 dedicatedCompute -= extract;
             }
             if (q.transfer) {
-                const unsigned char extract = std::min(q.capacity - q.size, dedicatedTransfer);
+                const unsigned char extract = std::min((unsigned char) (q.capacity - q.size), dedicatedTransfer);
                 q.size += extract;
                 q.dedicatedTransferCount += extract;
                 dedicatedTransfer -= extract;
@@ -326,7 +326,7 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
         // Look for missing transfer queues
         for (auto &q : queues) {
             if (q.transfer) {
-                const unsigned char extract = std::min(transfer, q.capacity - q.size);
+                const unsigned char extract = std::min(transfer, (char) (q.capacity - q.size));
                 q.size += extract;
                 q.dedicatedTransferCount += extract;
                 transfer -= extract;
@@ -605,7 +605,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMgr::debugCallback(
                 size_t posAddress = name.find(" at ");
                 ss << "\t\t\t" << "objectName   = " << name.substr(0, posAddress) << "\n";
                 if (posAddress != std::string::npos)
-                    debugFunc[identifier[posAddress + 4] & 0x3f](reinterpret_cast<void *>(std::stol(identifier.substr(posAddress + 5))), ss);
+                    instance->debugFunc[name[posAddress + 4] & 0x3f](reinterpret_cast<void *>(std::stol(name.substr(posAddress + 5))), ss);
             }
         }
     }

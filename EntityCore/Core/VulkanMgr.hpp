@@ -40,16 +40,16 @@ struct QueueFamily {
     bool present;
     unsigned char dedicatedGraphicCount;
     unsigned char dedicatedComputeCount;
-    unsigned char dedicatedGraphicAndCompute;
+    unsigned char dedicatedGraphicAndComputeCount;
     unsigned char dedicatedTransferCount;
 };
 
 struct QueueRequirement {
-    unsigned char transferQueues;
-    unsigned char dedicatedGraphicQueues;
-    unsigned char dedicatedComputeQueues;
-    unsigned char dedicatedGraphicAndComputeQueues; // If not available, querry pair of graphic and compute queues
-    unsigned char dedicatedTransferQueues;
+    unsigned char transfer;
+    unsigned char dedicatedGraphic;
+    unsigned char dedicatedCompute;
+    unsigned char dedicatedGraphicAndCompute; // If not available, querry pair of graphic and compute queues
+    unsigned char dedicatedTransfer;
 };
 
 /*
