@@ -229,14 +229,17 @@ void Pipeline::removeVertexEntry(uint32_t location)
     master.putLog("Failed to remove entry", LogType::DEBUG);
 }
 
-void Pipeline::build()
+void Pipeline::build(const std::string &customName)
 {
-    if (!isOk || bindingDescriptions.empty() || shaderStages.empty()) {
+    if (!isOk || shaderStages.empty()) {
         master.putLog("Can't build invalid Pipeline", LogType::ERROR);
         for (auto &stage : shaderStages) {
             vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
         }
         return;
+    }
+    if (bindingDescriptions.empty()) {
+        master.putLog("No vertex entry defined for Pipeline \"" + (customName.empty() ? "Use" + name : customName.c_str()) + "\"", LogType::DEBUG);
     }
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -257,7 +260,7 @@ void Pipeline::build()
         master.putLog("Faild to create Pipeline", LogType::ERROR);
         graphicsPipeline = VK_NULL_HANDLE;
     } else {
-        master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, "Use" + name);
+        master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, customName.empty() ? "Use" + name : customName.c_str());
     }
     for (auto &stage : shaderStages) {
         vkDestroyShaderModule(master.refDevice, stage.module, nullptr);

@@ -29,17 +29,18 @@ MenuMgr::MenuMgr(std::shared_ptr<EntityLib> master, void *data, void (*selectPag
     surfaceTexture->init(1920, 1080);
     surface = surfaceTexture->createSDLSurface();
     pLayout = std::make_unique<PipelineLayout>(vkmgr);
+    pLayout->setTextureLocation(0, &PipelineLayout::DEFAULT_SAMPLER);
+    pLayout->buildLayout();
+    pLayout->build();
+
     setMgr = std::make_unique<SetMgr>(vkmgr, 1, 0, 1);
     menuSet = std::make_unique<Set>(vkmgr, *setMgr, pLayout.get());
 
-    pLayout->setTextureLocation(0);
-    pLayout->buildLayout();
-    pLayout->build();
     pipeline = std::make_unique<Pipeline>(vkmgr, renderMgr, 0, pLayout.get());
     pipeline->setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    pipeline->bindShader("screen.vert.spf");
+    pipeline->bindShader("screen.vert.spv");
     pipeline->bindShader("image.frag.spv");
-    pipeline->build();
+    pipeline->build("MenuMgr");
     menuSet->bindTexture(*surfaceTexture, 0);
     for (auto &f : frames) {
         VkCommandBuffer &cmd = f->begin(VK_SUBPASS_CONTENTS_INLINE, 1, &surfaceTexture);

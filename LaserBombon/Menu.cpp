@@ -32,6 +32,7 @@ bool Menu::mainloop(int type)
             break;
         case LOAD:
             master->load(0); // load menu is the first mandatory menu
+            return true;
             break;
         case EQUIPMENT:
             // dual from here

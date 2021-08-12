@@ -18,7 +18,8 @@ int MenuBase::addDependency(Dependency dep)
     for (auto &d : dependants)
         if (d == dep.master)
             return (dependency.size() - 1);
-    dep.master->dependants.push_back(this);
+    if (dep.master)
+        dep.master->dependants.push_back(this);
     return (dependency.size() - 1);
 }
 

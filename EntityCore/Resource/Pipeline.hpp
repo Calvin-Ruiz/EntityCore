@@ -53,7 +53,7 @@ public:
     //! Set rasterisation sample count
     void setSampleCount(VkSampleCountFlagBits sample);
     //! Build pipeline for use
-    void build();
+    void build(const std::string &customName = "\0");
     //! For internal use only
     VkPipeline &get() {return graphicsPipeline;}
     //! Set shader path

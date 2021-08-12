@@ -260,12 +260,14 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
         queues.resize(queues.size() + 1);
         queues.back().id = i;
         queues.back().capacity = qfp.queueCount;
-        if (presenting)
+        if (presenting) {
             vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+        }
         queues.back().graphic = (qfp.queueFlags & vk::QueueFlagBits::eGraphics) ? 1 : 0;
         queues.back().compute = (qfp.queueFlags & vk::QueueFlagBits::eCompute) ? 1 : 0;
         queues.back().transfer = (qfp.queueFlags & vk::QueueFlagBits::eTransfer) ? 1 : 0;
         queues.back().present = presentSupport;
+        ++i;
     }
     unsigned char dedicatedGraphicAndCompute = queueRequest.dedicatedGraphicAndCompute;
     unsigned char dedicatedGraphic = queueRequest.dedicatedGraphic;
