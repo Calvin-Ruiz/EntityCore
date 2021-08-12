@@ -18,7 +18,7 @@ EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int he
     width *= WIN_SIZE_SCALING;
     height *= WIN_SIZE_SCALING;
     window = SDL_CreateWindow(AppName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN|SDL_WINDOW_SHOWN);
-    master = std::make_unique<VulkanMgr>(AppName, appVersion, window, width, height, 64, enableDebugLayers, drawLogs, saveLogs, "cache/");
+    master = std::make_unique<VulkanMgr>(AppName, appVersion, window, width, height, QueueRequirement{2, 1, 1, 0, 0}, 64, enableDebugLayers, drawLogs, saveLogs, "cache/");
     localBuffer = std::make_unique<BufferMgr>(*master, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 136*1024);
     localBuffer->setName("Dynamic staging buffer");
     Texture::setTextureDir("./textures/");
@@ -37,15 +37,20 @@ EntityLib::EntityLib(const char *AppName, uint32_t appVersion, int width, int he
     // init frames
     auto tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
     tmp->bind(0, master->getSwapchainView()[frames.size()]);
-    tmp->build();
+    graphicQueueFamily = master->acquireQueue(graphicQueue, VulkanMgr::QueueType::GRAPHIC, "GPUDisplay/MenuMgr");
+    if (graphicQueueFamily == nullptr) {
+        // This is an impossible scenario
+        master->putLog("Missing graphic queue (unpossible case)", LogType::ERROR);
+    }
+    tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
     tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
     tmp->bind(0, master->getSwapchainView()[frames.size()]);
-    tmp->build();
+    tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
     tmp = std::make_unique<FrameMgr>(*master, *renderMgr, frames.size(), width, height, std::to_string(frames.size()));
     tmp->bind(0, master->getSwapchainView()[frames.size()]);
-    tmp->build();
+    tmp->build(graphicQueueFamily->id, true);
     frames.push_back(std::move(tmp));
 }
 
@@ -75,10 +80,10 @@ void EntityLib::loadFragment(int idx, int texX1, int texY1, int texX2, int texY2
     tmp.damage = -damage;
     tmp.sizeX = width * worldScaleX / 2;
     tmp.sizeY = height * worldScaleY / 2;
-    tmp.texX1 = texX1 * mapScaleX + 0.001f;
-    tmp.texY1 = texY1 * mapScaleY + 0.001f;
-    tmp.texX2 = texX2 * mapScaleX - 0.002f;
-    tmp.texY2 = texY2 * mapScaleY - 0.002f;
+    tmp.texX1 = (texX1 + 0.5f) * mapScaleX + 0.00001f;
+    tmp.texY1 = (texY1 + 0.5f) * mapScaleY + 0.00001f;
+    tmp.texX2 = (texX2 - 0.5f) * mapScaleX - 0.00002f;
+    tmp.texY2 = (texY2 - 0.5f) * mapScaleY - 0.00002f;
     tmp.aliveNow = VK_FALSE;
     tmp.newlyInserted = VK_TRUE;
     flags[idx] = flag;

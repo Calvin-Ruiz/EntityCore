@@ -144,6 +144,7 @@ private:
     VkCommandPool computePool;
     VkCommandPool transferPool;
     VkQueue computeQueue;
+    const struct QueueFamily *computeQueueFamily;
     VkCommandBuffer cmds[4]; // Transfer 1, Compute 1, Transfer 2, Compute 2
     VkCommandBuffer cmd;
     VkFence fences[2];

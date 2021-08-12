@@ -31,7 +31,7 @@ enum class LogType {
 };
 
 struct QueueFamily {
-    size_t id;
+    uint32_t id;
     unsigned char capacity;
     unsigned char size;
     bool graphic;
@@ -90,6 +90,7 @@ public:
         GRAPHIC_COMPUTE,
         TRANSFER
     };
+    const QueueFamily *previewQueueFamily(QueueType type);
     const QueueFamily *acquireQueue(VkQueue &queue, QueueType type, const std::string &name = "\0");
 
     //! Others

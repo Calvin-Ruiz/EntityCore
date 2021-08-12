@@ -24,11 +24,11 @@
 GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMgr) : vkmgr(*VulkanMgr::instance), localBuffer(master->getLocalBuffer()), entityMap(master->getEntityMap()), renderMgr(master->getRender()), frames(master->getFrames()), swapchain(vkmgr.getSwapchain()), master(master)
 {
     entityVertexBuffer = entityMgr.getVertexBuffer();
-    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0, (uint32_t) vkmgr.getGraphicQueueFamilyIndex()[0]};
+    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0, master->graphicQueueFamily->id};
     vkCreateCommandPool(vkmgr.refDevice, &poolInfo, nullptr, &cmdPool);
     VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 3};
     vkAllocateCommandBuffers(vkmgr.refDevice, &allocInfo, cmds);
-    graphicQueue = vkmgr.getGraphicQueues()[0];
+    graphicQueue = master->graphicQueue;
     VkSemaphoreCreateInfo semInfo {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, nullptr, 0};
     for (int i = 0; i < 6; ++i)
         vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores + i);
@@ -68,21 +68,26 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     submitResources();
     initCommands();
     VkFenceCreateInfo fenceInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
-    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences);
-    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + 1);
-    vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + 2);
+    for (int i = 0; i < 3; ++i)
+        vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + i);
 }
 
 GPUDisplay::~GPUDisplay()
 {
     stop();
+    if (updater->joinable())
+        updater->join();
     vkQueueWaitIdle(graphicQueue);
     TTF_CloseFont(myFont);
     TTF_Quit();
     SDL_FreeSurface(scoreboardSurface);
-    vkDestroyFence(vkmgr.refDevice, fences[0], nullptr);
-    vkDestroyFence(vkmgr.refDevice, fences[1], nullptr);
-    vkDestroyFence(vkmgr.refDevice, fences[2], nullptr);
+    vkDestroyCommandPool(vkmgr.refDevice, cmdPool, nullptr);
+    for (int i = 0; i < 3; ++i)
+        vkDestroyFence(vkmgr.refDevice, fences[i], nullptr);
+    for (int i = 0; i < 6; ++i)
+        vkDestroySemaphore(vkmgr.refDevice, semaphores[i], nullptr);
+    imageVertexBuffer.reset();
+    jaugeVertexBuffer.reset();
 }
 
 void GPUDisplay::stop()
@@ -185,7 +190,7 @@ void GPUDisplay::mainloop()
 
 void GPUDisplay::submitResources()
 {
-    auto tmpMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 1024*1024);
+    auto tmpMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 1920*1080*4*sizeof(float)); // Same size and properties than menu buffer => reusable memory for menu
     tmpMgr->setName("Temporary staging buffer");
     background = std::make_unique<Texture>(vkmgr, *tmpMgr, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "background.png");
     background->init();

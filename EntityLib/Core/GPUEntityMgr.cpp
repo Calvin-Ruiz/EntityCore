@@ -28,17 +28,26 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     gpuEntities = entityMgr->acquireBuffer(sizeof(EntityData) * END_ALL);
     gpuVertices = vertexMgr->acquireBuffer(sizeof(EntityVertexGroup) * END_ALL);
     readback = (EntityState *) readbackMgr->getPtr(readbackBuffer);
-    if (vkmgr.getComputeQueues().size() > 0) {
-        computeQueue = vkmgr.getComputeQueues()[0];
-    } else if (vkmgr.getGraphicQueues().size() > 1) {
-        vkmgr.putLog("No dedicated compute queue found, assume graphic queue support compute", LogType::WARNING);
-        computeQueue = vkmgr.getGraphicQueues()[1];
-    } else {
-        vkmgr.putLog("No dedicated compute queue found, assume graphic queue support compute", LogType::WARNING);
-        vkmgr.putLog("Only one graphic & compute queue is available", LogType::WARNING);
-        vkmgr.putLog("Queue submission may conflict", LogType::WARNING);
-        computeQueue = vkmgr.getGraphicQueues()[0];
+    computeQueueFamily = vkmgr.acquireQueue(computeQueue, VulkanMgr::QueueType::COMPUTE, "GPUEntityMgr");
+    if (computeQueueFamily == nullptr) {
+        vkmgr.putLog("GPU not supported (expected 1 graphic and 1 compute queue)", LogType::ERROR);
+        if (master->graphicQueueFamily->compute) {
+            vkmgr.putLog("Unique graphic queue support compute operation, using it (may cause random crash)", LogType::WARNING);
+            computeQueueFamily = master->graphicQueueFamily;
+            computeQueue = master->graphicQueue;
+        }
     }
+    // if (vkmgr.getComputeQueues().size() > 0) {
+    //     computeQueue = vkmgr.getComputeQueues()[0];
+    // } else if (vkmgr.getGraphicQueues().size() > 1) {
+    //     vkmgr.putLog("No dedicated compute queue found, assume graphic queue support compute", LogType::WARNING);
+    //     computeQueue = vkmgr.getGraphicQueues()[1];
+    // } else {
+    //     vkmgr.putLog("No dedicated compute queue found, assume graphic queue support compute", LogType::WARNING);
+    //     vkmgr.putLog("Only one graphic & compute queue is available", LogType::WARNING);
+    //     vkmgr.putLog("Queue submission may conflict", LogType::WARNING);
+    //     computeQueue = vkmgr.getGraphicQueues()[0];
+    // }
 
     syncExt = new SyncEvent[2] {{&vkmgr, true}, {&vkmgr, true}};
     syncInt = new SyncEvent[4] {{&vkmgr}, {&vkmgr}, {&vkmgr}, {&vkmgr}};
@@ -55,7 +64,7 @@ GPUEntityMgr::GPUEntityMgr(std::shared_ptr<EntityLib> master) : vkmgr(*VulkanMgr
     syncInt[0].combineDstDependencies(syncInt[3]);
     syncInt[1].combineDstDependencies(syncInt[2]);
 
-    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, (uint32_t) vkmgr.getComputeQueueFamilyIndex()[0]};
+    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, computeQueueFamily->id};
     vkCreateCommandPool(vkmgr.refDevice, &poolInfo, nullptr, &transferPool);
     poolInfo.flags = 0;
     vkCreateCommandPool(vkmgr.refDevice, &poolInfo, nullptr, &computePool);

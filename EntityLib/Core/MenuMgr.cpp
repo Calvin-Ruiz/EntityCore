@@ -4,6 +4,7 @@
 #include "EntityCore/Core/VulkanMgr.hpp"
 #include "EntityCore/Core/FrameMgr.hpp"
 #include "EntityCore/Core/RenderMgr.hpp"
+#include "EntityCore/Core/BufferMgr.hpp"
 #include "EntityCore/Resource/Texture.hpp"
 #include "EntityCore/Resource/Set.hpp"
 #include "EntityCore/Resource/SetMgr.hpp"
@@ -20,7 +21,7 @@ MenuMgr::MenuMgr(std::shared_ptr<EntityLib> master, void *data, void (*selectPag
     vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores);
     vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores + 1);
     vkCreateSemaphore(vkmgr.refDevice, &semInfo, nullptr, semaphores + 2);
-    graphicQueue = vkmgr.getGraphicQueues()[0];
+    graphicQueue = master->graphicQueue;
     myFont = TTF_OpenFont("textures/font.ttf", 32);
 
     uniBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 0, 1920*1080*4*sizeof(float));
@@ -29,12 +30,12 @@ MenuMgr::MenuMgr(std::shared_ptr<EntityLib> master, void *data, void (*selectPag
     surface = surfaceTexture->createSDLSurface();
     pLayout = std::make_unique<PipelineLayout>(vkmgr);
     setMgr = std::make_unique<SetMgr>(vkmgr, 1, 0, 1);
-    menuSet = std::make_unique<Set>(vkmgr, *setMgr, pLayout->getPipelineLayout());
+    menuSet = std::make_unique<Set>(vkmgr, *setMgr, pLayout.get());
 
     pLayout->setTextureLocation(0);
     pLayout->buildLayout();
     pLayout->build();
-    pipeline = std::make_unique<Pipeline>(vkmgr, renderMgr, 0, pLayout->getPipelineLayout());
+    pipeline = std::make_unique<Pipeline>(vkmgr, renderMgr, 0, pLayout.get());
     pipeline->setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     pipeline->bindShader("screen.vert.spf");
     pipeline->bindShader("image.frag.spv");
@@ -181,7 +182,7 @@ bool MenuMgr::mainloop(bool _allowExit)
         if (hasChanges) {
             SDL_FillRect(surface, NULL, 0);
             for (auto &e : elements)
-                hasChanges |= e->draw();
+                e->draw();
         }
         VkCommandBuffer &cmd = frames[imageIdx]->begin(VK_SUBPASS_CONTENTS_INLINE, (int) hasChanges, &surfaceTexture);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->get());
@@ -204,7 +205,7 @@ bool MenuMgr::mainloop(bool _allowExit)
 std::list<MenuBase *>::iterator MenuMgr::attach(MenuBase *element)
 {
     elements.push_back(element);
-    return elements.rbegin();
+    return --elements.end();
 }
 
 void MenuMgr::detach(std::list<MenuBase *>::iterator &element)

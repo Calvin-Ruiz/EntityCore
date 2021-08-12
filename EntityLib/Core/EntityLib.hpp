@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include <SDL2/SDL.h>
+#include <vulkan/vulkan.h>
 
 class VulkanMgr;
 class Texture;
@@ -20,6 +21,7 @@ class RenderMgr;
 class FrameMgr;
 
 struct EntityData;
+struct QueueFamily;
 
 #define WIN_SIZE_SCALING 1.5
 
@@ -45,6 +47,8 @@ public:
     const float worldScaleY;
 
     static std::string toText(long nbr);
+    VkQueue graphicQueue;
+    const struct QueueFamily *graphicQueueFamily;
 private:
     std::vector<EntityData> fragments;
     std::unique_ptr<BufferMgr> localBuffer;

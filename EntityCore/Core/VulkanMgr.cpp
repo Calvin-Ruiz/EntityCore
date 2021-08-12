@@ -696,6 +696,37 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
         logs << header << str << std::endl;
 }
 
+const QueueFamily *VulkanMgr::previewQueueFamily(VulkanMgr::QueueType type)
+{
+    switch (type) {
+        case QueueType::GRAPHIC:
+            for (auto &q : queues) {
+                if (q.dedicatedGraphicCount)
+                    return &q;
+            }
+            break;
+        case QueueType::COMPUTE:
+            for (auto &q : queues) {
+                if (q.dedicatedComputeCount)
+                    return &q;
+            }
+            break;
+        case QueueType::GRAPHIC_COMPUTE:
+            for (auto &q : queues) {
+                if (q.dedicatedGraphicAndComputeCount)
+                    return &q;
+            }
+            break;
+        case QueueType::TRANSFER:
+            for (auto &q : queues) {
+                if (q.dedicatedTransferCount)
+                    return &q;
+            }
+            break;
+    }
+    return nullptr;
+}
+
 const QueueFamily *VulkanMgr::acquireQueue(VkQueue &queue, VulkanMgr::QueueType type, const std::string &name)
 {
     for (auto &q : queues) {
