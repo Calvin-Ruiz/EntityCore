@@ -5,6 +5,6 @@ mkdir build
 cd build
 clear
 cmake ..
-make -j
+make -j install
 cd ../LaserBombon
 cp ../build/LaserBombon .
