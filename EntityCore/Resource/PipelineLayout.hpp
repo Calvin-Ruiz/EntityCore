@@ -46,7 +46,6 @@ private:
     std::vector<VkDescriptorSetLayoutBinding> uniformsLayout;
     std::vector<VkDescriptorSetLayout> descriptor;
     std::vector<VkPushConstantRange> pushConstants;
-    std::list<VkSampler> sampler;
     //! Inform which descriptor is owned by this PipelineLayout
     std::vector<int> descriptorPos;
 

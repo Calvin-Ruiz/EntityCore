@@ -5,6 +5,7 @@
 #include "EntityCore/SubMemory.hpp"
 #include <string>
 #include <fstream>
+#include <list>
 
 class SDL_Window;
 class MemoryManager;
@@ -95,6 +96,7 @@ public:
 
     //! Others
     void putLog(const std::string &str, LogType type = LogType::INFO);
+    VkSampler &getSampler(const VkSamplerCreateInfo &createInfo);
 
     //! getDevice();
     const VkDevice &refDevice;
@@ -162,6 +164,8 @@ private:
     std::vector<const char *> instanceExtension = {"VK_KHR_surface", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME};
     std::vector<const char *> deviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    std::list<VkSampler> samplers;
+    std::vector<VkSamplerCreateInfo> samplersInfo;
     bool hasLayer;
     static bool isAlive;
     bool isReady = false;

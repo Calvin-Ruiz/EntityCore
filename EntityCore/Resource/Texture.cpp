@@ -187,49 +187,11 @@ void Texture::detach()
 
 bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
 {
+    bool includeFirstTransition = includeTransition;
     if (!onGPU) {
         if (createImage()) {
             master.putLog("Created image support for '" + name + "'", LogType::INFO);
-            if (cmd != VK_NULL_HANDLE && onCPU) {
-                VkImageMemoryBarrier barrier[2] {
-                    {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}},
-                    {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, info.mipLevels - 1, 1, 0, info.arrayLayers}}};
-                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
-                VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
-                vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-                if (includeTransition) {
-                    VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, 1}}};
-                    if (info.mipLevels > 1) {
-                        barrier->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                        barrier->dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                        barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                        barrier->newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                        barrier->subresourceRange.levelCount = 1;
-                        for (int i = 1; i < info.mipLevels; ++i) {
-                            iregion.srcSubresource.mipLevel = iregion.dstSubresource.mipLevel++;
-                            iregion.srcOffsets[1].x = iregion.dstOffsets[1].x;
-                            iregion.srcOffsets[1].y = iregion.dstOffsets[1].y;
-                            if (iregion.dstOffsets[1].x > 1)
-                                iregion.dstOffsets[1].x /= 2;
-                            if (iregion.dstOffsets[1].y > 1)
-                                iregion.dstOffsets[1].y /= 2;
-                            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
-                            vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &iregion, VK_FILTER_LINEAR);
-                            ++barrier->subresourceRange.baseMipLevel;
-                        }
-                        barrier->srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                        barrier->dstAccessMask = 0;
-                        barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                        barrier->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        barrier->subresourceRange.baseMipLevel = 0;
-                        barrier->subresourceRange.levelCount = info.mipLevels - 1;
-                        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barrier);
-                    } else {
-                        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier + 1);
-                    }
-                }
-                return true;
-            }
+            includeFirstTransition = true;
         } else {
             return false;
         }
@@ -247,8 +209,44 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     }
+    VkImageMemoryBarrier barrier[2] {
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}},
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, info.mipLevels - 1, 1, 0, info.arrayLayers}}};
+    if (includeFirstTransition)
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
     VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
     vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    if (includeTransition) {
+        VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, 1}}};
+        if (info.mipLevels > 1) {
+            barrier->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier->dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier->newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier->subresourceRange.levelCount = 1;
+            for (int i = 1; i < info.mipLevels; ++i) {
+                iregion.srcSubresource.mipLevel = iregion.dstSubresource.mipLevel++;
+                iregion.srcOffsets[1].x = iregion.dstOffsets[1].x;
+                iregion.srcOffsets[1].y = iregion.dstOffsets[1].y;
+                if (iregion.dstOffsets[1].x > 1)
+                    iregion.dstOffsets[1].x /= 2;
+                if (iregion.dstOffsets[1].y > 1)
+                    iregion.dstOffsets[1].y /= 2;
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
+                vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &iregion, VK_FILTER_LINEAR);
+                ++barrier->subresourceRange.baseMipLevel;
+            }
+            barrier->srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier->dstAccessMask = 0;
+            barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier->subresourceRange.baseMipLevel = 0;
+            barrier->subresourceRange.levelCount = info.mipLevels - 1;
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barrier);
+        } else {
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier + 1);
+        }
+    }
     if (sdlSurface) {
         VkImageMemoryBarrier barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);

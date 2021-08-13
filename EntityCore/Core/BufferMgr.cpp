@@ -223,21 +223,21 @@ void BufferMgr::flush(const std::vector<SubBuffer> &subBuffers)
 
 void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst)
 {
-    VkBufferCopy region {src.offset, dst.offset, src.size};
+    VkBufferCopy region {(VkDeviceSize) src.offset, (VkDeviceSize) dst.offset, (VkDeviceSize) src.size};
 
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }
 
 void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int range)
 {
-    VkBufferCopy region {src.offset, dst.offset, range};
+    VkBufferCopy region {(VkDeviceSize) src.offset, (VkDeviceSize) dst.offset, (VkDeviceSize) range};
 
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }
 
 void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int range, int srcOffset, int dstOffset)
 {
-    VkBufferCopy region {src.offset + srcOffset, dst.offset + dstOffset, range};
+    VkBufferCopy region {(VkDeviceSize) (src.offset + srcOffset), (VkDeviceSize) (dst.offset + dstOffset), (VkDeviceSize) range};
 
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }

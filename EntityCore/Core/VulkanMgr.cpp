@@ -100,6 +100,8 @@ VulkanMgr::~VulkanMgr()
     isAlive = false;
     vkDeviceWaitIdle(device);
     putLog("Release resources", LogType::INFO);
+    for (auto &tmp : samplers)
+        vkDestroySampler(device, tmp, nullptr);
     if (presenting) {
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
@@ -764,4 +766,20 @@ const QueueFamily *VulkanMgr::acquireQueue(VkQueue &queue, VulkanMgr::QueueType 
         return &q;
     }
     return nullptr;
+}
+
+VkSampler &VulkanMgr::getSampler(const VkSamplerCreateInfo &createInfo)
+{
+    int i = 0;
+    for (auto &s : samplers) {
+        if (memcmp(&createInfo, &samplersInfo[i++], sizeof(createInfo)) == 0) {
+            return s;
+        }
+    }
+    samplers.resize(samplers.size() + 1);
+    samplersInfo.push_back(createInfo);
+    if (vkCreateSampler(device, &createInfo, nullptr, &samplers.back()) != VK_SUCCESS) {
+        throw std::runtime_error("échec de la creation d'un sampler!");
+    }
+    return samplers.back();
 }

@@ -32,7 +32,7 @@ SyncEvent::SyncEvent(VulkanMgr *master, bool deviceOnly) : master(master)
     dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR;
     dep.pNext = nullptr;
     dep.dependencyFlags = 0;
-    VkEventCreateInfo info {VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, nullptr, (deviceOnly && enabled) ? VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR : (VkEventCreateFlags) 0};
+    VkEventCreateInfo info {VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, nullptr, (deviceOnly && enabled) ? VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR : (VkEventCreateFlagBits) 0};
     vkCreateEvent(master->refDevice, &info, nullptr, &event);
 }
 

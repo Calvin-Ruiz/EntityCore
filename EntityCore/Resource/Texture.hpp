@@ -26,7 +26,7 @@ public:
     bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
     //! Export texture to GPU, return true on success
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
-    //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, also build mipmap if any (disabled if the texture is already on GPU)
+    //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
     bool use(VkCommandBuffer cmd = VK_NULL_HANDLE, bool includeTransition = false);
     //! Release texture on GPU (may invalidate all previous bindings)
     void unuse();

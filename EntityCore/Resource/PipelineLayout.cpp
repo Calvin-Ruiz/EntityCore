@@ -10,8 +10,6 @@ PipelineLayout::PipelineLayout(VulkanMgr &master) : master(master)
 
 PipelineLayout::~PipelineLayout()
 {
-    for (auto &tmp : sampler)
-        vkDestroySampler(master.refDevice, tmp, nullptr);
     if (builded) {
         vkDestroyPipelineLayout(master.refDevice, pipelineLayout, nullptr);
     }
@@ -22,18 +20,11 @@ PipelineLayout::~PipelineLayout()
 
 void PipelineLayout::setTextureLocation(uint32_t binding, const VkSamplerCreateInfo *samplerInfo, VkShaderStageFlags stage, VkSampler *pSampler)
 {
-    if (samplerInfo) {
-        VkSampler tmpSampler;
-        if (vkCreateSampler(master.refDevice, samplerInfo, nullptr, &tmpSampler) != VK_SUCCESS) {
-            throw std::runtime_error("échec de la creation d'un sampler!");
-        }
-        sampler.push_back(tmpSampler);
-    }
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
     samplerLayoutBinding.binding = binding;
     samplerLayoutBinding.descriptorCount = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = samplerInfo ? &sampler.back() : pSampler;
+    samplerLayoutBinding.pImmutableSamplers = samplerInfo ? &master.getSampler(*samplerInfo) : pSampler;
     samplerLayoutBinding.stageFlags = stage;
     uniformsLayout.push_back(samplerLayoutBinding);
 }
