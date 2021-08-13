@@ -9,8 +9,12 @@
 #include "RenderMgr.hpp"
 #include "EntityCore/Resource/Texture.hpp"
 
-FrameMgr::FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name) :
-    master(master), renderer(renderer), id(id), name(name)
+bool FrameMgr::alive = false;
+std::thread FrameMgr::helper;
+PushQueue<FrameMgr *, 7> FrameMgr::queue;
+
+FrameMgr::FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name, void (*submitFunc)(void *data), void *data) :
+    master(master), renderer(renderer), id(id), name(name), submitFunc(submitFunc), data(data)
 {
     info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     info.width = width;
@@ -149,4 +153,50 @@ void FrameMgr::compileMain()
     vkEndCommandBuffer(mainCmd);
     if (actual == mainCmd)
         actual = VK_NULL_HANDLE;
+}
+
+void FrameMgr::helperMainloop()
+{
+    FrameMgr *self = nullptr;
+    while (alive) {
+        while (queue.pop(self)) {
+            bool first = true;
+            for (auto &b : self->batches) {
+                if (first)
+                    first = false;
+                else
+                    vkCmdNextSubpass(self->mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+                vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
+                b.clear();
+            }
+            vkCmdEndRenderPass(self->mainCmd);
+            vkEndCommandBuffer(self->mainCmd);
+            self->submitFunc(self->data);
+            self->batch = 0;
+            self->submitted = true;
+        }
+        std::this_thread::yield();
+    }
+}
+
+void FrameMgr::submit()
+{
+    while (!queue.emplace(this))
+        std::this_thread::yield();
+}
+
+void FrameMgr::startHelper()
+{
+    if (alive)
+        return;
+    alive = true;
+    helper = std::thread(helperMainloop);
+}
+
+void FrameMgr::stopHelper()
+{
+    if (!alive)
+        return;
+    alive = false;
+    helper.join();
 }
