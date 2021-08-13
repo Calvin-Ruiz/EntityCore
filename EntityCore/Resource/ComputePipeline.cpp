@@ -15,7 +15,6 @@ ComputePipeline::ComputePipeline(VulkanMgr &master, PipelineLayout *layout) : ma
 ComputePipeline::~ComputePipeline()
 {
     if (computePipeline != VK_NULL_HANDLE) {
-        vkDeviceWaitIdle(master.refDevice);
         vkDestroyPipeline(master.refDevice, computePipeline, nullptr);
     }
 }

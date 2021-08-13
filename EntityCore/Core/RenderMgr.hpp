@@ -14,8 +14,6 @@
 class VulkanMgr;
 class Texture;
 
-#define MAX_FB_BIND 3
-
 /*
 * Define the RenderPass which describe framebuffer resources use and transition
 */
@@ -50,15 +48,18 @@ public:
     // Create a subpass with previously defined characteristics
     void pushLayer(VkPipelineBindPoint type = VK_PIPELINE_BIND_POINT_GRAPHICS);
     // Build rendering pattern
-    bool build();
+    bool build(int maxFrameBuffer = 3);
 
     // ===== USE ===== //
     void bind(int bindID, VkFramebuffer frameBuffer, VkRect2D renderArea);
     inline void begin(int bindID, VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
-        vkCmdBeginRenderPass(cmd, infos + bindID, content);
+        vkCmdBeginRenderPass(cmd, infos.data() + bindID, content);
     }
     inline void next(VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
         vkCmdNextSubpass(cmd, content);
+    }
+    inline int getPassCount() const {
+        return subpass;
     }
     //! Don't use it outside of EntityCore/Core
     VkRenderPass renderPass;
@@ -79,7 +80,7 @@ private:
     std::vector<VkSubpassDependency> dep;
     std::vector<Layer> layers;
     std::vector<VkClearValue> clears;
-    VkRenderPassBeginInfo infos[MAX_FB_BIND];
+    std::vector<VkRenderPassBeginInfo> infos;
     int subpass = -1;
 };
 

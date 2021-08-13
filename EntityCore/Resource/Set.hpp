@@ -45,6 +45,8 @@ public:
     void clear() {writeSet.clear();}
     //! Manually update bindings
     void update();
+    //! Destroy descriptor set hold, require the Set to be temporary
+    void uninit();
 private:
     //! Allocate descriptorSet from SetMgr
     void init();

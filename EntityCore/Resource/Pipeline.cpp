@@ -77,7 +77,6 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
 Pipeline::~Pipeline()
 {
     if (graphicsPipeline != VK_NULL_HANDLE) {
-        vkDeviceWaitIdle(master.refDevice);
         vkDestroyPipeline(master.refDevice, graphicsPipeline, nullptr);
     }
 }

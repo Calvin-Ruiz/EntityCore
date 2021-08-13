@@ -17,6 +17,7 @@ Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding
 
 Set::~Set()
 {
+    uninit();
 }
 
 void Set::init()
@@ -34,6 +35,14 @@ void Set::init()
     }
     for (auto &ws : writeSet) {
         ws.dstSet = set;
+    }
+}
+
+void Set::uninit()
+{
+    if (temporary && initialized) {
+        mgr.destroySet(set);
+        initialized = false;
     }
 }
 

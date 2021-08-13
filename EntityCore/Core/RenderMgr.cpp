@@ -96,7 +96,7 @@ void RenderMgr::bind(int bindID, VkFramebuffer frameBuffer, VkRect2D renderArea)
     infos[bindID] = VkRenderPassBeginInfo({VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, renderPass, frameBuffer, renderArea, (uint32_t) clears.size(), clears.data()});
 }
 
-bool RenderMgr::build()
+bool RenderMgr::build(int maxFrameBuffer)
 {
     {
         ++subpass;
@@ -126,5 +126,6 @@ bool RenderMgr::build()
     subpasses.shrink_to_fit();
     dep.clear();
     dep.shrink_to_fit();
+    infos.resize(maxFrameBuffer);
     return true;
 }

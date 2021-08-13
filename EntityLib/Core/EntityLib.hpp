@@ -24,7 +24,7 @@ struct EntityData;
 struct QueueFamily;
 
 #define WIN_SIZE_SCALING 1.5
-#define WINDOWLESS true
+#define WINDOWLESS false
 
 class EntityLib {
 public:

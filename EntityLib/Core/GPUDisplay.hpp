@@ -17,7 +17,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#define WINDOWLESS true
+#define WINDOWLESS false
 
 #define JB1 0.5,  0.5, 0.5,  0.25
 #define JB2 0.25, 1,   0.25, 0.25
