@@ -181,6 +181,7 @@ void FrameMgr::helperMainloop()
 
 void FrameMgr::submit()
 {
+    submitted = false;
     while (!queue.emplace(this))
         std::this_thread::yield();
 }
