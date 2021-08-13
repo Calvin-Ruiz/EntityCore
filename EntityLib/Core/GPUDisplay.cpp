@@ -85,8 +85,8 @@ GPUDisplay::~GPUDisplay()
     stop();
     if (updater->joinable())
         updater->join();
-    sender = nullptr;
     vkQueueWaitIdle(graphicQueue);
+    sender = nullptr;
     TTF_CloseFont(myFont);
     TTF_Quit();
     SDL_FreeSurface(scoreboardSurface);
