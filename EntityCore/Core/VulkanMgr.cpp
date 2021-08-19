@@ -21,7 +21,7 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     cachePath = _cachePath;
     isAlive = true;
     if (saveLogs) {
-        logs.open("EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
+        logs.open(_cachePath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
     }
     if (presenting) {
@@ -42,21 +42,21 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     initQueues(queueRequest);
     initDevice();
     if (presenting) {
-        initSwapchain(width, height);
+        initSwapchain(width, abs(height));
         createImageViews();
     } else {
         swapChainExtent.width = width;
-        swapChainExtent.height = height;
+        swapChainExtent.height = abs(height);
     }
     memoryManager = new MemoryManager(*this, chunkSize*1024*1024);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
 
     // Déformation de l'image
-    viewport.width = (float) swapChainExtent.width;
-    viewport.height = swapChainExtent.height;
-    viewport.x = 0.f;
-    viewport.y = 0.f;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.x = (swapChainExtent.width - width) / 2.f;
+    viewport.y = (swapChainExtent.height - height) / 2.f;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -227,14 +227,24 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
     if (window)
         initWindow(window);
 
+    putLog("Reading GPU(s) properties", LogType::DEBUG);
     // get a physicalDevice
+    bool oneHasBeenSelected = false;
     for (const auto &pDevice : vkinstance->enumeratePhysicalDevices()) {
         if (isDeviceSuitable(pDevice)) {
+            oneHasBeenSelected = true;
             physicalDevice = pDevice;
             if (pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
                 break;
             }
         }
+    }
+    if (oneHasBeenSelected) {
+        putLog("GPU selected", LogType::DEBUG);
+    } else {
+        putLog("No valid GPU detected", LogType::ERROR);
+        std::cerr << "FATAL : No GPU match requirements\n";
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);

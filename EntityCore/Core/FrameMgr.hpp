@@ -25,7 +25,7 @@ class Texture;
 class FrameMgr {
 public:
     // if submitFunc is not null, it is used
-    FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name = "Default", void (*submitFunc)(void *data) = nullptr, void *data = nullptr);
+    FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name = "Default", void (*submitFunc)(void *data, int id) = nullptr, void *data = nullptr);
     virtual ~FrameMgr();
     FrameMgr(const FrameMgr &cpy) = delete;
     FrameMgr &operator=(const FrameMgr &src) = delete;
@@ -43,7 +43,7 @@ public:
     // Create count subCommands and return the id of the first newly created subCommand
     int create(uint32_t count);
     // Start recording subCommand for use in layerIdx layer
-    void begin(int idx, int layerIdx);
+    VkCommandBuffer &begin(int idx, int layerIdx);
     // Compile subCommand
     void compile();
     // Set name to command
@@ -113,7 +113,7 @@ private:
     // Execution builder helper
     static void helperMainloop();
     std::vector<std::vector<VkCommandBuffer>> batches;
-    void (*submitFunc)(void *data);
+    void (*submitFunc)(void *data, int id);
     void *data;
     static bool alive;
     static std::thread helper;

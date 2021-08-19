@@ -34,11 +34,12 @@ enum class LogType {
 struct QueueFamily {
     uint32_t id;
     unsigned char capacity;
-    unsigned char size;
+    unsigned char size; // Number of unused queues which can be acquired
     bool graphic;
     bool compute;
     bool transfer;
     bool present;
+    // Determine how many of each type of queue can be extracted
     unsigned char dedicatedGraphicCount;
     unsigned char dedicatedComputeCount;
     unsigned char dedicatedGraphicAndComputeCount;

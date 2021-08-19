@@ -15,3 +15,13 @@ VertexBuffer::~VertexBuffer()
 {
     mgr.releaseBuffer(vertexBuffer);
 }
+
+void VertexBuffer::fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst)
+{
+    const unsigned char stride = vertexBuffer.size / size / 4;
+    while (count--) {
+        *dst = *src;
+        src += elemSize;
+        dst += stride;
+    }
+}

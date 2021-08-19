@@ -21,7 +21,7 @@ static int getFormatSize(VkFormat format)
     }
 }
 
-VertexArray::VertexArray(VulkanMgr &master, int alignment) : master(master), alignment(alignment)
+VertexArray::VertexArray(VulkanMgr &master, int alignment) : alignment(alignment), master(master)
 {
 }
 

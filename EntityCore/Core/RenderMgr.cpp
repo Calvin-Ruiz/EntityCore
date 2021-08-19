@@ -45,6 +45,11 @@ void RenderMgr::setupClear(int id, float value)
     clears[id].depthStencil = {value, 0};
 }
 
+void RenderMgr::addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
+{
+    dep.push_back({(id == -1) ? VK_SUBPASS_EXTERNAL : id, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlags) 0});
+}
+
 void RenderMgr::addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
     dep.push_back({(subpass == -1) ? VK_SUBPASS_EXTERNAL : subpass, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlags) 0});

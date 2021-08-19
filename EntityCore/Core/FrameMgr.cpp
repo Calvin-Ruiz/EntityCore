@@ -13,7 +13,7 @@ bool FrameMgr::alive = false;
 std::thread FrameMgr::helper;
 PushQueue<FrameMgr *, 7> FrameMgr::queue;
 
-FrameMgr::FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name, void (*submitFunc)(void *data), void *data) :
+FrameMgr::FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name, void (*submitFunc)(void *data, int id), void *data) :
     master(master), renderer(renderer), id(id), name(name), submitFunc(submitFunc), data(data)
 {
     info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -89,11 +89,12 @@ int FrameMgr::create(uint32_t count)
     return (first);
 }
 
-void FrameMgr::begin(int idx, int layerIdx)
+VkCommandBuffer &FrameMgr::begin(int idx, int layerIdx)
 {
     inheritance.subpass = layerIdx;
     actual = cmds[idx];
     vkBeginCommandBuffer(actual, &tmpCmdInfo);
+    return cmds[idx];
 }
 
 void FrameMgr::compile()
@@ -172,7 +173,7 @@ void FrameMgr::helperMainloop()
             }
             vkCmdEndRenderPass(self->mainCmd);
             vkEndCommandBuffer(self->mainCmd);
-            self->submitFunc(self->data);
+            self->submitFunc(self->data, self->id);
             self->batch = 0;
             self->submitted = true;
         }

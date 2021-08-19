@@ -31,6 +31,8 @@ public:
     void setupClear(int id, VkClearColorValue color);
     // Depth buffer
     void setupClear(int id, float value);
+    // Add dependency between specific layer and next layer
+    void addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Add dependency between actual layer and next layer
     void addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Add dependency inside this layer

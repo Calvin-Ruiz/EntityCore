@@ -30,6 +30,7 @@ public:
     // Add input for the last binding entry created
     bool addInput(VkFormat format, bool used = true);
     VertexBuffer *createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr = nullptr, BufferMgr *instanceMgr = nullptr);
+    const int alignment;
     //! Internally used
     const std::vector<VkVertexInputBindingDescription> &getVertexBindingDesc() {return bindingDesc;}
     //! Internally used
@@ -42,7 +43,6 @@ private:
     int size = 0;
     uint32_t location = 0;
     uint32_t offset = 0;
-    const int alignment;
 };
 
 #endif /* end of include guard: VERTEX_ARRAY_HPP */
