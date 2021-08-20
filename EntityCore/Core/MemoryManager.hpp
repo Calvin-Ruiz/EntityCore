@@ -17,6 +17,14 @@ struct MappedMemory {
     void *data = nullptr;
 };
 
+struct MemoryQuerry {
+    size_t total; // Physical capacity
+    size_t available; // Estimation of the memory available for this application
+    size_t used; // Estimation of the memory allocated by this application
+    size_t free; // Estimation of the remaining memory
+    VkMemoryPropertyFlags flags; // Property of this memory, has the flag VK_MEMORY_HEAP_DEVICE_LOCAL_BIT if located on the GPU
+};
+
 /**
 *   \brief Handle memory allocation and mapping
 */
@@ -39,6 +47,8 @@ public:
     uint32_t getChunkSize() const {return chunkSize;}
     //! Tell frame has complete
     void endOfFrame() {hasReleasedUnusedMemory = false;}
+    //! Querry available ressources to decide what to do
+    std::vector<MemoryQuerry> querryMemory();
 private:
     //! Assign the memory index according to requirements
     void findMemoryIndex(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, SubMemory *subMemory);

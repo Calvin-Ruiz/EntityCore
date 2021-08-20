@@ -17,6 +17,8 @@ class Texture;
 */
 class Set {
 public:
+    //! Create a set which can only be push
+    Set() = default;
     //! create a Set which can be bind
     //! Do not bind anything to it while bound to commandBuffer which can be submitted
     //! If not temporary, the Set memory won't be available for another Set when destroyed
@@ -61,7 +63,7 @@ private:
     std::vector<uint32_t> dynamicOffsets;
     VkDescriptorSet set = VK_NULL_HANDLE;
     bool initialized = false;
-    bool temporary;
+    bool temporary = false;
 };
 
 #endif /* end of include guard: SET_HPP */

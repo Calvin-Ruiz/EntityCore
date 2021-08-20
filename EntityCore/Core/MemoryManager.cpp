@@ -250,3 +250,17 @@ void MemoryManager::displayResources()
         oss.str(std::string());
     }
 }
+
+std::vector<MemoryQuerry> MemoryManager::querryMemory()
+{
+    vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
+    std::vector<MemoryQuerry> querry(memProperties.memoryProperties.memoryHeapCount);
+    for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
+        querry[i].total = memProperties.memoryProperties.memoryHeaps[i].size;
+        querry[i].available = memBudjet.heapBudget[i];
+        querry[i].used = memBudjet.heapUsage[i];
+        querry[i].free = querry[i].available - querry[i].used;
+        querry[i].flags = memProperties.memoryProperties.memoryHeaps[i].flags;
+    }
+    return querry;
+}
