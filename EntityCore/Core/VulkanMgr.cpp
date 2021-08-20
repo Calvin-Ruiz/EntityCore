@@ -13,7 +13,7 @@
 bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath) :
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, VkImageUsageFlags swapchainUsage) :
     refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), presenting(window != nullptr)
 {
     assert(!isAlive); // There must be only one VulkanMgr instance
@@ -42,7 +42,7 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     initQueues(queueRequest);
     initDevice();
     if (presenting) {
-        initSwapchain(width, abs(height));
+        initSwapchain(width, abs(height), swapchainUsage);
         createImageViews();
     } else {
         swapChainExtent.width = width;
@@ -436,7 +436,7 @@ static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
     }
 }
 
-void VulkanMgr::initSwapchain(int width, int height)
+void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
@@ -459,7 +459,7 @@ void VulkanMgr::initSwapchain(int width, int height)
     createInfo.imageExtent = swapChainExtent;
     createInfo.imageArrayLayers = 1; // Pas besoin de 3D stéréoscopique
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    //createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT; // Transfert nécessaire pour l'affichage
+    createInfo.imageUsage = swapchainUsage;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Pas de transparence pour le contenu de la fenêtre
