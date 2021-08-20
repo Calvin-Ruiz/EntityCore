@@ -1,5 +1,6 @@
 #include "EntityCore/Core/VulkanMgr.hpp"
 #include "PipelineLayout.hpp"
+#include "Set.hpp"
 
 VkSamplerCreateInfo PipelineLayout::DEFAULT_SAMPLER = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, nullptr, 0, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0f, VK_TRUE, 8.0f, VK_FALSE, VK_COMPARE_OP_ALWAYS, 0.0f, 0.0f, VK_BORDER_COLOR_INT_OPAQUE_BLACK, VK_FALSE};
 
@@ -114,4 +115,14 @@ void PipelineLayout::build()
 void PipelineLayout::setPushConstant(VkShaderStageFlags stage, uint32_t offset, uint32_t size)
 {
     pushConstants.emplace_back(VkPushConstantRange{stage, offset, size});
+}
+
+void PipelineLayout::bindSet(VkCommandBuffer &cmd, Set &set, int binding, uint32_t dynamicOffset, VkPipelineBindPoint bp)
+{
+    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, binding, 1, set.get(), (dynamicOffset != UINT32_MAX), &dynamicOffset);
+}
+
+void PipelineLayout::bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding, const std::vector<uint32_t> &dynamicOffsets, VkPipelineBindPoint bp)
+{
+    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, firstBinding, sets.size(), sets.data(), dynamicOffsets.size(), dynamicOffsets.data());
 }

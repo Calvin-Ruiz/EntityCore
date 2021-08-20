@@ -7,6 +7,7 @@
 #include <array>
 
 class VulkanMgr;
+class Set;
 
 /**
 *   \brief Handle shared resources (uniform, uniform texture, buffer, push constant)
@@ -33,9 +34,13 @@ public:
     void buildLayout(VkDescriptorSetLayoutCreateFlags flags = 0);
     //! Use set emplacement of another pipelineLayout (default : first owned set emplacement)
     void setGlobalPipelineLayout(PipelineLayout *pl, int index = -1);
-    //! For internal use only
+    //! Bind descriptor set
+    void bindSet(VkCommandBuffer &cmd, Set &set, int binding, uint32_t dynamicOffset = UINT32_MAX, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    //! Bind multiple descriptor set
+    void bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding, const std::vector<uint32_t> &dynamicOffsets = {}, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    //! Return pipeline layout
     VkPipelineLayout &getPipelineLayout() {return pipelineLayout;}
-    //! For internal use only
+    //! Return layout for Set
     VkDescriptorSetLayout &getDescriptorLayout(int index = -1) {return descriptor[(index != -1) ? index : descriptorPos.front()];}
     static VkSamplerCreateInfo DEFAULT_SAMPLER;
 
