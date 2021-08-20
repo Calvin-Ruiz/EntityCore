@@ -4,8 +4,9 @@
 #include <memory>
 #include <vector>
 #include <array>
-#include <vulkan/vulkan.h>
 #include <cstring>
+#include <alloca.h>
+#include "EntityCore/SubBuffer.hpp"
 
 class VulkanMgr;
 class VertexBuffer;
@@ -30,6 +31,18 @@ public:
     // Add input for the last binding entry created
     bool addInput(VkFormat format, bool used = true);
     VertexBuffer *createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr = nullptr, BufferMgr *instanceMgr = nullptr);
+    //! Bind VertexBuffer for use with offset in draw, allowing switching with any other VertexBuffer with the same BufferMgr
+    inline void bindGlobal(VkCommandBuffer &cmd, SubBuffer &vertex) {
+        const VkDeviceSize zero = 0;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &vertex.buffer, &zero);
+    }
+    //! Bind this VertexBuffer, don't allow switching VertexBuffer without binding it
+    inline void bind(VkCommandBuffer &cmd, SubBuffer &vertex, int binding = 0) {
+        const VkDeviceSize offset = vertex.offset;
+        vkCmdBindVertexBuffers(cmd, binding, 1, &vertex.buffer, &offset);
+    }
+    //! Bind those VertexBuffers, don't allow switching VertexBuffer without binding them
+    void bind(VkCommandBuffer &cmd, const std::vector<VertexBuffer *> &vertex, int firstBinding = 0);
     const int alignment;
     //! Internally used
     const std::vector<VkVertexInputBindingDescription> &getVertexBindingDesc() {return bindingDesc;}

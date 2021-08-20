@@ -63,3 +63,16 @@ VertexBuffer *VertexArray::createBuffer(int binding, int vertexCount, BufferMgr 
             return nullptr;
     }
 }
+
+void VertexArray::bind(VkCommandBuffer &cmd, const std::vector<VertexBuffer *> &vertex, int firstBinding)
+{
+    const uint32_t sz = vertex.size();
+    VkBuffer *buffers = reinterpret_cast<VkBuffer *>(alloca((sizeof(VkDeviceSize) + sizeof(VkBuffer)) * sz));
+    VkDeviceSize *offsets = reinterpret_cast<VkDeviceSize *>(buffers + sz);
+    for (int i = 0; i < sz; ++i) {
+        SubBuffer &b = vertex[i]->get();
+        buffers[i] = b.buffer;
+        offsets[i] = b.offset;
+    }
+    vkCmdBindVertexBuffers(cmd, firstBinding, sz, buffers, offsets);
+}
