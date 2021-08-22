@@ -178,7 +178,7 @@ void BufferMgr::startMainloop(BufferMgr *self)
 {
     while (true) {
         while (self->isAlive && self->releaseStack.empty())
-            std::this_thread::yield();
+            std::this_thread::sleep_for(std::chrono::microseconds(400));
         if (!self->isAlive)
             return;
         self->releaseBuffer();

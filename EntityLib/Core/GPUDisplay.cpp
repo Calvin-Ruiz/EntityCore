@@ -201,7 +201,7 @@ void GPUDisplay::mainloop()
         } else {
             shield.unlock();
             while (!active)
-                std::this_thread::yield();
+                std::this_thread::sleep_for(std::chrono::microseconds(400));
             shield.lock();
         }
         switcher = (switcher + 1) % 3;

@@ -37,7 +37,7 @@ void FrameSender::mainloop()
 {
     while (alive) {
         if (blockedFrameIdx == pendingFrameIdx) {
-            std::this_thread::yield();
+            std::this_thread::sleep_for(std::chrono::microseconds(400));
             continue;
         }
         blockedFrameIdx = (blockedFrameIdx + 1) % readback.size();
@@ -52,7 +52,7 @@ void FrameSender::mainloop()
 void FrameSender::acquireFrame(uint32_t &frameIdx)
 {
     while (nextFrameIdx == blockedFrameIdx) {
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
     }
     frameIdx = nextFrameIdx++;
     nextFrameIdx %= readback.size();

@@ -225,7 +225,7 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
     while (alive) {
         // vkmgr.putLog(std::string("Compute Cycle ") + std::to_string(cnt++), LogType::INFO);
         while (!active) {
-            std::this_thread::yield();
+            std::this_thread::sleep_for(std::chrono::microseconds(400));
             clock = std::chrono::system_clock::now();
         }
         cmd = cmds[frameparity << 1];
@@ -251,7 +251,7 @@ void GPUEntityMgr::mainloop(void (*update)(void *, GPUEntityMgr &), void (*updat
             std::this_thread::sleep_until(clock); // Don't go over 1000 fps (x10 speed)
         }
         // while (!syncExt[!frameparity].isSet())
-        //     std::this_thread::yield();
+        //     std::this_thread::sleep_for(std::chrono::microseconds(400));
         updateChanges(); // Read back changes
         updatePlayer(data, *this); // Update player shield // Record transfer due to GPU event // Write player changes
         vkCmdCopyBuffer(cmd, entityPushBuffer.buffer, gpuEntities.buffer, regions.size(), regions.data());

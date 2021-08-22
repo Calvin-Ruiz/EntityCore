@@ -177,7 +177,7 @@ void FrameMgr::helperMainloop()
             self->batch = 0;
             self->submitted = true;
         }
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
     }
 }
 
@@ -185,7 +185,7 @@ void FrameMgr::submit()
 {
     submitted = false;
     while (!queue.emplace(this))
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
 }
 
 void FrameMgr::startHelper()

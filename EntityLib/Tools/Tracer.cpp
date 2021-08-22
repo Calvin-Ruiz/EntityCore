@@ -19,7 +19,7 @@ void Tracer::emplace(Trace type, void *data, const std::string &name, trace_draw
 {
     interrupt = true;
     while (!interrupted)
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
     tracing.push_back({handler, data, name, type});
     interrupt = false;
 }
@@ -28,7 +28,7 @@ void Tracer::erase(const std::string &name)
 {
     interrupt = true;
     while (!interrupted)
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
 
     for (unsigned int i = 0; i < tracing.size(); ++i) {
         if (name == tracing[i].name) {
@@ -84,7 +84,7 @@ void Tracer::stop()
 {
     alive = false;
     while (!interrupted)
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::microseconds(400));
 }
 
 void Tracer::mainloop()
@@ -98,7 +98,7 @@ void Tracer::mainloop()
         while (interrupt) {
             interrupted = true;
             while (interrupt)
-                std::this_thread::yield();
+                std::this_thread::sleep_for(std::chrono::microseconds(400));
             interrupted = false;
         }
         if (needRedraw) {
