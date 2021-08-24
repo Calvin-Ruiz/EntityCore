@@ -97,10 +97,14 @@ VkCommandBuffer &FrameMgr::begin(int idx, int layerIdx)
     return cmds[idx];
 }
 
-void FrameMgr::compile()
+void FrameMgr::compile(int idx)
 {
-    vkEndCommandBuffer(actual);
-    actual = VK_NULL_HANDLE;
+    if (idx == -1) {
+        vkEndCommandBuffer(actual);
+        actual = VK_NULL_HANDLE;
+    } else {
+        vkEndCommandBuffer(cmds[idx]);
+    }
 }
 
 void FrameMgr::setName(int id, const std::string &name)

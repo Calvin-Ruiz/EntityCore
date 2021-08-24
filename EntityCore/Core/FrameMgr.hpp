@@ -45,7 +45,7 @@ public:
     // Start recording subCommand for use in layerIdx layer
     VkCommandBuffer &begin(int idx, int layerIdx);
     // Compile subCommand
-    void compile();
+    void compile(int idx = -1);
     // Set name to command
     void setName(int idx, const std::string &name);
     // Reset every command previously recorded
