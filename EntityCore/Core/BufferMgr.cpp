@@ -174,6 +174,21 @@ void *BufferMgr::getPtr(SubBuffer &subBuffer)
     return static_cast<char *>(data) + subBuffer.offset; // static_cast for GCC
 }
 
+SubBuffer BufferMgr::fastAcquireBuffer(int size)
+{
+    if (maxOffset + size > memory.size) {
+        return {};
+    }
+    SubBuffer tmp {buffer, maxOffset, size, false};
+    maxOffset += size;
+    return tmp;
+}
+
+void BufferMgr::reset()
+{
+    maxOffset = 0;
+}
+
 void BufferMgr::startMainloop(BufferMgr *self)
 {
     while (true) {
@@ -183,6 +198,12 @@ void BufferMgr::startMainloop(BufferMgr *self)
             return;
         self->releaseBuffer();
     }
+}
+
+void BufferMgr::invalidate()
+{
+    VkMappedMemoryRange range {VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, memory.memory, memory.offset, (VkDeviceSize) maxOffset};
+    vkInvalidateMappedMemoryRanges(master.refDevice, 1, &range);
 }
 
 void BufferMgr::invalidate(SubBuffer &subBuffer)
@@ -201,6 +222,13 @@ void BufferMgr::invalidate(const std::vector<SubBuffer> &subBuffers)
         ranges.push_back({VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, memory.memory, memory.offset + b.offset, (VkDeviceSize) b.size});
     }
     vkInvalidateMappedMemoryRanges(master.refDevice, ranges.size(), ranges.data());
+}
+
+void BufferMgr::flush()
+{
+    VkMappedMemoryRange range {VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, nullptr, memory.memory, memory.offset, (VkDeviceSize) maxOffset};
+
+    vkFlushMappedMemoryRanges(master.refDevice, 1, &range);
 }
 
 void BufferMgr::flush(SubBuffer &subBuffer)

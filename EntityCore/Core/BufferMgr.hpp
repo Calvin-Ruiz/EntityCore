@@ -22,12 +22,20 @@ public:
     ~BufferMgr();
     SubBuffer acquireBuffer(int size, bool isUniform = false);
     void releaseBuffer(SubBuffer &subBuffer);
+    //! For per-frame buffer allocation (don't use acquireBuffer nor releaseBuffer on this BufferMgr when using this)
+    SubBuffer fastAcquireBuffer(int size);
+    // Release every previously acquired SubBuffer, mustn't be used with acquireBuffer
+    void reset();
     // Return a pointer to
     void *getPtr(SubBuffer &subBuffer);
+    // Make the changes from the device visible (if host_cached)
+    void invalidate();
     // Make the changes from the device visible (if host_cached)
     void invalidate(SubBuffer &subBuffer);
     // Make the changes from the device visible (if host_cached)
     void invalidate(const std::vector<SubBuffer> &subBuffers);
+    // Make the changes from the gpu visible (if host_cached)
+    void flush();
     // Make the changes from the gpu visible (if host_cached)
     void flush(SubBuffer &subBuffer);
     // Make the changes from the gpu visible (if host_cached)
@@ -42,6 +50,9 @@ public:
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size);
     // Record a copy of size octects from one SubBuffer to another SubBuffer with an offset
     static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);
+    inline VkBuffer &getBuffer() {
+        return buffer;
+    }
 private:
     void releaseBuffer(); // Release next buffer in stack
     static void startMainloop(BufferMgr *self);
