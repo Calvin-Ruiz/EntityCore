@@ -13,6 +13,8 @@ public:
         buffer.size = allocSize;
         mgr.releaseBuffer(buffer);
     }
+    T &get() {return ptr;}
+    SubBuffer &getBuffer() {return buffer;}
     operator T&() {return ptr;}
     operator SubBuffer&() {return buffer;}
 private:
