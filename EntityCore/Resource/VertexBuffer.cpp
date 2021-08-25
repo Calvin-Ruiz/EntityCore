@@ -7,7 +7,7 @@ VertexBuffer::VertexBuffer(BufferMgr &mgr, int size, int stride, int alignment) 
     VkDeviceSize bufferSize = ((stride * size - 1) / alignment + 1) * alignment;
 
     assert(alignment % stride == 0);
-    vertexBuffer = mgr.acquireBuffer(bufferSize, false);
+    vertexBuffer = mgr.acquireBuffer(bufferSize);
     offset = vertexBuffer.offset / stride;
 }
 

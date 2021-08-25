@@ -3,13 +3,16 @@
 
 int BufferMgr::uniformOffsetAlignment;
 
-BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize) : master(master), bufferBlocSize(bufferBlocSize)
+BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize, const std::string &name, bool uniformBuffer) : master(master), bufferBlocSize(bufferBlocSize), uniformBuffer(uniformBuffer)
 {
     if (!master.createBuffer(bufferBlocSize, usage, properties, buffer, memory, preferedProperties)) {
         master.putLog("Failed to create buffer bloc", LogType::ERROR);
         return;
     }
-    master.setObjectName(buffer, VK_OBJECT_TYPE_BUFFER, "BufferMgr");
+    if (name.empty())
+        master.setObjectName(buffer, VK_OBJECT_TYPE_BUFFER, "BufferMgr");
+    else
+        master.setObjectName(buffer, VK_OBJECT_TYPE_BUFFER, name.c_str());
     SubBuffer subBuffer;
     subBuffer.buffer = buffer;
     subBuffer.offset = 0;
@@ -29,47 +32,22 @@ BufferMgr::~BufferMgr()
     master.free(memory);
 }
 
-SubBuffer BufferMgr::acquireBuffer(int size, bool isUniform)
+SubBuffer BufferMgr::acquireBuffer(int size)
 {
+    if (uniformBuffer) {
+        size = ((size - 1) / uniformOffsetAlignment + 1) * uniformOffsetAlignment;
+    }
     // std::lock_guard<std::mutex> lock(mutex);
     SubBuffer buffer;
     buffer.buffer = VK_NULL_HANDLE;
     std::list<std::list<SubBuffer>>::iterator availableSubBuffer;
-    if (!isUniform) {
-        availableSubBuffer = std::find_if(availableSubBufferZones.begin(), availableSubBufferZones.end(),
-          [size](auto &value){return (value.back().size >= size);});
-        if (availableSubBuffer != availableSubBufferZones.end()) {
-            auto optimalAvailableSubBuffer = std::find_if(availableSubBuffer, availableSubBufferZones.end(),
-            [size](auto &value){return !(value.back().size < size || value.back().possibleUniform);});
-            if (optimalAvailableSubBuffer != availableSubBufferZones.end()) availableSubBuffer = optimalAvailableSubBuffer;
-            buffer = availableSubBuffer->back();
-            availableSubBuffer->pop_back();
-            if (availableSubBuffer->size() == 0) availableSubBufferZones.erase(availableSubBuffer);
-        }
-    } else {
-        for (availableSubBuffer = availableSubBufferZones.begin(); availableSubBuffer != availableSubBufferZones.end(); ++availableSubBuffer) {
-            if (availableSubBuffer->front().size < size)
-                continue;
-            for (auto it = availableSubBuffer->begin(); it != availableSubBuffer->end(); ++it) {
-                if (!it->possibleUniform)
-                    break;
-                if (it->offset % uniformOffsetAlignment > 0 && it->size + it->offset % uniformOffsetAlignment - uniformOffsetAlignment < size)
-                    continue;
-                buffer = *it;
-                availableSubBuffer->erase(it);
-                if (availableSubBuffer->size() == 0) availableSubBufferZones.erase(availableSubBuffer);
-                if (buffer.offset % uniformOffsetAlignment > 0) {
-                    SubBuffer tmp = buffer;
-                    tmp.size = uniformOffsetAlignment - buffer.offset % uniformOffsetAlignment;
-                    buffer.offset += tmp.size;
-                    buffer.size -= tmp.size;
-                    insert(tmp);
-                }
-                break;
-            }
-            if (buffer.buffer != VK_NULL_HANDLE)
-                break;
-        }
+    availableSubBuffer = std::find_if(availableSubBufferZones.begin(), availableSubBufferZones.end(),
+      [size](auto &value){return (value.back().size >= size);});
+    if (availableSubBuffer != availableSubBufferZones.end()) {
+        buffer = availableSubBuffer->back();
+        availableSubBuffer->pop_back();
+        if (availableSubBuffer->size() == 0)
+            availableSubBufferZones.erase(availableSubBuffer);
     }
     if (buffer.buffer == VK_NULL_HANDLE) {
         master.putLog("Can't allocate buffer in global buffer !", LogType::ERROR);
@@ -89,13 +67,9 @@ SubBuffer BufferMgr::acquireBuffer(int size, bool isUniform)
 
 void BufferMgr::insert(SubBuffer &subBuffer)
 {
-    subBuffer.possibleUniform = (subBuffer.offset % uniformOffsetAlignment == 0) || (subBuffer.size > uniformOffsetAlignment - subBuffer.offset % uniformOffsetAlignment);
     for (auto it = availableSubBufferZones.begin(); it != availableSubBufferZones.end(); ++it) {
         if (it->front().size == subBuffer.size) {
-            if (subBuffer.possibleUniform)
-                it->push_front(subBuffer);
-            else
-                it->push_back(subBuffer);
+            it->push_back(subBuffer);
             if (it->size() == 500 && !isAlive && false) {
                 isAlive = true;
                 releaseThread = std::make_unique<std::thread>(startMainloop, this);
@@ -179,7 +153,7 @@ SubBuffer BufferMgr::fastAcquireBuffer(int size)
     if (maxOffset + size > memory.size) {
         return {};
     }
-    SubBuffer tmp {buffer, maxOffset, size, false};
+    SubBuffer tmp {buffer, maxOffset, size};
     maxOffset += size;
     return tmp;
 }

@@ -18,9 +18,9 @@ class VulkanMgr;
 */
 class BufferMgr {
 public:
-    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize = 512*1024);
+    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false);
     ~BufferMgr();
-    SubBuffer acquireBuffer(int size, bool isUniform = false);
+    SubBuffer acquireBuffer(int size);
     void releaseBuffer(SubBuffer &subBuffer);
     //! For per-frame buffer allocation (don't use acquireBuffer nor releaseBuffer on this BufferMgr when using this)
     SubBuffer fastAcquireBuffer(int size);
@@ -71,6 +71,7 @@ private:
     std::list<std::list<SubBuffer>> availableSubBufferZones;
     //std::list<SubBuffer> availableSubBuffer;
     const int bufferBlocSize;
+    const bool uniformBuffer;
 };
 
 #endif /* end of include guard: BUFFER_MGR_HPP */
