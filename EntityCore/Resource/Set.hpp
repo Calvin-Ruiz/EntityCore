@@ -25,7 +25,7 @@ public:
     Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding = -1, bool initialize = true, bool temporary = false);
     ~Set();
     //! Bind uniform to this set
-    void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset = 0);
+    void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range = -1, int offset = 0);
     //! Bind texture to this set
     void bindTexture(Texture &texture, uint32_t binding, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //! Bind storage buffer to this set

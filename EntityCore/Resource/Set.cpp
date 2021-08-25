@@ -72,11 +72,7 @@ bool Set::createDescriptorSet()
 
 void Set::bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset)
 {
-    VkDescriptorBufferInfo buffInfo{};
-    buffInfo.buffer = buffer.buffer;
-    buffInfo.offset = buffer.offset + offset;
-    buffInfo.range = range;
-    bufferInfo.push_front(buffInfo);
+    bufferInfo.push_front({buffer.buffer, (VkDeviceSize) (buffer.offset + offset), (range == -1) ? buffer.size : range});
     writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, 0, 1,
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         nullptr, &bufferInfo.front(), nullptr});
