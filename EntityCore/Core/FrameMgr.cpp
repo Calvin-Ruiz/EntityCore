@@ -89,6 +89,12 @@ int FrameMgr::create(uint32_t count)
     return (first);
 }
 
+void FrameMgr::begin(VkCommandBuffer &cmd, int layerIdx)
+{
+    inheritance.subpass = layerIdx;
+    vkBeginCommandBuffer(cmd, &tmpCmdInfo);
+}
+
 VkCommandBuffer &FrameMgr::begin(int idx, int layerIdx)
 {
     inheritance.subpass = layerIdx;
@@ -105,6 +111,11 @@ void FrameMgr::compile(int idx)
     } else {
         vkEndCommandBuffer(cmds[idx]);
     }
+}
+
+void FrameMgr::compile(VkCommandBuffer &cmd)
+{
+    vkEndCommandBuffer(cmd);
 }
 
 void FrameMgr::setName(int id, const std::string &name)

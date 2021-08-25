@@ -135,7 +135,7 @@ void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements
     }
     if (subMemory->memory == VK_NULL_HANDLE) {
         if (memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-            // host cached memory is rarely used, don't allocate a whole chunk for them
+            // Host visible memory should be allocated separately in order to allow concurrent access to different buffer
             *subMemory = allocateChunk(subMemory->memoryIndex, memRequirements.size);
             return;
         }

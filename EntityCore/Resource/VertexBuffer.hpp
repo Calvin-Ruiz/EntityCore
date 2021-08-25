@@ -20,8 +20,6 @@ public:
     ~VertexBuffer();
     // Return the SubBuffer matching this VertexBuffer
     SubBuffer &get() {return vertexBuffer;}
-    // Return a pointer to the beginning of the VertexBuffer
-    void *getPtr() {return ptr;}
     //! Get the firstVertex/vertexOffset for the draw command
     int getOffset() const {return offset;}
     //! Get the vertexCount for the draw command
@@ -33,7 +31,6 @@ private:
     SubBuffer vertexBuffer;
     int offset;
     const int size;
-    void *ptr;
 };
 
 #endif /* end of include guard: VERTEX_BUFFER_HPP */
