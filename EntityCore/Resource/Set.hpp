@@ -10,6 +10,7 @@ class VulkanMgr;
 class SetMgr;
 class PipelineLayout;
 class Texture;
+template <typename T> class Uniform;
 
 /**
 *   \brief Handle binding for pipelineLayout layout
@@ -24,6 +25,11 @@ public:
     //! If not temporary, the Set memory won't be available for another Set when destroyed
     Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding = -1, bool initialize = true, bool temporary = false);
     ~Set();
+    //! Bind uniform to this set
+    template <typename T>
+    void bindUniform(std::unique_ptr<Uniform<T>> &buffer, uint32_t binding) {
+        bindUniform(buffer->getBuffer(), binding);
+    }
     //! Bind uniform to this set
     void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range = -1, int offset = 0);
     //! Bind texture to this set
