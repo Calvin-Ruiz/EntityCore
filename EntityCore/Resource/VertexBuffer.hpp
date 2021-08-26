@@ -16,7 +16,7 @@ class BufferMgr;
 class VertexBuffer {
 public:
     // Note : stride MUST be a multiple of alignment
-    VertexBuffer(BufferMgr &mgr, int size, int stride, int alignment);
+    VertexBuffer(BufferMgr &mgr, int size, int stride, int alignment, int binding);
     ~VertexBuffer();
     // Return the SubBuffer matching this VertexBuffer
     SubBuffer &get() {return vertexBuffer;}
@@ -24,6 +24,8 @@ public:
     int getOffset() const {return offset;}
     //! Get the vertexCount for the draw command
     int getVertexCount() const {return size;}
+    //! Bind this VertexBuffer, don't allow switching between VertexBuffer without binding
+    void bind(VkCommandBuffer &cmd);
     //! Fill an entry with another one, elemSize being is the size of an element
     void fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst);
 private:
@@ -31,6 +33,7 @@ private:
     SubBuffer vertexBuffer;
     int offset;
     const int size;
+    const int binding;
 };
 
 #endif /* end of include guard: VERTEX_BUFFER_HPP */

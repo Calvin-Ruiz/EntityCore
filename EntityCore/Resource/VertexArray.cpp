@@ -56,9 +56,9 @@ VertexBuffer *VertexArray::createBuffer(int binding, int vertexCount, BufferMgr 
 {
     switch (bindingDesc[binding].inputRate) {
         case VK_VERTEX_INPUT_RATE_VERTEX:
-            return new VertexBuffer(*vertexMgr, vertexCount, bindingDesc[binding].stride, alignment);
+            return new VertexBuffer(*vertexMgr, vertexCount, bindingDesc[binding].stride, alignment, binding);
         case VK_VERTEX_INPUT_RATE_INSTANCE:
-            return new VertexBuffer(*instanceMgr, vertexCount, bindingDesc[binding].stride, alignment);
+            return new VertexBuffer(*instanceMgr, vertexCount, bindingDesc[binding].stride, alignment, binding);
         default:
             return nullptr;
     }
