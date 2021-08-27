@@ -48,6 +48,7 @@ public:
     bool isSet();
     // Pipeline barrier
     void placeBarrier(VkCommandBuffer &cmd);
+    bool hasMultiDstDependency() const {return !multiEvent.empty();}
     static void setupPFN(VkInstance instance);
     static void enable() {enabled = true;}
 private:

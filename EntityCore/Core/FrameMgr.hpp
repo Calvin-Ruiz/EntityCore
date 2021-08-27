@@ -17,6 +17,7 @@
 class VulkanMgr;
 class RenderMgr;
 class Texture;
+class SyncEvent;
 
 /*
 ** Manage frame-local resources
@@ -61,7 +62,7 @@ public:
 
     // --- main command --- //
     // Start recording
-    VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE, int nbTextures = 0, Texture **textures = nullptr);
+    VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE, int nbTextures = 0, Texture **textures = nullptr, SyncEvent *sync = nullptr);
     // Next rendering layer
     void next(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE);
     // Execute command

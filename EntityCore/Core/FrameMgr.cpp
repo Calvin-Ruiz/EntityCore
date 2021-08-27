@@ -8,6 +8,7 @@
 #include "FrameMgr.hpp"
 #include "RenderMgr.hpp"
 #include "EntityCore/Resource/Texture.hpp"
+#include "EntityCore/Resource/SyncEvent.hpp"
 
 bool FrameMgr::alive = false;
 std::thread FrameMgr::helper;
@@ -134,12 +135,18 @@ void FrameMgr::discardRecord()
         vkResetCommandPool(master.refDevice, secondaryPool, 0);
 }
 
-VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Texture **textures)
+VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Texture **textures, SyncEvent *sync)
 {
     vkResetCommandPool(master.refDevice, graphicPool, 0);
     vkBeginCommandBuffer(mainCmd, &cmdInfo);
     while (--nbTexture >= 0)
         (*(textures++))->use(mainCmd);
+    if (sync) {
+        if (sync->hasMultiDstDependency())
+            sync->multiDstDependency(mainCmd);
+        else
+            sync->dstDependency(mainCmd);
+    }
     renderer.begin(id, mainCmd, content);
     switch (content) {
         case VK_SUBPASS_CONTENTS_INLINE:
