@@ -6,6 +6,7 @@
 */
 #include "SyncEvent.hpp"
 #include "EntityCore/Core/VulkanMgr.hpp"
+#include "EntityCore/Core/BufferMgr.hpp"
 #include "Texture.hpp"
 
 PFN_vkCmdSetEvent2KHR SyncEvent::ptr_vkCmdSetEvent2KHR = nullptr;
@@ -62,6 +63,11 @@ void SyncEvent::bufferBarrier(SubBuffer &buffer, VkPipelineStageFlags2KHR srcSta
 void SyncEvent::bufferBarrier(VkBuffer buffer, uint32_t offset, uint32_t size, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess)
 {
     buffers.push_back({VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR, nullptr, srcStage, srcAccess, dstStage, dstAccess, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, buffer, offset, size});
+}
+
+void SyncEvent::bufferBarrier(BufferMgr &buffer, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess)
+{
+    buffers.push_back({VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR, nullptr, srcStage, srcAccess, dstStage, dstAccess, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, buffer.getBuffer(), 0, VK_WHOLE_SIZE});
 }
 
 void SyncEvent::imageBarrier(Texture &texture, VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess, uint32_t miplevel, uint32_t miplevelcount)
@@ -169,6 +175,8 @@ VkPipelineStageFlags SyncEvent::compatConvStage(VkPipelineStageFlags2KHR stage)
 
     if (stage & VK_PIPELINE_STAGE_2_COPY_BIT_KHR)
         ret |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+    if (stage & VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR)
+        ret |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
     if (stage & ~(VK_PIPELINE_STAGE_2_COPY_BIT_KHR | 0x0001ffff))
         master->putLog("Unhandled pipeline stage compatibility conversion", LogType::ERROR);
     return ret;

@@ -135,6 +135,14 @@ void FrameMgr::discardRecord()
         vkResetCommandPool(master.refDevice, secondaryPool, 0);
 }
 
+VkCommandBuffer FrameMgr::createMain()
+{
+    VkCommandBuffer cmd;
+    VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
+    vkAllocateCommandBuffers(master.refDevice, &allocInfo, &cmd);
+    return cmd;
+}
+
 VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Texture **textures, SyncEvent *sync)
 {
     vkResetCommandPool(master.refDevice, graphicPool, 0);

@@ -61,6 +61,8 @@ public:
     VkCommandBuffer getHandle(int idx) {return cmds[idx];}
 
     // --- main command --- //
+    // Create a primary CommandBuffer which will be resetted when starting recording the main command
+    VkCommandBuffer createMain();
     // Start recording
     VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE, int nbTextures = 0, Texture **textures = nullptr, SyncEvent *sync = nullptr);
     // Next rendering layer
