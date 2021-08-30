@@ -54,11 +54,12 @@ bool VertexArray::addInput(VkFormat format, bool used)
 
 VertexBuffer *VertexArray::createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr)
 {
+    const int _alignment = (alignment) ? alignment : bindingDesc[binding].stride;
     switch (bindingDesc[binding].inputRate) {
         case VK_VERTEX_INPUT_RATE_VERTEX:
-            return new VertexBuffer(*vertexMgr, vertexCount, bindingDesc[binding].stride, alignment, binding);
+            return new VertexBuffer(*vertexMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
         case VK_VERTEX_INPUT_RATE_INSTANCE:
-            return new VertexBuffer(*instanceMgr, vertexCount, bindingDesc[binding].stride, alignment, binding);
+            return new VertexBuffer(*instanceMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
         default:
             return nullptr;
     }

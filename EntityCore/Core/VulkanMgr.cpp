@@ -219,7 +219,12 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
         initDebug(&instanceCreateInfo);
 
     // create a UniqueInstance
-    vkinstance = vk::createInstanceUnique(instanceCreateInfo);
+    try {
+        vkinstance = vk::createInstanceUnique(instanceCreateInfo);
+    } catch (vk::LayerNotPresentError &e) {
+        instanceCreateInfo.enabledLayerCount = 0;
+        vkinstance = vk::createInstanceUnique(instanceCreateInfo);
+    }
 
     if (hasLayer)
         startDebug();

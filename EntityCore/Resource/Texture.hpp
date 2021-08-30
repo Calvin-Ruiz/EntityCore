@@ -23,7 +23,7 @@ public:
     // load texture using name as filename, return true on success
     bool init(int nbChannels = 4, bool mipmap = false);
     // load texture with custom datas
-    bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
+    bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, int depth = 1);
     //! Export texture to GPU, return true on success
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
     //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
@@ -65,9 +65,10 @@ private:
     SubBuffer staging;
     VkImageCreateInfo info;
     VkImageAspectFlags aspect;
-    int nbChannels;
-    int elemSize;
+    int nbChannels = 4;
+    int elemSize = 1;
     std::string name;
+    unsigned short widthSplit = 1;
     bool onCPU = false;
     bool onGPU = false;
     bool sdlSurface = false;

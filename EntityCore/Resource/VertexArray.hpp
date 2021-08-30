@@ -23,7 +23,8 @@ class BufferMgr;
 class VertexArray
 {
 public:
-    VertexArray(VulkanMgr &master, int alignment);
+    // Note : set alignment to 0 if you don't use alignment properties
+    VertexArray(VulkanMgr &master, int alignment = 0);
     ~VertexArray() = default;
 
     // Create a binding entry which match a VertexBuffer binding

@@ -57,18 +57,21 @@ bool Texture::init(int nbChannels, bool mipmap)
     return res;
 }
 
-bool Texture::init(int width, int height, void *content, bool mipmap, int _nbChannels, int _elemSize, VkImageAspectFlags _aspect, VkSampleCountFlagBits sampleCount)
+bool Texture::init(int width, int height, void *content, bool mipmap, int _nbChannels, int _elemSize, VkImageAspectFlags _aspect, VkSampleCountFlagBits sampleCount, int depth)
 {
     aspect = _aspect;
     nbChannels = _nbChannels;
     elemSize = _elemSize;
     info.extent.width = width;
     info.extent.height = height;
+    info.extent.depth = depth;
     info.samples = sampleCount;
+    info.mipLevels = static_cast<uint32_t>(std::log2(std::max(width, height))) + 1;
+    widthSplit = 1 << ((static_cast<int>(std::log2(depth)) - 1) / 2);
     if (mipmap)
         info.mipLevels = static_cast<uint32_t>(std::log2(std::max(width, height))) + 1;
     if (content) {
-        VkDeviceSize size = width * height * nbChannels * elemSize;
+        VkDeviceSize size = width * height * depth * nbChannels * elemSize;
         staging = mgr->acquireBuffer(size);
         onCPU = true;
         long *src = (long *) content;
@@ -214,8 +217,21 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, info.mipLevels - 1, 1, 0, info.arrayLayers}}};
     if (includeFirstTransition)
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
-    VkBufferImageCopy region {(VkDeviceSize) staging.offset, 0, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
-    vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    VkBufferImageCopy region {(VkDeviceSize) staging.offset, info.extent.width * widthSplit, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
+    if (info.extent.depth == 1) {
+        vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    } else {
+        std::vector<VkBufferImageCopy> regions;
+        regions.reserve(widthSplit);
+        region.imageExtent.depth /= widthSplit;
+        for (int i = 0; i < widthSplit; ++i) {
+
+            regions.push_back(region);
+            region.bufferOffset += info.extent.width * nbChannels * elemSize;
+            region.imageOffset.z += region.imageExtent.depth;
+        }
+        vkCmdCopyBufferToImage(cmd, staging.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, regions.size(), regions.data());
+    }
     if (includeTransition) {
         VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, 1}}};
         if (info.mipLevels > 1) {
