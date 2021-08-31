@@ -26,8 +26,8 @@ void VertexBuffer::fillEntry(unsigned char elemSize, unsigned int count, const f
 {
     const unsigned char stride = vertexBuffer.size / size / 4;
     while (count--) {
-        *dst = *src;
-        src += elemSize;
+        for (unsigned char i = 0; i < elemSize; ++i)
+            dst[i] = *(src++);
         dst += stride;
     }
 }

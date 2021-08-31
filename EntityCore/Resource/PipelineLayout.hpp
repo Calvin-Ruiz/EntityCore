@@ -43,6 +43,11 @@ public:
         VkPushConstantRange &info = pushConstants[idx];
         vkCmdPushConstants(cmd, pipelineLayout, info.stageFlags, info.offset, info.size, pValues);
     }
+    //! Push constants, the index start to 0 and match the setPushConstant call order
+    inline void pushConstant(VkCommandBuffer &cmd, int idx, const void *pValues, int offset, int size) {
+        VkPushConstantRange &info = pushConstants[idx];
+        vkCmdPushConstants(cmd, pipelineLayout, info.stageFlags, info.offset + offset, size, pValues);
+    }
     //! Return pipeline layout
     VkPipelineLayout &getPipelineLayout() {return pipelineLayout;}
     //! Return layout for Set
