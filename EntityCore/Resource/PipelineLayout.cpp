@@ -117,12 +117,13 @@ void PipelineLayout::setPushConstant(VkShaderStageFlags stage, uint32_t offset, 
     pushConstants.emplace_back(VkPushConstantRange{stage, offset, size});
 }
 
-void PipelineLayout::bindSet(VkCommandBuffer &cmd, Set &set, int binding, uint32_t dynamicOffset, VkPipelineBindPoint bp)
+void PipelineLayout::bindSet(VkCommandBuffer &cmd, Set &set, int binding, VkPipelineBindPoint bp)
 {
-    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, binding, 1, set.get(), (dynamicOffset != UINT32_MAX), &dynamicOffset);
+    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, binding, 1, set.get(), set.getDynamicOffsets().size(), set.getDynamicOffsets().data());
 }
 
-void PipelineLayout::bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding, const std::vector<uint32_t> &dynamicOffsets, VkPipelineBindPoint bp)
+void PipelineLayout::bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding, VkPipelineBindPoint bp)
 {
-    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, firstBinding, sets.size(), sets.data(), dynamicOffsets.size(), dynamicOffsets.data());
+    // TODO implement dynamic offset
+    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, firstBinding, sets.size(), sets.data(), 0, nullptr);
 }

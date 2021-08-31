@@ -35,9 +35,9 @@ public:
     //! Use set emplacement of another pipelineLayout (default : first owned set emplacement)
     void setGlobalPipelineLayout(PipelineLayout *pl, int index = -1);
     //! Bind descriptor set
-    void bindSet(VkCommandBuffer &cmd, Set &set, int binding = 0, uint32_t dynamicOffset = UINT32_MAX, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    void bindSet(VkCommandBuffer &cmd, Set &set, int binding = 0, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
     //! Bind multiple descriptor set
-    void bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding = 0, const std::vector<uint32_t> &dynamicOffsets = {}, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    void bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding = 0, VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
     //! Push constants, the index start to 0 and match the setPushConstant call order
     inline void pushConstant(VkCommandBuffer &cmd, int idx, const void *pValues) {
         VkPushConstantRange &info = pushConstants[idx];
