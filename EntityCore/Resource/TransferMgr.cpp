@@ -65,7 +65,22 @@ void *TransferMgr::planCopy(SubBuffer &dst, int offset, int _size)
 
 void TransferMgr::planCopyBetween(SubBuffer &src, SubBuffer &dst)
 {
-    pendingExternalCopy[{src.buffer, dst.buffer}].push_back({(VkDeviceSize) src.offset, (VkDeviceSize) dst.offset, (VkDeviceSize) dst.size});
+    const VkBufferCopy copy {(VkDeviceSize) src.offset, (VkDeviceSize) dst.offset, (VkDeviceSize) dst.size};
+    if (src.buffer == buffer.buffer) {
+        pendingCopy[dst.buffer].push_back(copy);
+    } else {
+        pendingExternalCopy[{src.buffer, dst.buffer}].push_back(copy);
+    }
+}
+
+void TransferMgr::planCopyBetween(SubBuffer &src, SubBuffer &dst, int size)
+{
+    const VkBufferCopy copy {(VkDeviceSize) src.offset, (VkDeviceSize) dst.offset, (VkDeviceSize) size};
+    if (src.buffer == buffer.buffer) {
+        pendingCopy[dst.buffer].push_back(copy);
+    } else {
+        pendingExternalCopy[{src.buffer, dst.buffer}].push_back(copy);
+    }
 }
 
 void TransferMgr::copy(VkCommandBuffer &cmd)

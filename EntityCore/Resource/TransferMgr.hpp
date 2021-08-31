@@ -13,6 +13,7 @@ public:
     void *planCopy(SubBuffer &dst);
     void *planCopy(SubBuffer &dst, int offset, int size);
     void planCopyBetween(SubBuffer &src, SubBuffer &dst);
+    void planCopyBetween(SubBuffer &src, SubBuffer &dst, int size);
     void copy(VkCommandBuffer &cmd); // Record copy and reset allocation
 private:
     BufferMgr &mgr;
