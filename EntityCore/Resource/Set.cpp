@@ -112,6 +112,20 @@ int Set::bindVirtualUniform(SubBuffer &buffer, uint32_t binding, uint32_t range,
     return dynamicOffsets.size() - 1;
 }
 
+int Set::bindVirtualUniform(VkBuffer buffer, uint32_t binding, uint32_t range, uint32_t arraySize)
+{
+    VkDescriptorBufferInfo buffInfo{};
+    buffInfo.buffer = buffer;
+    buffInfo.offset = 0;
+    buffInfo.range = range;
+    bufferInfo.push_front(buffInfo);
+    dynamicOffsets.push_back(buffer.offset);
+    writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, 0, arraySize,
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        nullptr, &bufferInfo.front(), nullptr});
+    return dynamicOffsets.size() - 1;
+}
+
 void Set::setVirtualUniform(int offset, int virtualUniformID)
 {
     dynamicOffsets[virtualUniformID] = offset;

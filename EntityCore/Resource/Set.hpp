@@ -39,6 +39,9 @@ public:
     //! Bind uniform location
     //! @return virtualUniformId used as reference in setVirtualUniform
     int bindVirtualUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, uint32_t arraySize = 1);
+    //! Bind uniform location
+    //! @return virtualUniformId used as reference in setVirtualUniform
+    int bindVirtualUniform(VkBuffer buffer, uint32_t binding, uint32_t range, uint32_t arraySize = 1);
     //! Attach uniform to uniform location, can be used regardless to previous binding to commandBuffer
     void setVirtualUniform(int offset, int virtualUniformID);
     //void bindTexture(TextureImage *texture, int binding);
