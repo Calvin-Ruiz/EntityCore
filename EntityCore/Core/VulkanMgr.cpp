@@ -392,14 +392,6 @@ void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkP
     for (int i = 0; i < size; ++i) {
         *(dst++) = *(src++) & *(src2++);
     }
-    // deviceFeatures.geometryShader = supportedDeviceFeatures.geometryShader;
-    // deviceFeatures.tessellationShader = supportedDeviceFeatures.tessellationShader;
-    // deviceFeatures.samplerAnisotropy = supportedDeviceFeatures.samplerAnisotropy;
-    // deviceFeatures.sampleRateShading = supportedDeviceFeatures.sampleRateShading;
-    // deviceFeatures.multiDrawIndirect = supportedDeviceFeatures.multiDrawIndirect;
-    // deviceFeatures.wideLines = supportedDeviceFeatures.wideLines;
-    // deviceFeatures.shaderFloat64 = supportedDeviceFeatures.shaderFloat64;
-    // deviceFeatures.vertexPipelineStoresAndAtomics = supportedDeviceFeatures.vertexPipelineStoresAndAtomics;
     displayEnabledFeaturesInfo(preferedFeatures, requiredFeatures);
 
     VkDeviceCreateInfo createInfo{};
