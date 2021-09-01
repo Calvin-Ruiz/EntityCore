@@ -119,7 +119,7 @@ int Set::bindVirtualUniform(VkBuffer buffer, uint32_t binding, uint32_t range, u
     buffInfo.offset = 0;
     buffInfo.range = range;
     bufferInfo.push_front(buffInfo);
-    dynamicOffsets.push_back(buffer.offset);
+    dynamicOffsets.push_back(0);
     writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, 0, arraySize,
         VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         nullptr, &bufferInfo.front(), nullptr});

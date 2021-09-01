@@ -60,7 +60,7 @@ struct QueueRequirement {
 */
 class VulkanMgr {
 public:
-    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", VkImageUsageFlags swapchainUsage = 0);
+    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", VkImageUsageFlags swapchainUsage = 0);
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
@@ -127,7 +127,7 @@ private:
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::vector<QueueFamily> queues;
 
-    void initDevice();
+    void initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures);
     VkDevice device;
 
     void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage);
@@ -157,7 +157,7 @@ private:
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     VkDebugUtilsMessengerEXT callback;
     void displayPhysicalDeviceInfo(VkPhysicalDeviceProperties &prop);
-    void displayEnabledFeaturesInfo();
+    void displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures &requestedFeatures, const VkPhysicalDeviceFeatures &requiredFeatures);
     PFN_vkSetDebugUtilsObjectNameEXT ptr_vkSetDebugUtilsObjectNameEXT = nullptr;
 
     bool checkDeviceExtensionSupport(VkPhysicalDevice pDevice);

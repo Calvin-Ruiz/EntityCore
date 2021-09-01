@@ -13,7 +13,7 @@
 bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, VkImageUsageFlags swapchainUsage) :
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, VkImageUsageFlags swapchainUsage) :
     refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), presenting(window != nullptr)
 {
     assert(!isAlive); // There must be only one VulkanMgr instance
@@ -40,7 +40,7 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     displayPhysicalDeviceInfo(physicalDeviceProperties);
     initQueues(queueRequest);
-    initDevice();
+    initDevice(requiredFeatures, preferedFeatures);
     if (presenting) {
         initSwapchain(width, abs(height), swapchainUsage);
         createImageViews();
@@ -235,11 +235,19 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
     putLog("Reading GPU(s) properties", LogType::DEBUG);
     // get a physicalDevice
     bool oneHasBeenSelected = false;
+    bool suboptimalSelected = false;
     for (const auto &pDevice : vkinstance->enumeratePhysicalDevices()) {
         if (isDeviceSuitable(pDevice)) {
-            oneHasBeenSelected = true;
-            physicalDevice = pDevice;
+            if (!suboptimalSelected && pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+                suboptimalSelected = true;
+                oneHasBeenSelected = false;
+            }
+            if (!oneHasBeenSelected) {
+                oneHasBeenSelected = true;
+                physicalDevice = pDevice;
+            }
             if (pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+                physicalDevice = pDevice;
                 break;
             }
         }
@@ -250,6 +258,7 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
         putLog("No valid GPU detected", LogType::ERROR);
         std::cerr << "FATAL : No GPU match requirements\n";
         std::this_thread::sleep_for(std::chrono::seconds(3));
+        exit(-1);
     }
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -366,20 +375,32 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
     }
 }
 
-void VulkanMgr::initDevice()
+void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures)
 {
     VkPhysicalDeviceFeatures supportedDeviceFeatures;
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);
 
+    const VkBool32 *src = reinterpret_cast<const VkBool32 *>(&requiredFeatures);
+    VkBool32 *dst = reinterpret_cast<VkBool32 *>(&preferedFeatures);
+    constexpr int size = sizeof(requiredFeatures) / sizeof(VkBool32);
+    for (int i = 0; i < size; ++i) {
+        *(dst++) |= *(src++);
+    }
+    src = reinterpret_cast<const VkBool32 *>(&preferedFeatures);
+    const VkBool32 *src2 = reinterpret_cast<const VkBool32 *>(&supportedDeviceFeatures);
+    dst = reinterpret_cast<VkBool32 *>(&deviceFeatures);
+    for (int i = 0; i < size; ++i) {
+        *(dst++) = *(src++) & *(src2++);
+    }
     // deviceFeatures.geometryShader = supportedDeviceFeatures.geometryShader;
     // deviceFeatures.tessellationShader = supportedDeviceFeatures.tessellationShader;
-    deviceFeatures.samplerAnisotropy = supportedDeviceFeatures.samplerAnisotropy;
-    deviceFeatures.sampleRateShading = supportedDeviceFeatures.sampleRateShading;
+    // deviceFeatures.samplerAnisotropy = supportedDeviceFeatures.samplerAnisotropy;
+    // deviceFeatures.sampleRateShading = supportedDeviceFeatures.sampleRateShading;
     // deviceFeatures.multiDrawIndirect = supportedDeviceFeatures.multiDrawIndirect;
     // deviceFeatures.wideLines = supportedDeviceFeatures.wideLines;
     // deviceFeatures.shaderFloat64 = supportedDeviceFeatures.shaderFloat64;
-    deviceFeatures.vertexPipelineStoresAndAtomics = supportedDeviceFeatures.vertexPipelineStoresAndAtomics;
-    displayEnabledFeaturesInfo();
+    // deviceFeatures.vertexPipelineStoresAndAtomics = supportedDeviceFeatures.vertexPipelineStoresAndAtomics;
+    displayEnabledFeaturesInfo(preferedFeatures, requiredFeatures);
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -675,18 +696,70 @@ void VulkanMgr::displayPhysicalDeviceInfo(VkPhysicalDeviceProperties &prop)
     putLog(ss.str(), LogType::LAYER);
 }
 
-void VulkanMgr::displayEnabledFeaturesInfo()
+#define FEATURE_STATE(name, str) if (requestedFeatures.name) { \
+    ss << str; \
+    if (deviceFeatures.name) { \
+        ss << " : enabled\n"; \
+    } else { \
+        requirementMet |= (!requiredFeatures.name); \
+        ss << " : unavailable\n"; \
+    } \
+} \
+
+void VulkanMgr::displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures &requestedFeatures, const VkPhysicalDeviceFeatures &requiredFeatures)
 {
+    bool requirementMet = true;
     std::ostringstream ss;
     ss << "===== Used device features =====\n";
-    ss << "geometryShader : " << (deviceFeatures.geometryShader == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "tessellationShader : " << (deviceFeatures.tessellationShader == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "samplerAnisotropy : " << (deviceFeatures.samplerAnisotropy == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "sampleRateShading : " << (deviceFeatures.sampleRateShading == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "multiDrawIndirect : " << (deviceFeatures.multiDrawIndirect == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "wideLines : " << (deviceFeatures.wideLines == VK_TRUE ? "enabled" : "disabled") << std::endl;
-    ss << "shaderFloat64 : " << (deviceFeatures.shaderFloat64 == VK_TRUE ? "enabled" : "disabled");
+    FEATURE_STATE(fullDrawIndexUint32, "fullDrawIndexUint32")
+    FEATURE_STATE(imageCubeArray, "imageCubeArray")
+    FEATURE_STATE(independentBlend, "independentBlend")
+    FEATURE_STATE(geometryShader, "geometryShader")
+    FEATURE_STATE(tessellationShader, "tessellationShader")
+    FEATURE_STATE(sampleRateShading, "sampleRateShading")
+    FEATURE_STATE(logicOp, "logicOp")
+    FEATURE_STATE(multiDrawIndirect, "multiDrawIndirect")
+    FEATURE_STATE(drawIndirectFirstInstance, "drawIndirectFirstInstance")
+    FEATURE_STATE(depthClamp, "depthClamp")
+    FEATURE_STATE(depthBiasClamp, "depthBiasClamp")
+    FEATURE_STATE(fillModeNonSolid, "fillModeNonSolid")
+    FEATURE_STATE(depthBounds, "depthBounds")
+    FEATURE_STATE(wideLines, "wideLines")
+    FEATURE_STATE(largePoints, "largePoints")
+    FEATURE_STATE(alphaToOne, "alphaToOne")
+    FEATURE_STATE(multiViewport, "multiViewport")
+    FEATURE_STATE(samplerAnisotropy, "samplerAnisotropy")
+    FEATURE_STATE(textureCompressionETC2, "textureCompressionETC2")
+    FEATURE_STATE(textureCompressionASTC_LDR, "textureCompressionASTC_LDR")
+    FEATURE_STATE(textureCompressionBC, "textureCompressionBC")
+    FEATURE_STATE(pipelineStatisticsQuery, "pipelineStatisticsQuery")
+    FEATURE_STATE(vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics")
+    FEATURE_STATE(fragmentStoresAndAtomics, "fragmentStoresAndAtomics")
+    FEATURE_STATE(shaderTessellationAndGeometryPointSize, "shaderTessellationAndGeometryPointSize")
+    FEATURE_STATE(shaderImageGatherExtended, "shaderImageGatherExtended")
+    FEATURE_STATE(shaderStorageImageExtendedFormats, "shaderStorageImageExtendedFormats")
+    FEATURE_STATE(shaderStorageImageMultisample, "shaderStorageImageMultisample")
+    FEATURE_STATE(shaderStorageImageReadWithoutFormat, "shaderStorageImageReadWithoutFormat")
+    FEATURE_STATE(shaderUniformBufferArrayDynamicIndexing, "shaderUniformBufferArrayDynamicIndexing")
+    FEATURE_STATE(shaderSampledImageArrayDynamicIndexing, "shaderSampledImageArrayDynamicIndexing")
+    FEATURE_STATE(shaderStorageBufferArrayDynamicIndexing, "shaderStorageBufferArrayDynamicIndexing")
+    FEATURE_STATE(shaderStorageImageArrayDynamicIndexing, "shaderStorageImageArrayDynamicIndexing")
+    FEATURE_STATE(shaderClipDistance, "shaderClipDistance")
+    FEATURE_STATE(shaderCullDistance, "shaderCullDistance")
+    FEATURE_STATE(shaderFloat64, "shaderFloat64")
+    FEATURE_STATE(shaderInt64, "shaderInt64")
+    FEATURE_STATE(shaderInt16, "shaderInt16")
+    FEATURE_STATE(shaderResourceResidency, "shaderResourceResidency")
+    FEATURE_STATE(shaderResourceMinLod, "shaderResourceMinLod")
+    FEATURE_STATE(sparseBinding, "sparseBinding")
+    FEATURE_STATE(variableMultisampleRate, "variableMultisampleRate")
+    FEATURE_STATE(inheritedQueries, "inheritedQueries")
     putLog(ss.str(), LogType::LAYER);
+    if (!requirementMet) {
+        putLog("One or more mandatory feature is not available", LogType::ERROR);
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        exit(-1);
+    }
 }
 
 void VulkanMgr::putLog(const std::string &str, LogType type)
