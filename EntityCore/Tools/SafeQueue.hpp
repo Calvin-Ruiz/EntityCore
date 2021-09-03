@@ -25,8 +25,8 @@ public:
             return false;
         }
         datas[++writeIdx & capacity] = std::move(data);
-        ++count;
-        cv.notify_one();
+        if (!count++)
+            cv.notify_one();
         return true;
     }
     bool emplace(T data) {
@@ -63,6 +63,10 @@ public:
         lock.release();
         mtx.unlock();
         blocking = false;
+    }
+    // Enfore the worker thread to check for work
+    void flush() {
+        cv.notify_one();
     }
     // Make the pop call non-blocking, mostly usefull to close a worker thread
     void close() {
