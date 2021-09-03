@@ -9,6 +9,77 @@
 #define SAFEQUEUE_HPP_
 
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
+
+// Thread-safe queue for insertion with blocking pop operation (maximal capacity of 65535 elements, must be a power-of-two - 1)
+template<class T, unsigned short capacity = 255>
+class WorkQueue {
+public:
+    WorkQueue() : writeIdx(0), count(0), vcount(0) {}
+    ~WorkQueue() = default;
+    // Insert element to thread-safe queue, return true on success
+    bool push(T &data) {
+        if (++vcount >= capacity) {
+            --vcount;
+            return false;
+        }
+        datas[++writeIdx & capacity] = std::move(data);
+        ++count;
+        cv.notify_one();
+        return true;
+    }
+    bool emplace(T data) {
+        return push(data);
+    }
+    // Extract element from queue, return true on success, or false on failure if non-blocking
+    bool pop(T &data) {
+        BEGIN:
+        if (count) {
+            data = std::move(datas[++readIdx & capacity]);
+            --count;
+            --vcount;
+            return true;
+        }
+        if (blocking) {
+            cv.wait(lock);
+            goto BEGIN; // Don't invoke stack
+        }
+        return false;
+    }
+    unsigned char size() const {
+        return count;
+    }
+    bool empty() const {
+        return count == 0;
+    }
+    // Acquire ownership of this queue by this thread for pop operations
+    void acquire() {
+        lock = std::unique_lock<std::mutex>(mtx);
+        blocking = true;
+    }
+    // Release ownership of this queue by this thread for pop operations
+    void release() {
+        lock.release();
+        mtx.unlock();
+        blocking = false;
+    }
+    // Make the pop call non-blocking, mostly usefull to close a worker thread
+    void close() {
+        blocking = false;
+        cv.notify_one();
+    }
+private:
+    T datas[capacity + 1];
+    unsigned short readIdx = 0;
+    std::atomic<unsigned short> writeIdx;
+    std::atomic<unsigned short> count;
+    std::atomic<unsigned int> vcount;
+    bool blocking = false;
+    std::condition_variable cv;
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock;
+};
 
 // Thread-safe queue for insertion (maximal capacity of 65535 elements, must be a power-of-two - 1)
 template<class T, unsigned short capacity = 255>

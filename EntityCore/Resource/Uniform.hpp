@@ -15,6 +15,7 @@ public:
     }
     T &get() {return ptr;}
     SubBuffer &getBuffer() {return buffer;}
+    int getOffset() {return buffer.offset;}
     operator T&() {return ptr;}
     operator SubBuffer&() {return buffer;}
 private:

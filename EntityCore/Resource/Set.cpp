@@ -78,9 +78,9 @@ void Set::bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, int o
         nullptr, &bufferInfo.front(), nullptr});
 }
 
-void Set::bindTexture(Texture &texture, uint32_t binding, VkImageLayout layout)
+void Set::bindTexture(Texture &texture, uint32_t binding, VkSampler sampler, VkImageLayout layout)
 {
-    imageInfo.push_front({VK_NULL_HANDLE, texture.getView(), layout});
+    imageInfo.push_front({sampler, texture.getView(), layout});
     writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, 0, 1,
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         &imageInfo.front(), nullptr, nullptr});

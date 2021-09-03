@@ -33,7 +33,7 @@ public:
     //! Bind uniform to this set
     void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range = -1, int offset = 0);
     //! Bind texture to this set
-    void bindTexture(Texture &texture, uint32_t binding, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    void bindTexture(Texture &texture, uint32_t binding, VkSampler sampler = VK_NULL_HANDLE, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //! Bind storage buffer to this set
     void bindStorageBuffer(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset = 0);
     //! Bind uniform location
@@ -58,6 +58,10 @@ public:
     void update();
     //! Destroy descriptor set hold, require the Set to be temporary
     void uninit();
+    //! Push set to command
+    void push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding);
+    //! Get descriptor set
+    operator VkDescriptorSet() {return *get();}
 private:
     //! Allocate descriptorSet from SetMgr
     void init();
