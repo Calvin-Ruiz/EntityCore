@@ -13,8 +13,8 @@
 bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, VkImageUsageFlags swapchainUsage) :
-    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), presenting(window != nullptr)
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage) :
+    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
 {
     assert(!isAlive); // There must be only one VulkanMgr instance
     instance = this;
@@ -463,7 +463,7 @@ void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchain
     swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
     swapChainImageFormat = surfaceFormat.format;
 
-    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    uint32_t imageCount = (forceSwapchainCount) ? forceSwapchainCount : swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }

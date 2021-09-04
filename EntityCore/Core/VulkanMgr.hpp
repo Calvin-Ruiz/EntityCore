@@ -60,7 +60,7 @@ struct QueueRequirement {
 */
 class VulkanMgr {
 public:
-    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", VkImageUsageFlags swapchainUsage = 0);
+    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", int forceSwapchainCount = 0, VkImageUsageFlags swapchainUsage = 0);
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
@@ -168,11 +168,12 @@ private:
     std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
     std::list<VkSampler> samplers;
     std::vector<VkSamplerCreateInfo> samplersInfo;
-    bool hasLayer;
+    void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
     static bool isAlive;
+    int forceSwapchainCount;
+    bool hasLayer;
     bool isReady = false;
     bool presenting;
-    void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
 };
 
 #endif
