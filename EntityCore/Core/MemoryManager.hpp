@@ -10,7 +10,6 @@
 #include <mutex>
 
 class VulkanMgr;
-class Uniform;
 
 struct MappedMemory {
     int nbMapping = 0;

@@ -59,9 +59,11 @@ public:
     //! Destroy descriptor set hold, require the Set to be temporary
     void uninit();
     //! Push set to command
-    void push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding);
+    void push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
     //! Get descriptor set
     operator VkDescriptorSet() {return *get();}
+    //! Internally used
+    static void setupPFN(VkInstance instance);
 private:
     //! Allocate descriptorSet from SetMgr
     void init();
@@ -77,6 +79,7 @@ private:
     VkDescriptorSet set = VK_NULL_HANDLE;
     bool initialized = false;
     bool temporary = false;
+    static PFN_vkCmdPushDescriptorSetKHR pushSet;
 };
 
 #endif /* end of include guard: SET_HPP */

@@ -4,6 +4,8 @@
 #include "Texture.hpp"
 #include "Set.hpp"
 
+PFN_vkCmdPushDescriptorSetKHR Set::pushSet;
+
 Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding, bool initialize, bool temporary) : master(master), mgr(mgr), temporary(temporary)
 {
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -147,4 +149,14 @@ VkDescriptorSet *Set::get()
     if (!writeSet.empty())
         update();
     return &set;
+}
+
+void Set::push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint)
+{
+    pushSet(cmd, bindPoint, layout.getPipelineLayout(), binding, writeSet.size(), writeSet.data());
+}
+
+void Set::setupPFN(VkInstance instance)
+{
+    pushSet = (PFN_vkCmdPushDescriptorSetKHR) vkGetInstanceProcAddr(instance, "vkCmdPushDescriptorSetKHR");
 }

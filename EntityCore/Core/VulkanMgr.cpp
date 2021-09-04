@@ -2,6 +2,7 @@
 #include "BufferMgr.hpp"
 #include "MemoryManager.hpp"
 #include "EntityCore/Resource/SyncEvent.hpp"
+#include "EntityCore/Resource/Set.hpp"
 #include <SDL2/SDL_vulkan.h>
 #include <iostream>
 #include <set>
@@ -13,13 +14,15 @@
 bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage) :
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet) :
     refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
 {
     assert(!isAlive); // There must be only one VulkanMgr instance
     instance = this;
     cachePath = _cachePath;
     isAlive = true;
+    if (usePushSet)
+        deviceExtension.push_back("VK_KHR_push_descriptor");
     if (saveLogs) {
         logs.open(_cachePath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
@@ -33,6 +36,8 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
         instanceExtension.resize(initialSize + sdl2ExtensionCount);
         if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
             std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+    } else {
+        swapchainUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
 
     initVulkan(_AppName, appVersion, window, enableDebugLayers);
@@ -51,6 +56,7 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     memoryManager = new MemoryManager(*this, chunkSize*1024*1024);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
+    Set::setupPFN(vkinstance.get());
 
     // Déformation de l'image
     viewport.width = width;
@@ -477,8 +483,7 @@ void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchain
     createInfo.imageExtent = swapChainExtent;
     createInfo.imageArrayLayers = 1; // Pas besoin de 3D stéréoscopique
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.imageUsage = swapchainUsage;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    createInfo.imageUsage = swapchainUsage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Pas de transparence pour le contenu de la fenêtre
     createInfo.presentMode = presentMode;
