@@ -7,7 +7,7 @@ Use EntityCore and implement management of entities by the GPU for use by LaserB
 # Requirement
 Mandatory :
   - Latest Vulkan SDK installed
-  - Nvidia GPU
+  - Nvidia GPU (excepted for EntityCore)
 
 Recommended :  
   - Latest vulkan driver (20 February 2021 for VK_KHR_synchronisation_2)
