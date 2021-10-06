@@ -14,4 +14,4 @@
 #include "EntityCore/Resource/VertexArray.hpp"
 #include "EntityCore/Resource/VertexBuffer.hpp"
 #include "EntityCore/Resource/TransferMgr.hpp"
-#include "EntityCore/Resource/Uniform.hpp"
+#include "EntityCore/Resource/SharedBuffer.hpp"

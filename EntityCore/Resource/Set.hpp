@@ -10,7 +10,7 @@ class VulkanMgr;
 class SetMgr;
 class PipelineLayout;
 class Texture;
-template <typename T> class Uniform;
+template <typename T> class SharedBuffer;
 
 /**
 *   \brief Handle binding for pipelineLayout layout
@@ -27,7 +27,7 @@ public:
     ~Set();
     //! Bind uniform to this set
     template <typename T>
-    void bindUniform(std::unique_ptr<Uniform<T>> &buffer, uint32_t binding) {
+    void bindUniform(std::unique_ptr<SharedBuffer<T>> &buffer, uint32_t binding) {
         bindUniform(buffer->getBuffer(), binding);
     }
     //! Bind uniform to this set

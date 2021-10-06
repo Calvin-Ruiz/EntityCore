@@ -1,15 +1,15 @@
-#ifndef UNIFORM_HPP_
-#define UNIFORM_HPP_
+#ifndef SHAREDBUFFER_HPP_
+#define SHAREDBUFFER_HPP_
 
 #include "EntityCore/Core/BufferMgr.hpp"
 
 template <typename T>
-class Uniform {
+class SharedBuffer {
 public:
-    Uniform(BufferMgr &mgr) : mgr(mgr), buffer(mgr.acquireBuffer(sizeof(T))), ptr(*mgr.getPtr(buffer)), allocSize(buffer.size) {
+    SharedBuffer(BufferMgr &mgr) : mgr(mgr), buffer(mgr.acquireBuffer(sizeof(T))), ptr(*mgr.getPtr(buffer)), allocSize(buffer.size) {
         buffer.size = sizeof(T);
     }
-    ~Uniform() {
+    ~SharedBuffer() {
         buffer.size = allocSize;
         mgr.releaseBuffer(buffer);
     }
@@ -25,4 +25,4 @@ private:
     const int allocSize;
 };
 
-#endif /* end of include guard: UNIFORM_HPP_ */
+#endif /* end of include guard: SHAREDBUFFER_HPP_ */

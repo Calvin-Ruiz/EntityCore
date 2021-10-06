@@ -124,6 +124,10 @@ void PipelineLayout::bindSet(VkCommandBuffer &cmd, Set &set, int binding, VkPipe
 
 void PipelineLayout::bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, int firstBinding, VkPipelineBindPoint bp)
 {
-    // TODO implement dynamic offset
     vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, firstBinding, sets.size(), sets.data(), 0, nullptr);
+}
+
+void PipelineLayout::bindSets(VkCommandBuffer &cmd, const std::vector<VkDescriptorSet> &sets, Set &dynamicOffset, int firstBinding, VkPipelineBindPoint bp)
+{
+    vkCmdBindDescriptorSets(cmd, bp, pipelineLayout, firstBinding, sets.size(), sets.data(), set.getDynamicOffsets().size(), set.getDynamicOffsets().data());
 }
