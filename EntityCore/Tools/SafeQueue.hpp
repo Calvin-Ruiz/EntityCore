@@ -11,6 +11,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <cstring>
 
 // Thread-safe queue for insertion with blocking pop operation (maximal capacity of 65535 elements, must be a power-of-two - 1)
 template<class T, unsigned short capacity = 255>
@@ -20,7 +21,7 @@ public:
     ~WorkQueue() = default;
     // Insert element to thread-safe queue, return true on success
     bool push(T &data) {
-        if (++vcount >= capacity) {
+        if (++vcount > capacity) {
             --vcount;
             return false;
         }
@@ -29,23 +30,56 @@ public:
             cv.notify_one();
         return true;
     }
-    bool emplace(T data) {
-        return push(data);
+    bool emplace(const T &data) {
+        if (++vcount > capacity) {
+            --vcount;
+            return false;
+        }
+        datas[++writeIdx & capacity] = data;
+        if (!count++)
+            cv.notify_one();
+        return true;
+    }
+    bool pushRaw(const void *data) {
+        if (++vcount > capacity) {
+            --vcount;
+            return false;
+        }
+        std::memcpy(datas[++writeIdx & capacity], data, sizeof(T));
+        if (!count++)
+            cv.notify_one();
+        return true;
     }
     // Extract element from queue, return true on success, or false on failure if non-blocking
     bool pop(T &data) {
-        BEGIN:
-        if (count) {
-            data = std::move(datas[++readIdx & capacity]);
-            --count;
-            --vcount;
-            return true;
-        }
-        if (blocking) {
+        while (blocking) {
+            if (count)
+                goto EXTRACT;
             cv.wait(lock);
-            goto BEGIN; // Don't invoke stack
         }
-        return false;
+        if (!count)
+            return false;
+        EXTRACT:
+        data = std::move(datas[++readIdx & capacity]);
+        --vcount;
+        --count;
+        return true;
+    }
+    // Extract element address from queue valid until next call to popRaw
+    // return true on success, or false on failure if non-blocking
+    bool popRaw(void *&data) {
+        while (blocking) {
+            if (count)
+                goto EXTRACT;
+            cv.wait(lock);
+        }
+        if (!count)
+            return false;
+        EXTRACT:
+        data = &datas[++readIdx & capacity];
+        --vcount;
+        --count;
+        return true;
     }
     unsigned char size() const {
         return count;
@@ -93,11 +127,20 @@ public:
     ~PushQueue() = default;
     // Insert element to thread-safe queue, return true on success
     bool push(T &data) {
-        if (++vcount >= capacity) {
+        if (++vcount > capacity) {
             --vcount;
             return false;
         }
         datas[++writeIdx & capacity] = std::move(data);
+        ++count;
+        return true;
+    }
+    bool pushRaw(const void *data) {
+        if (++vcount > capacity) {
+            --vcount;
+            return false;
+        }
+        std::memcpy(datas[++writeIdx & capacity], data, sizeof(T));
         ++count;
         return true;
     }
@@ -108,6 +151,17 @@ public:
     bool pop(T &data) {
         if (count) {
             data = std::move(datas[++readIdx & capacity]);
+            --count;
+            --vcount;
+            return true;
+        }
+        return false;
+    }
+    // Extract element address from queue valid until next call to popRaw
+    // return true on success, false on failure
+    bool popRaw(void *&data) {
+        if (count) {
+            data = &datas[++readIdx & capacity];
             --count;
             --vcount;
             return true;
