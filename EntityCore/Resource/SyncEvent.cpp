@@ -9,6 +9,8 @@
 #include "EntityCore/Core/BufferMgr.hpp"
 #include "Texture.hpp"
 
+#define STAGE_TRANSFER (VK_PIPELINE_STAGE_2_COPY_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR | VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR)
+
 PFN_vkCmdSetEvent2KHR SyncEvent::ptr_vkCmdSetEvent2KHR = nullptr;
 PFN_vkCmdWaitEvents2KHR SyncEvent::ptr_vkCmdWaitEvents2KHR = nullptr;
 PFN_vkCmdResetEvent2KHR SyncEvent::ptr_vkCmdResetEvent2KHR = nullptr;
@@ -166,18 +168,18 @@ void SyncEvent::placeBarrier(VkCommandBuffer &cmd)
 
 bool SyncEvent::isSet()
 {
-    return ((vkGetEventStatus(master->refDevice, event) == VK_EVENT_SET) ? true : false);
+    return (vkGetEventStatus(master->refDevice, event) == VK_EVENT_SET);
 }
 
 VkPipelineStageFlags SyncEvent::compatConvStage(VkPipelineStageFlags2KHR stage)
 {
     VkPipelineStageFlags ret = stage & 0x0001ffff;
 
-    if (stage & VK_PIPELINE_STAGE_2_COPY_BIT_KHR)
+    if (stage & STAGE_TRANSFER)
         ret |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-    if (stage & VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR)
+    if (stage & (VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR))
         ret |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-    if (stage & ~(VK_PIPELINE_STAGE_2_COPY_BIT_KHR | 0x0001ffff))
+    if (stage & ~(STAGE_TRANSFER | VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR | 0x0001ffff))
         master->putLog("Unhandled pipeline stage compatibility conversion", LogType::ERROR);
     return ret;
 }
@@ -185,11 +187,11 @@ VkPipelineStageFlags SyncEvent::compatConvStage(VkPipelineStageFlags2KHR stage)
 VkAccessFlags SyncEvent::compatConvAccess(VkAccessFlags2KHR access)
 {
     VkAccessFlags ret = access & 0x0001ffff;
-    if (access & VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR)
+    if (access & (VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR))
         ret |= VK_ACCESS_SHADER_READ_BIT;
     if (access & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR)
         ret |= VK_ACCESS_SHADER_WRITE_BIT;
-    if (access & ~(VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR | 0x0001ffff))
+    if (access & ~(VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR | 0x0001ffff))
         master->putLog("Unhandled access compatibility conversion", LogType::ERROR);
     return ret;
 }
