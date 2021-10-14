@@ -40,11 +40,11 @@ void PipelineLayout::setImageLocation(uint32_t binding, VkShaderStageFlags stage
     uniformsLayout.push_back(imageLayoutBinding);
 }
 
-void PipelineLayout::setUniformLocation(VkShaderStageFlags stage, uint32_t binding, uint32_t arraySize, bool isVirtual)
+void PipelineLayout::setUniformLocation(VkShaderStageFlags stage, uint32_t binding, uint32_t arraySize, bool isDynamic)
 {
     VkDescriptorSetLayoutBinding uniformCollection{};
     uniformCollection.binding = binding;
-    uniformCollection.descriptorType = (isVirtual) ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uniformCollection.descriptorType = (isDynamic) ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uniformCollection.descriptorCount = arraySize;
     uniformCollection.stageFlags = stage;
     //uniformCollection.pImmutableSamplers = nullptr; // Optionnel
