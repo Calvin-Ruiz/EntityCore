@@ -22,7 +22,7 @@ void *TransferMgr::beginPlanCopy(int _size)
     if (buffer.size + _size > size)
         return nullptr;
     planningCopy = true;
-    return (void *) (((char *) ptr) + _size);
+    return (void *) (((char *) ptr) + buffer.size);
 }
 
 void TransferMgr::endPlanCopy(SubBuffer &dst, int _size)
