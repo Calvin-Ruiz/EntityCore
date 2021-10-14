@@ -27,9 +27,11 @@ FrameMgr::~FrameMgr()
 {
     if (builded) {
         vkDestroyFramebuffer(master.refDevice, framebuffer, nullptr);
-        vkDestroyCommandPool(master.refDevice, graphicPool, nullptr);
-        if (secondaryPool != VK_NULL_HANDLE)
-            vkDestroyCommandPool(master.refDevice, secondaryPool, nullptr);
+        if (graphicPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(master.refDevice, graphicPool, nullptr);
+            if (secondaryPool != VK_NULL_HANDLE)
+                vkDestroyCommandPool(master.refDevice, secondaryPool, nullptr);
+        }
     }
 }
 
@@ -57,24 +59,26 @@ bool FrameMgr::build(uint32_t queueFamily, bool alwaysRecord, bool useSecondary,
         return false;
     }
     builded = true;
-    VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, (alwaysRecord ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : (VkCommandPoolCreateFlagBits) 0), queueFamily};
-    vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &graphicPool);
-    VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
-    vkAllocateCommandBuffers(master.refDevice, &allocInfo, &mainCmd);
-    master.setObjectName(mainCmd, VK_OBJECT_TYPE_COMMAND_BUFFER, "mainCmd of " + name);
-    cmdInfo.flags = (alwaysRecord) ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
-    if (useSecondary) {
-        poolInfo.flags = (staticSecondary) ? 0 : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &secondaryPool);
-        inheritance.renderPass = renderer.renderPass;
-        inheritance.framebuffer = framebuffer;
+    if (queueFamily != UINT32_MAX) {
+        VkCommandPoolCreateInfo poolInfo {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, (alwaysRecord ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : (VkCommandPoolCreateFlagBits) 0), queueFamily};
+        vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &graphicPool);
+        VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, graphicPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
+        vkAllocateCommandBuffers(master.refDevice, &allocInfo, &mainCmd);
+        master.setObjectName(mainCmd, VK_OBJECT_TYPE_COMMAND_BUFFER, "mainCmd of " + name);
+        cmdInfo.flags = (alwaysRecord) ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
+        if (useSecondary) {
+            poolInfo.flags = (staticSecondary) ? 0 : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            vkCreateCommandPool(master.refDevice, &poolInfo, nullptr, &secondaryPool);
+            inheritance.renderPass = renderer.renderPass;
+            inheritance.framebuffer = framebuffer;
+            batches.resize(renderer.getPassCount());
+        }
     }
     views.clear();
     views.shrink_to_fit();
     master.setObjectName(framebuffer, VK_OBJECT_TYPE_FRAMEBUFFER, name);
     renderer.bind(id, framebuffer, {{0, 0}, {info.width, info.height}});
     master.putLog("Build FrameBuffer '" + name + "' with size (" + std::to_string(info.width) + ", " + std::to_string(info.height) + ")", LogType::INFO);
-    batches.resize(renderer.getPassCount());
     return true;
 }
 

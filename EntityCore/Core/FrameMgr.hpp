@@ -38,7 +38,7 @@ public:
     // alwaysRecord : record the main command every frame
     // useSecondary : enable use of subCommand
     // staticSecondary : if true, the only way to re-record a subCommand is to call discardRecord and record every subCommand again
-    bool build(uint32_t queueFamily, bool alwaysRecord = false, bool useSecondary = false, bool staticSecondary = true);
+    bool build(uint32_t queueFamily = UINT32_MAX, bool alwaysRecord = false, bool useSecondary = false, bool staticSecondary = true);
 
     // ===== USE ===== //
     // Create count subCommands and return the id of the first newly created subCommand
