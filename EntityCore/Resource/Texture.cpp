@@ -63,6 +63,12 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
     nbChannels = _nbChannels;
     elemSize = _elemSize;
     info.extent.width = width;
+    bool flipHorizontal;
+    if (height < 0) {
+        height = -height;
+        flipHorizontal = true;
+    } else
+        flipHorizontal = false;
     info.extent.height = height;
     info.extent.depth = depth;
     info.samples = sampleCount;
@@ -74,10 +80,21 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
         VkDeviceSize size = width * height * depth * nbChannels * elemSize;
         staging = mgr->acquireBuffer(size);
         onCPU = true;
-        long *src = (long *) content;
-        long *dst = (long *) mgr->getPtr(staging);
-        for (int i = size / sizeof(long); i > 0; --i)
-            *(dst++) = *(src++);
+        if (flipHorizontal) {
+            const int dobleLineSize = width * nbChannels * elemSize * 2 / sizeof(long);
+            long *src = ((long *) content) + dobleLineSize * (height / 2 + 1);
+            long *dst = (long *) mgr->getPtr(staging);
+            for (int i = height; i--;) {
+                src -= dobleLineSize;
+                for (int j = lineSize; j--;)
+                    *(dst++) = *(src++);
+            }
+        } else {
+            long *src = (long *) content;
+            long *dst = (long *) mgr->getPtr(staging);
+            for (int i = size / sizeof(long); i > 0; --i)
+                *(dst++) = *(src++);
+        }
     } else
         return createImage();
     return true;
