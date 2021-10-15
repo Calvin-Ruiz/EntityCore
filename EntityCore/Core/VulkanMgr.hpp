@@ -74,6 +74,7 @@ public:
     std::vector<VkImageView> &getSwapchainView() {return swapChainImageViews;}
     std::vector<VkImage> &getSwapchainImage() {return swapChainImages;}
     VkExtent2D &getSwapChainExtent() {return swapChainExtent;}
+    VkRect2D &getScreenRect() {return scissor;}
     const VkPhysicalDeviceFeatures &getDeviceFeatures() {return deviceFeatures;}
     VkPipelineCache &getPipelineCache() {return pipelineCache;}
     //! Only MemoryManager should use this method

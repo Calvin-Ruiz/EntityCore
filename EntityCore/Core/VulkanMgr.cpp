@@ -67,8 +67,8 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
     viewport.maxDepth = 1.0f;
 
     // Découpage de l'image
-    scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
+    scissor.offset = {viewport.x, viewport.y};
+    scissor.extent = {viewport.width, viewport.height};
 
     // Viewport
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
