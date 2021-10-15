@@ -63,8 +63,8 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     jaugeVertexArray->addInput(VK_FORMAT_R32G32B32A32_SFLOAT);
     vertexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, sizeof(ImageVertex)*6*3 + sizeof(JaugeVertex)*(4*10));
     vertexBufferMgr->setName("Graphic objects");
-    imageVertexBuffer = std::unique_ptr<VertexBuffer>(imageVertexArray->createBuffer(0, 6*3, vertexBufferMgr.get()));
-    jaugeVertexBuffer = std::unique_ptr<VertexBuffer>(jaugeVertexArray->createBuffer(0, 4*10, vertexBufferMgr.get()));
+    imageVertexBuffer = imageVertexArray->createBuffer(0, 6*3, vertexBufferMgr.get());
+    jaugeVertexBuffer = jaugeVertexArray->createBuffer(0, 4*10, vertexBufferMgr.get());
     indexBufferMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 2*6*END_ALL);
     indexBufferMgr->setName("Index buffer");
     entityIndexBuffer = indexBufferMgr->acquireBuffer(2*6*END_ALL);
