@@ -15,6 +15,7 @@ public:
     }
     inline SharedBuffer &operator=(const T &value) {
         ptr = value;
+        return *this;
     }
     T &get() {return ptr;}
     SubBuffer &getBuffer() {return buffer;}
