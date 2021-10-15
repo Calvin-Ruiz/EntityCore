@@ -44,7 +44,7 @@ public:
     // Create count subCommands and return the id of the first newly created subCommand
     int create(uint32_t count);
     // Start recording subCommand for use in layerIdx layer
-    void begin(VkCommandBuffer &cmd, int layerIdx);
+    void begin(VkCommandBuffer cmd, int layerIdx);
     // Start recording subCommand for use in layerIdx layer
     VkCommandBuffer &begin(int idx, int layerIdx);
     // Compile subCommand
