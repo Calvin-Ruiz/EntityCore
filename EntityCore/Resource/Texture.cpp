@@ -81,11 +81,11 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
         staging = mgr->acquireBuffer(size);
         onCPU = true;
         if (flipHorizontal) {
-            const int dobleLineSize = width * nbChannels * elemSize * 2 / sizeof(long);
-            long *src = ((long *) content) + dobleLineSize * (height / 2 + 1);
+            const int lineSize = width * nbChannels * elemSize / sizeof(long); // Only work for multiple of 8
+            long *src = ((long *) content) + lineSize * (height + 1);
             long *dst = (long *) mgr->getPtr(staging);
             for (int i = height; i--;) {
-                src -= dobleLineSize;
+                src -= lineSize * 2;
                 for (int j = lineSize; j--;)
                     *(dst++) = *(src++);
             }

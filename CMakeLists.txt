@@ -9,6 +9,8 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/LaserBombon/*.cpp"
     )
 
+#file(GLOB lb_SRCS "${PROJECT_SOURCE_DIR}/LaserBombon/*.cpp")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -28,4 +30,4 @@ target_link_libraries(LaserBombon ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} ${SDL2_T
 install(DIRECTORY DESTINATION ${CMAKE_SOURCE_DIR}/LaserBombon/saves)
 install(DIRECTORY DESTINATION ${CMAKE_SOURCE_DIR}/LaserBombon/screenshots)
 install(DIRECTORY DESTINATION ${CMAKE_SOURCE_DIR}/LaserBombon/cache)
-install(TARGETS LaserBombon DESTINATION ${CMAKE_SOURCE_DIR}/LaserBombon/LaserBombon)
+install(TARGETS LaserBombon DESTINATION ${CMAKE_SOURCE_DIR}/LaserBombon)
