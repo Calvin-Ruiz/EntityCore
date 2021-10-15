@@ -6,7 +6,7 @@
 template <typename T>
 class SharedBuffer {
 public:
-    SharedBuffer(BufferMgr &mgr) : mgr(mgr), buffer(mgr.acquireBuffer(sizeof(T))), ptr(*mgr.getPtr(buffer)), allocSize(buffer.size) {
+    SharedBuffer(BufferMgr &mgr) : mgr(mgr), buffer(mgr.acquireBuffer(sizeof(T))), ptr(*(T *) mgr.getPtr(buffer)), allocSize(buffer.size) {
         buffer.size = sizeof(T);
     }
     ~SharedBuffer() {
@@ -16,6 +16,12 @@ public:
     inline SharedBuffer &operator=(const T &value) {
         ptr = value;
         return *this;
+    }
+    inline T &operator*() {
+        return ptr;
+    }
+    inline T *operator->() {
+        return &ptr;
     }
     T &get() {return ptr;}
     SubBuffer &getBuffer() {return buffer;}
