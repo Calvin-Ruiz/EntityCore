@@ -13,6 +13,9 @@ public:
         buffer.size = allocSize;
         mgr.releaseBuffer(buffer);
     }
+    inline SharedBuffer &operator=(const T &value) {
+        ptr = value;
+    }
     T &get() {return ptr;}
     SubBuffer &getBuffer() {return buffer;}
     int getOffset() {return buffer.offset;}
