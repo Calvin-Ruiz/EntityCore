@@ -19,7 +19,7 @@ template <typename T> class SharedBuffer;
 class Set {
 public:
     //! Create a set which can only be push
-    Set() = default;
+    Set() : master(*(VulkanMgr *) 0), mgr(*(SetMgr *) 0) {}
     //! create a Set which can be bind
     //! Do not bind anything to it while bound to commandBuffer which can be submitted
     //! If not temporary, the Set memory won't be available for another Set when destroyed
