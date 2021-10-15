@@ -90,7 +90,7 @@ public:
     inline void toExecute(int idx, int layerIdx) {
         batches[layerIdx].push_back(cmds[idx]);
     }
-    inline void toExecute(VkCommandBuffer &cmd, int layerIdx) {
+    inline void toExecute(VkCommandBuffer cmd, int layerIdx) {
         batches[layerIdx].push_back(cmd);
     }
     // Next subpass which is VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
