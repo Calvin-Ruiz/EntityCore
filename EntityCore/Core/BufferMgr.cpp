@@ -3,7 +3,7 @@
 
 int BufferMgr::uniformOffsetAlignment;
 
-BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize, const std::string &name, bool uniformBuffer) : master(master), bufferBlocSize(bufferBlocSize), uniformBuffer(uniformBuffer)
+BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize, const std::string &name, bool uniformBuffer) : master(master), name(name), bufferBlocSize(bufferBlocSize), uniformBuffer(uniformBuffer)
 {
     if (!master.createBuffer(bufferBlocSize, usage, properties, buffer, memory, preferedProperties)) {
         master.putLog("Failed to create buffer bloc", LogType::ERROR);
@@ -50,7 +50,7 @@ SubBuffer BufferMgr::acquireBuffer(int size)
             availableSubBufferZones.erase(availableSubBuffer);
     }
     if (buffer.buffer == VK_NULL_HANDLE) {
-        master.putLog("Can't allocate buffer in global buffer !", LogType::ERROR);
+        master.putLog("Can't allocate buffer in '" + name + "' !", LogType::ERROR);
     } else {
         if (buffer.size > size) {
             SubBuffer tmp = buffer;
@@ -244,7 +244,8 @@ void BufferMgr::copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int r
     vkCmdCopyBuffer(cmd, src.buffer, dst.buffer, 1, &region);
 }
 
-void BufferMgr::setName(const std::string &name)
+void BufferMgr::setName(const std::string &_name)
 {
+    name = _name;
     master.setObjectName(buffer, VK_OBJECT_TYPE_BUFFER, name.c_str());
 }

@@ -64,6 +64,7 @@ private:
     VulkanMgr &master;
     VkBuffer buffer;
     SubMemory memory;
+    std::string name;
     void *data = nullptr;
     void insert(SubBuffer &subBuffer);
     static int uniformOffsetAlignment;
