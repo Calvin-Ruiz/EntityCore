@@ -64,7 +64,7 @@ public:
         return subpass;
     }
     VkSampleCountFlagBits getSampleCount(int subpass) const {
-        return attachment[subpass].samples;
+        return sampleCount[subpass];
     }
     //! Don't use it outside of EntityCore/Core
     VkRenderPass renderPass;
@@ -86,6 +86,8 @@ private:
     std::vector<Layer> layers;
     std::vector<VkClearValue> clears;
     std::vector<VkRenderPassBeginInfo> infos;
+    std::vector<VkSampleCountFlagBits> sampleCount;
+    VkSampleCountFlagBits currentSampleCount;
     int subpass = -1;
 };
 

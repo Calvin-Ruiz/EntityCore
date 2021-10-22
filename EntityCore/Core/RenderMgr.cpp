@@ -68,6 +68,7 @@ void RenderMgr::bindInput(int id, VkImageLayout layout)
 void RenderMgr::bindColor(int id, VkImageLayout layout)
 {
     layers.back().colorAttachment.push_back({(uint32_t) id, layout});
+    currentSampleCount = attachment[id].samples;
 }
 
 void RenderMgr::bindDepth(int id, VkImageLayout layout)
@@ -94,6 +95,7 @@ void RenderMgr::pushLayer(VkPipelineBindPoint type)
         ((tmp.depthAttachment.empty()) ? nullptr : tmp.depthAttachment.data()),
         (uint32_t) tmp.preserveAttachment.size(), tmp.preserveAttachment.data()});
     layers.resize(++subpass + 2);
+    sampleCount.push_back(currentSampleCount);
 }
 
 void RenderMgr::bind(int bindID, VkFramebuffer frameBuffer, VkRect2D renderArea)
@@ -125,6 +127,8 @@ bool RenderMgr::build(int maxFrameBuffer)
     builded = true;
     layers.clear();
     layers.shrink_to_fit();
+    attachment.clear();
+    attachment.shrink_to_fit();
     subpasses.clear();
     subpasses.shrink_to_fit();
     dep.clear();
