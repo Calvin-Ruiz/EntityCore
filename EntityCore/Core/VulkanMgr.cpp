@@ -263,6 +263,10 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
         std::this_thread::sleep_for(std::chrono::seconds(3));
         exit(-1);
     }
+    if (_hasLayer) {
+        putLog("Debug layer used, enfore compatibility mode for SyncEvent", LogType::WARNING);
+        return;
+    }
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
