@@ -63,6 +63,9 @@ public:
     inline int getPassCount() const {
         return subpass;
     }
+    VkSampleCountFlagBits getSampleCount(int subpass) const {
+        return attachment[subpass].samples;
+    }
     //! Don't use it outside of EntityCore/Core
     VkRenderPass renderPass;
 private:

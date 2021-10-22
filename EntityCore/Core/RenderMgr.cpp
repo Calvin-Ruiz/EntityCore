@@ -125,8 +125,6 @@ bool RenderMgr::build(int maxFrameBuffer)
     builded = true;
     layers.clear();
     layers.shrink_to_fit();
-    attachment.clear();
-    attachment.shrink_to_fit();
     subpasses.clear();
     subpasses.shrink_to_fit();
     dep.clear();

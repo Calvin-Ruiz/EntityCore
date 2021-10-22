@@ -65,7 +65,7 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
 
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = master.getDeviceFeatures().sampleRateShading;
-    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.rasterizationSamples = render.getSampleCount(subpass);
     multisampling.minSampleShading = .2f;
     multisampling.pSampleMask = nullptr;
     multisampling.alphaToCoverageEnable = VK_FALSE;
@@ -204,11 +204,6 @@ void Pipeline::setTessellationState(uint32_t patchControlPoints)
 void Pipeline::setLineWidth(float lineWidth)
 {
     rasterizer.lineWidth = lineWidth;
-}
-
-void Pipeline::setSampleCount(VkSampleCountFlagBits sample)
-{
-   multisampling.rasterizationSamples = sample;
 }
 
 void Pipeline::bindVertex(VertexArray &vertex)
