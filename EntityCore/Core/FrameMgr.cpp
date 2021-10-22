@@ -211,8 +211,6 @@ void FrameMgr::helperMainloop()
                     vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
                 b.clear();
             }
-            vkCmdEndRenderPass(self->mainCmd);
-            vkEndCommandBuffer(self->mainCmd);
             self->submitFunc(self->data, self->id);
             self->batch = 0;
             self->submitted = true;

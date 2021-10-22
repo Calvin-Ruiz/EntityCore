@@ -98,6 +98,7 @@ public:
         ++batch;
     }
     // Submit command, apply every actions and call submitFunc in the helper thread
+    // Your submitFunc must call either compileMain or call vkCmdEndRenderPass and vkEndCommandBuffer in the main command
     void submit();
     // Return true if the last submission has completed, don't call begin() on the main command while it return false
     inline bool isDone() const {
