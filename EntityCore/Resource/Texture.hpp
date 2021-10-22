@@ -44,9 +44,9 @@ public:
     bool isOnCPU() const {return onCPU;}
     bool isOnGPU() const {return onGPU;}
     //! Internal use only
-    VkImage getImage() {return image;}
+    VkImage getImage();
     //! Internal use only
-    VkImageView getView() {return view;}
+    VkImageView getView();
     //! Write texture size in width and height arguments
     void getDimensions(int &width, int &height) const {width=info.extent.width;height=info.extent.height;}
     //! Write texture size in width, height and depth arguments
@@ -54,12 +54,14 @@ public:
     int getMipmapCount() const {return info.mipLevels;}
     VkImageAspectFlags getAspect() const {return aspect;}
 private:
+    //! Pre-create image on GPU
+    bool preCreateImage();
     //! Create image on GPU
     bool createImage();
     static std::string textureDir;
     VulkanMgr &master;
     BufferMgr *mgr; // Staging memory manager
-    VkImage image;
+    VkImage image = VK_NULL_HANDLE;
     VkImageView view;
     SubMemory memory;
     SubBuffer staging;

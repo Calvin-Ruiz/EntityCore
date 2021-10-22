@@ -100,12 +100,22 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
     return true;
 }
 
+bool Texture::preCreateImage()
+{
+    if (!image) {
+        if (vkCreateImage(master.refDevice, &info, nullptr, &image) != VK_SUCCESS) {
+            master.putLog("Failed to create image support for '" + name + "'", LogType::ERROR);
+            return false;
+        }
+        master.setObjectName(image, VK_OBJECT_TYPE_IMAGE, name);
+    }
+    return true;
+}
+
 bool Texture::createImage()
 {
-    if (vkCreateImage(master.refDevice, &info, nullptr, &image) != VK_SUCCESS) {
-        master.putLog("Failed to create image support for '" + name + "'", LogType::ERROR);
+    if (!preCreateImage())
         return false;
-    }
     // Allocate image memory
     VkMemoryDedicatedRequirements memDedicated{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS, nullptr, 0, 0};
     VkMemoryRequirements2 memRequirements;
@@ -116,14 +126,11 @@ bool Texture::createImage()
     memory = (memDedicated.prefersDedicatedAllocation) ?
         master.getMemoryManager()->dmalloc(memRequirements.memoryRequirements, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT):
         master.getMemoryManager()->malloc(memRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    if (memory.memory == VK_NULL_HANDLE) {
-        vkDestroyImage(master.refDevice, image, nullptr);
+    if (memory.memory == VK_NULL_HANDLE)
         return false;
-    }
     // Bind image memory
     if (vkBindImageMemory(master.refDevice, image, memory.memory, memory.offset) != VK_SUCCESS) {
         master.putLog("Faild to bind memory to '" + name + "'", LogType::ERROR);
-        vkDestroyImage(master.refDevice, image, nullptr);
         master.free(memory);
         return false;
     }
@@ -135,10 +142,8 @@ bool Texture::createImage()
         master.free(memory);
         return false;
     }
-    // Set name and flag onGPU
-    onGPU = true;
-    master.setObjectName(image, VK_OBJECT_TYPE_IMAGE, name);
     master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, name);
+    onGPU = true;
     return true;
 }
 
@@ -148,6 +153,8 @@ Texture::~Texture()
         detach();
     if (onGPU)
         unuse();
+    if (image)
+        vkDestroyImage(master.refDevice, image, nullptr);
 }
 
 void *Texture::acquireStagingMemoryPtr()
@@ -162,6 +169,7 @@ void Texture::unuse()
         vkDestroyImageView(master.refDevice, view, nullptr);
         vkDestroyImage(master.refDevice, image, nullptr);
         onGPU = false;
+        image = VK_NULL_HANDLE;
     }
 }
 
@@ -285,4 +293,22 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
     }
     return true;
+}
+
+VkImage Texture::getImage()
+{
+    if (image)
+        return image;
+    master.putLog("Binding of '" + name + "' implicitly call use() (safety fallback)", LogType::DEBUG);
+    preCreateImage();
+    return image;
+}
+
+VkImageView Texture::getView()
+{
+    if (onGPU)
+        return view;
+    master.putLog("Binding of '" + name + "' implicitly call use() (safety fallback)", LogType::DEBUG);
+    use();
+    return view;
 }
