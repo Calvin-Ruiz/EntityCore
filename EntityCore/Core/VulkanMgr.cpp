@@ -698,7 +698,7 @@ void VulkanMgr::displayPhysicalDeviceInfo(VkPhysicalDeviceProperties &prop)
     if (deviceFeatures.name) { \
         ss << " : enabled\n"; \
     } else { \
-        requirementMet |= (!requiredFeatures.name); \
+        requirementMet &= (!requiredFeatures.name); \
         ss << " : unavailable\n"; \
     } \
 } \
