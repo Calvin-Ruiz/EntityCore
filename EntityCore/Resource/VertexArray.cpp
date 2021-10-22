@@ -33,7 +33,6 @@ bool VertexArray::createBindingEntry(uint32_t stride, VkVertexInputRate type)
     }
     bindingDesc.push_back({++binding, stride, type});
     size = stride;
-    location = 0;
     offset = 0;
     return true;
 }
@@ -52,17 +51,22 @@ bool VertexArray::addInput(VkFormat format, bool used)
     return true;
 }
 
-std::unique_ptr<VertexBuffer> VertexArray::createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr)
+VertexBuffer *VertexArray::newBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr)
 {
     const int _alignment = (alignment) ? alignment : bindingDesc[binding].stride;
     switch (bindingDesc[binding].inputRate) {
         case VK_VERTEX_INPUT_RATE_VERTEX:
-            return std::make_unique<VertexBuffer>(*vertexMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
+            return new VertexBuffer(*vertexMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
         case VK_VERTEX_INPUT_RATE_INSTANCE:
-            return std::make_unique<VertexBuffer>(*instanceMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
+            return new VertexBuffer(*instanceMgr, vertexCount, bindingDesc[binding].stride, _alignment, binding);
         default:
             return nullptr;
     }
+}
+
+std::unique_ptr<VertexBuffer> VertexArray::createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr)
+{
+   return std::unique_ptr<VertexBuffer>(newBuffer(binding, vertexCount, vertexMgr, instanceMgr));
 }
 
 void VertexArray::bind(VkCommandBuffer &cmd, const std::vector<VertexBuffer *> &vertex, int firstBinding)
