@@ -207,7 +207,8 @@ void FrameMgr::helperMainloop()
                     first = false;
                 else
                     vkCmdNextSubpass(self->mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-                vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
+                if (b.size())
+                    vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
                 b.clear();
             }
             vkCmdEndRenderPass(self->mainCmd);
