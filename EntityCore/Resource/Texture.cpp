@@ -299,7 +299,7 @@ VkImage Texture::getImage()
 {
     if (image)
         return image;
-    master.putLog("Binding of '" + name + "' implicitly call use() (safety fallback)", LogType::DEBUG);
+    master.putLog("Binding of '" + name + "' image implicitly create bindless image (safety fallback)", LogType::DEBUG);
     preCreateImage();
     return image;
 }
@@ -308,7 +308,7 @@ VkImageView Texture::getView()
 {
     if (onGPU)
         return view;
-    master.putLog("Binding of '" + name + "' implicitly call use() (safety fallback)", LogType::DEBUG);
+    master.putLog("Binding of '" + name + "' view implicitly call use() (safety fallback)", LogType::DEBUG);
     use();
     return view;
 }
