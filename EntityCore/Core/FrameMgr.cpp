@@ -152,7 +152,7 @@ VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Textu
     vkResetCommandPool(master.refDevice, graphicPool, 0);
     vkBeginCommandBuffer(mainCmd, &cmdInfo);
     while (--nbTexture >= 0)
-        (*(textures++))->use(mainCmd);
+        (*(textures++))->use(mainCmd, true);
     if (sync) {
         if (sync->hasMultiDstDependency())
             sync->multiDstDependency(mainCmd);
