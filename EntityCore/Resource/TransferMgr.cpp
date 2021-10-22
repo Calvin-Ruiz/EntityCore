@@ -16,7 +16,7 @@ TransferMgr::~TransferMgr()
     mgr.releaseBuffer(buffer);
 }
 
-void *TransferMgr::beginPlanCopy(int _size)
+void *TransferMgr::beginPlanCopy(uint32_t _size)
 {
     assert(!planningCopy);
     if (buffer.size + _size > size)
@@ -25,7 +25,7 @@ void *TransferMgr::beginPlanCopy(int _size)
     return (void *) (((char *) ptr) + buffer.size);
 }
 
-void TransferMgr::endPlanCopy(SubBuffer &dst, int _size)
+void TransferMgr::endPlanCopy(SubBuffer &dst, uint32_t _size)
 {
     assert(planningCopy);
     planningCopy = false;

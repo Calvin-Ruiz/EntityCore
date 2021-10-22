@@ -8,8 +8,8 @@ public:
     TransferMgr(BufferMgr &mgr, int size);
     ~TransferMgr();
 
-    void *beginPlanCopy(int size); // pre-plan copy with a maximal size
-    void endPlanCopy(SubBuffer &dst, int size); // Finalize pre-planned copy defined final size
+    void *beginPlanCopy(uint32_t size); // pre-plan copy with a maximal size
+    void endPlanCopy(SubBuffer &dst, uint32_t size); // Finalize pre-planned copy defined final size
     void *planCopy(SubBuffer &dst);
     void *planCopy(SubBuffer &dst, int offset, int size);
     void planCopyBetween(SubBuffer &src, SubBuffer &dst);

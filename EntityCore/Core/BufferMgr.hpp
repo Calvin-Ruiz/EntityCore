@@ -23,7 +23,7 @@ public:
     SubBuffer acquireBuffer(int size);
     void releaseBuffer(SubBuffer &subBuffer);
     //! For per-frame buffer allocation (don't use acquireBuffer nor releaseBuffer on this BufferMgr when using this)
-    SubBuffer fastAcquireBuffer(int size);
+    SubBuffer fastAcquireBuffer(uint32_t size);
     // Release every previously acquired SubBuffer, mustn't be used with acquireBuffer
     void reset();
     // Return a pointer to
@@ -60,7 +60,7 @@ private:
     std::vector<SubBuffer> releaseStack;
     bool isAlive = false;
     std::mutex mutex, mutexQueue;
-    int maxOffset = 0;
+    uint32_t maxOffset = 0;
     VulkanMgr &master;
     VkBuffer buffer;
     SubMemory memory;

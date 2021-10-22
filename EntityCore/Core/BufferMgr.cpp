@@ -148,7 +148,7 @@ void *BufferMgr::getPtr(SubBuffer &subBuffer)
     return static_cast<char *>(data) + subBuffer.offset; // static_cast for GCC
 }
 
-SubBuffer BufferMgr::fastAcquireBuffer(int size)
+SubBuffer BufferMgr::fastAcquireBuffer(uint32_t size)
 {
     if (maxOffset + size > memory.size) {
         return {};
