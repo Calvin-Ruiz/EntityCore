@@ -5,8 +5,8 @@
 
 struct SubBuffer {
     VkBuffer buffer; // The VkBuffer from which the SubBuffer owned a portion
-    int offset; // The offset in the VkBuffer of the owned portion by this SubBuffer
-    int size; // The size in the VkBuffer of the portion owned by this SubBuffer
+    uint32_t offset; // The offset in the VkBuffer of the owned portion by this SubBuffer
+    uint32_t size; // The size in the VkBuffer of the portion owned by this SubBuffer
 };
 
 #endif /* end of include guard: SUB_BUFFER_HPP */
