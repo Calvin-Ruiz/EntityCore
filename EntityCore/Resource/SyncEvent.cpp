@@ -103,6 +103,10 @@ void SyncEvent::build()
             compatSrc |= compatConvStage(b.srcStageMask);
             compatDst |= compatConvStage(b.dstStageMask);
         }
+        if (!compatSrc)
+            compatSrc = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        if (!compatDst)
+            compatDst = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     }
 }
 
