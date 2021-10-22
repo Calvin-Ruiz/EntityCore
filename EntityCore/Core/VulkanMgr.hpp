@@ -170,7 +170,6 @@ private:
     std::list<VkSampler> samplers;
     std::vector<VkSamplerCreateInfo> samplersInfo;
     void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
-    static bool isAlive;
     int forceSwapchainCount;
     bool hasLayer;
     bool isReady = false;

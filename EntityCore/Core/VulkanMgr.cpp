@@ -11,16 +11,14 @@
 #include <thread>
 #include <sstream>
 
-bool VulkanMgr::isAlive = false;
 VulkanMgr *VulkanMgr::instance = nullptr;
 
 VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet) :
     refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
 {
-    assert(!isAlive); // There must be only one VulkanMgr instance
+    assert(!instance); // There must be only one VulkanMgr instance
     instance = this;
     cachePath = _cachePath;
-    isAlive = true;
     if (usePushSet)
         deviceExtension.push_back("VK_KHR_push_descriptor");
     if (saveLogs) {
@@ -103,7 +101,6 @@ VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *wind
 
 VulkanMgr::~VulkanMgr()
 {
-    isAlive = false;
     vkDeviceWaitIdle(device);
     putLog("Release resources", LogType::INFO);
     for (auto &tmp : samplers)
