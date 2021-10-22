@@ -18,7 +18,7 @@ class VulkanMgr;
 */
 class BufferMgr {
 public:
-    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, int bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false);
+    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, VkDeviceSize bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false);
     ~BufferMgr();
     SubBuffer acquireBuffer(int size);
     void releaseBuffer(SubBuffer &subBuffer);
@@ -71,7 +71,7 @@ private:
     //! each std::list in this std::list are equally sized SubBuffer
     std::list<std::list<SubBuffer>> availableSubBufferZones;
     //std::list<SubBuffer> availableSubBuffer;
-    const int bufferBlocSize;
+    const VkDeviceSize bufferBlocSize;
     const bool uniformBuffer;
 };
 
