@@ -54,13 +54,15 @@ struct QueueRequirement {
     unsigned char dedicatedTransfer;
 };
 
+typedef void (*logger_t)(const std::string &str, LogType type);
+
 /*
 * Core class, manage global ressources
 * Used as base to create any vulkan ressource
 */
 class VulkanMgr {
 public:
-    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", int forceSwapchainCount = 0, VkImageUsageFlags swapchainUsage = 0, bool usePushSet = false);
+    VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", int forceSwapchainCount = 0, VkImageUsageFlags swapchainUsage = 0, bool usePushSet = false, logger_t redirectLog = nullptr);
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
@@ -82,6 +84,7 @@ public:
     void setObjectName(void *handle, VkObjectType type, const std::string &name);
     //! Called by MemoryManager when getting low of memory,
     void releaseUnusedMemory();
+    //! Redirect every logs
 
     // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
     // Return the queue family from which the queue was created, or nullptr in case of failure
@@ -107,6 +110,7 @@ public:
 private:
     const bool drawLogs;
     const bool saveLogs;
+    logger_t redirectLog;
     std::ofstream logs;
     std::string cachePath;
     MemoryManager *memoryManager;

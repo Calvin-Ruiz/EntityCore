@@ -18,7 +18,7 @@ public:
     void acquireFrame(uint32_t &frameIdx);
     void presentFrame(uint32_t frameIdx);
 private:
-    void submitFrame(void *data);
+    virtual void submitFrame(void *data);
     void mainloop();
     VulkanMgr &vkmgr;
     std::vector<std::unique_ptr<Texture>> &frames;

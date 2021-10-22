@@ -13,8 +13,8 @@
 
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet) :
-    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
+VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
+    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), redirectLog(redirectLog), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
 {
     assert(!instance); // There must be only one VulkanMgr instance
     instance = this;
@@ -758,6 +758,8 @@ void VulkanMgr::displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures &reque
 
 void VulkanMgr::putLog(const std::string &str, LogType type)
 {
+    if (redirectLog)
+        return redirectLog(str, type);
     std::string header;
 
     switch (type) {
