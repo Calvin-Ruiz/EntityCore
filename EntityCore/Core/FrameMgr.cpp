@@ -10,9 +10,8 @@
 #include "EntityCore/Resource/Texture.hpp"
 #include "EntityCore/Resource/SyncEvent.hpp"
 
-bool FrameMgr::alive = false;
 std::thread FrameMgr::helper;
-PushQueue<FrameMgr *, 7> FrameMgr::queue;
+WorkQueue<FrameMgr *, 7> FrameMgr::queue;
 
 FrameMgr::FrameMgr(VulkanMgr &master, RenderMgr &renderer, int id, uint32_t width, uint32_t height, const std::string &name, void (*submitFunc)(void *data, int id), void *data) :
     master(master), renderer(renderer), id(id), name(name), submitFunc(submitFunc), data(data)
@@ -199,45 +198,44 @@ void FrameMgr::compileMain()
 void FrameMgr::helperMainloop()
 {
     FrameMgr *self = nullptr;
-    while (alive) {
-        while (queue.pop(self)) {
-            bool first = true;
-            for (auto &b : self->batches) {
-                if (first)
-                    first = false;
-                else
-                    vkCmdNextSubpass(self->mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-                if (b.size())
-                    vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
-                b.clear();
-            }
-            self->submitFunc(self->data, self->id);
-            self->batch = 0;
-            self->submitted = true;
+    queue.acquire();
+    while (queue.pop(self)) {
+        bool first = true;
+        for (auto &b : self->batches) {
+            if (first)
+                first = false;
+            else
+                vkCmdNextSubpass(self->mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            if (b.size())
+                vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
+            b.clear();
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(400));
+        self->submitFunc(self->data, self->id);
+        self->batch = 0;
+        self->submitted = true;
     }
+    queue.release();
 }
 
 void FrameMgr::submit()
 {
     submitted = false;
     while (!queue.emplace(this))
-        std::this_thread::sleep_for(std::chrono::microseconds(400));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    queue.flush(); // Just to be sure
 }
 
 void FrameMgr::startHelper()
 {
-    if (alive)
+    if (helper.joinable())
         return;
-    alive = true;
     helper = std::thread(helperMainloop);
 }
 
 void FrameMgr::stopHelper()
 {
-    if (!alive)
+    if (!helper.joinable())
         return;
-    alive = false;
+    queue.close();
     helper.join();
 }

@@ -128,9 +128,8 @@ private:
     std::vector<std::vector<VkCommandBuffer>> batches;
     void (*submitFunc)(void *data, int id);
     void *data;
-    static bool alive;
     static std::thread helper;
-    static PushQueue<FrameMgr *, 7> queue;
+    static WorkQueue<FrameMgr *, 7> queue;
     int batch = 0;
     bool submitted = true;
 };
