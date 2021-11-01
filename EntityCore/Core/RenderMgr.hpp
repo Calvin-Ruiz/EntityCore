@@ -26,7 +26,7 @@ public:
 
     // ===== SETUP ===== //
     // Attach a resources and return his attachment id
-    int attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout, VkImageLayout finalLayout);
+    int attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout, VkImageLayout finalLayout, bool store = true);
     // Color attachment
     void setupClear(int id, VkClearColorValue color);
     // Depth buffer
