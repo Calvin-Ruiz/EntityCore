@@ -30,9 +30,9 @@ void TransferMgr::endPlanCopy(SubBuffer &dst, uint32_t _size)
 {
     assert(planningCopy);
     planningCopy = false;
-    if (size == 0)
+    if (_size == 0)
         return;
-    pendingCopy[dst.buffer].push_back({(VkDeviceSize) (buffer.offset + buffer.size), (VkDeviceSize) dst.offset, (VkDeviceSize) dst.size});
+    pendingCopy[dst.buffer].push_back({(VkDeviceSize) (buffer.offset + buffer.size), (VkDeviceSize) dst.offset, (VkDeviceSize) _size});
     buffer.size += _size;
 }
 
