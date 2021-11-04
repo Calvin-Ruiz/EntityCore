@@ -200,19 +200,7 @@ void FrameMgr::helperMainloop()
     FrameMgr *self = nullptr;
     queue.acquire();
     while (queue.pop(self)) {
-        bool first = true;
-        for (auto &b : self->batches) {
-            if (first)
-                first = false;
-            else
-                vkCmdNextSubpass(self->mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-            if (b.size())
-                vkCmdExecuteCommands(self->mainCmd, b.size(), b.data());
-            b.clear();
-        }
-        self->submitFunc(self->data, self->id);
-        self->batch = 0;
-        self->submitted = true;
+        self->submitInline();
     }
     queue.release();
 }
@@ -223,6 +211,23 @@ void FrameMgr::submit()
     while (!queue.emplace(this))
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     queue.flush(); // Just to be sure
+}
+
+void FrameMgr::submitInline()
+{
+    bool first = true;
+    for (auto &b : batches) {
+        if (first)
+            first = false;
+        else
+            vkCmdNextSubpass(mainCmd, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+        if (b.size())
+            vkCmdExecuteCommands(mainCmd, b.size(), b.data());
+        b.clear();
+    }
+    submitFunc(data, id);
+    batch = 0;
+    submitted = true;
 }
 
 void FrameMgr::startHelper()
