@@ -1,4 +1,5 @@
 #include "EntityCore/SubBuffer.hpp"
+#include "SyncEvent.hpp"
 #include <map>
 #include <vector>
 class BufferMgr;
@@ -18,6 +19,7 @@ public:
     void copy(VkCommandBuffer &cmd); // Record copy and reset allocation
 private:
     BufferMgr &mgr;
+    SyncEvent barrier;
     void *ptr;
     std::map<VkBuffer, std::vector<VkBufferCopy>> pendingCopy;
     std::map<std::pair<VkBuffer, VkBuffer>, std::vector<VkBufferCopy>> pendingExternalCopy;

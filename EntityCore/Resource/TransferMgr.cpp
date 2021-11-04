@@ -6,8 +6,9 @@ TransferMgr::TransferMgr(BufferMgr &mgr, int size) : mgr(mgr), size(size)
 {
     buffer = mgr.acquireBuffer(size);
     ptr = mgr.getPtr(buffer);
+    barrier.bufferBarrier(buffer, VK_PIPELINE_STAGE_2_HOST_BIT_KHR, VK_PIPELINE_STAGE_2_COPY_BIT_KHR, VK_ACCESS_2_HOST_WRITE_BIT_KHR, VK_ACCESS_2_TRANSFER_READ_BIT_KHR);
+    barrier.build();
     buffer.size = 0;
-
 }
 
 TransferMgr::~TransferMgr()
@@ -95,6 +96,7 @@ void TransferMgr::planCopyBetween(SubBuffer &src, SubBuffer &dst, int size, int 
 
 void TransferMgr::copy(VkCommandBuffer &cmd)
 {
+    barrier.placeBarrier(cmd);
     buffer.size = 0;
     // record copy
     for (auto &v : pendingCopy) {
