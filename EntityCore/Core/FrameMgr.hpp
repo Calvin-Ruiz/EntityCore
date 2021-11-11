@@ -93,6 +93,10 @@ public:
     inline void toExecute(VkCommandBuffer cmd, int layerIdx) {
         batches[layerIdx].push_back(cmd);
     }
+    // Cancel execution of one or several commands
+    // Must be called before submit() or submitInline()
+    // The commands must have all been pre-submitted with toExecute, and must be sorted in layer order, then in pre-submission order
+    void cancelExecution(std::vector<VkCommandBuffer> &cmds);
     // Next subpass which is VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
     inline void nextPass() {
         ++batch;

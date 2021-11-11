@@ -244,3 +244,34 @@ void FrameMgr::stopHelper()
     queue.close();
     helper.join();
 }
+
+void FrameMgr::cancelExecution(std::vector<VkCommandBuffer> &cmds)
+{
+    VkCommandBuffer *beg = cmds.data();
+    VkCommandBuffer *end = beg + cmds.size();
+    VkCommandBuffer target = *(beg++);
+    for (auto &b : batches) {
+        int size = b.size();
+        VkCommandBuffer *src = b.data() - 1;
+        VkCommandBuffer *dst = src;
+        while (size--) {
+            if (*(++src) == target) {
+                if (beg == end)
+                    return;
+                target = *(beg++);
+                while (size--) {
+                    if (*(++src) == target) {
+                        if (beg == end)
+                            return;
+                        target = *(beg++);
+                    } else {
+                        *(dst++) = *src;
+                    }
+                }
+                b.resize(dst - b.data());
+                break;
+            }
+            ++dst;
+        }
+    }
+}
