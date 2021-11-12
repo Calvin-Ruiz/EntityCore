@@ -4,8 +4,8 @@
 #include "TileMap.hpp"
 #include <cstring>
 
-TileMap::TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name, VkImageUsageFlags usage, VkFormat format) :
-    Texture(master, mgr, usage, name, format)
+TileMap::TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name, uint8_t chunkSize, VkImageUsageFlags usage, VkFormat format) :
+    Texture(master, mgr, usage, name, format), CHUNK_SIZE(chunkSize)
 {
     switch (format) {
         case VK_FORMAT_R8G8B8A8_UNORM:

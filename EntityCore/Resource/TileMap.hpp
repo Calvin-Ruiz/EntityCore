@@ -4,16 +4,13 @@
 #include "Texture.hpp"
 #include "EntityCore/SubTexture.hpp"
 
-// Size of a chunk, every allocation are rounded up to a multiple of this value
-// Bigger is faster
-#define CHUNK_SIZE 4
-
 /**
 *   \brief Dynamic creation and usage of tile map
 */
 class TileMap : protected Texture {
 public:
-    TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name = "unnamed", VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
+    // chunkSize : size of a chunk, every allocation are rounded up to a multiple of this value
+    TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name = "unnamed", uint8_t chunkSize = 4, VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
     virtual ~TileMap();
 
     bool createMap(uint32_t width, uint32_t height);
@@ -48,7 +45,9 @@ private:
     uint16_t *negmap = nullptr;
     uint16_t lineSize = 0;
     uint16_t *end;
+    const uint8_t CHUNK_SIZE;
     bool loaded = false;
+
 };
 
 #endif /* end of include guard: TILEMAP_HPP */
