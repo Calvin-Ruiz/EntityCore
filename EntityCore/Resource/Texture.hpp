@@ -53,7 +53,7 @@ public:
     void getDimensions(int &width, int &height, int &depth) const {width=info.extent.width;height=info.extent.height;depth=info.extent.depth;}
     int getMipmapCount() const {return info.mipLevels;}
     VkImageAspectFlags getAspect() const {return aspect;}
-private:
+protected:
     //! Pre-create image on GPU
     bool preCreateImage();
     //! Create image on GPU
