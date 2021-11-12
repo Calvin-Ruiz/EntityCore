@@ -45,7 +45,6 @@ void FrameSender::mainloop()
         vkResetFences(vkmgr.refDevice, 1, fences + blockedFrameIdx);
         readbackMgr->invalidate(readback[blockedFrameIdx]);
         submitFrame(readbackPtr[blockedFrameIdx]);
-        std::cout << "Submit frame " << (int) blockedFrameIdx << std::endl;
     }
 }
 
@@ -61,9 +60,4 @@ void FrameSender::acquireFrame(uint32_t &frameIdx)
 void FrameSender::presentFrame(uint32_t frameIdx)
 {
     pendingFrameIdx = frameIdx;
-}
-
-void FrameSender::submitFrame(void *data)
-{
-    // Send the frame here
 }

@@ -13,12 +13,12 @@ class BufferMgr;
 class FrameSender {
 public:
     FrameSender(VulkanMgr &vkmgr, std::vector<std::unique_ptr<Texture>> &frames, VkFence *fences);
-    ~FrameSender();
+    virtual ~FrameSender();
     void setupReadback(VkCommandBuffer cmd, unsigned char frameIdx);
     void acquireFrame(uint32_t &frameIdx);
     void presentFrame(uint32_t frameIdx);
 private:
-    virtual void submitFrame(void *data);
+    virtual void submitFrame(void *data) = 0;
     void mainloop();
     VulkanMgr &vkmgr;
     std::vector<std::unique_ptr<Texture>> &frames;

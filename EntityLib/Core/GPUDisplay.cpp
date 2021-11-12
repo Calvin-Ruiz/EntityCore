@@ -75,7 +75,8 @@ GPUDisplay::GPUDisplay(std::shared_ptr<EntityLib> master, GPUEntityMgr &entityMg
     for (int i = 0; i < 3; ++i)
         vkCreateFence(vkmgr.refDevice, &fenceInfo, nullptr, fences + i);
     if (WINDOWLESS) {
-        sender = std::make_unique<FrameSender>(vkmgr, master->frameDraw, fences);
+        assert(false); // Not implemented yet
+        // sender = std::make_unique<FrameSender>(vkmgr, master->frameDraw, fences);
     }
     initCommands();
 }
