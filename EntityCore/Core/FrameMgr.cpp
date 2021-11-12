@@ -253,25 +253,26 @@ void FrameMgr::cancelExecution(std::vector<VkCommandBuffer> &cmds)
     for (auto &b : batches) {
         int size = b.size();
         VkCommandBuffer *src = b.data() - 1;
-        VkCommandBuffer *dst = src;
         while (size--) {
             if (*(++src) == target) {
-                if (beg == end)
-                    return;
-                target = *(beg++);
+                target = (beg == end) ? VK_NULL_HANDLE : *(beg++);
+                VkCommandBuffer *dst = src;
                 while (size--) {
                     if (*(++src) == target) {
-                        if (beg == end)
-                            return;
+                        if (beg == end) {
+                            target = VK_NULL_HANDLE;
+                            break;
+                        }
                         target = *(beg++);
                     } else {
                         *(dst++) = *src;
                     }
                 }
                 b.resize(dst - b.data());
+                if (!target)
+                    return;
                 break;
             }
-            ++dst;
         }
     }
 }
