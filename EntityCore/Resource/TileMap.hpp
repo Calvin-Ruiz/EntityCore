@@ -45,6 +45,7 @@ private:
     std::vector<VkBufferImageCopy> writes;
     int *ptr;
     uint16_t *map = nullptr;
+    uint16_t *negmap = nullptr;
     uint16_t lineSize = 0;
     uint16_t *end;
     bool loaded = false;

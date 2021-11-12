@@ -36,13 +36,15 @@ bool TileMap::createMap(uint32_t width, uint32_t height)
     height += CHUNK_SIZE - 1;
     height /= CHUNK_SIZE;
     lineSize = width + 1;
-    map = new uint16_t[lineSize * height + 1];
+    map = new uint16_t[lineSize * height * 2 + 1];
     map[0] = 0;
+    memset(map + lineSize * height + 1, 0, lineSize * height * sizeof(*map));
     for (uint32_t i = 0; i++ < height;) {
         map[i * lineSize] = 0;
+        map[(height + i) * lineSize] = 1;
         propagate(map + i * lineSize);
     }
-    end = (++map) + lineSize * height;
+    negmap = ((++map) + lineSize * height);
     loaded = false;
     return true;
 }
@@ -117,9 +119,10 @@ void TileMap::uploadChanges(VkCommandBuffer cmd, bool includeTransition, VkImage
 SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
 {
     uint16_t *ptr = map;
-    uint16_t *end = this->end - lineSize * (height - 1);
+    uint16_t *end = negmap - lineSize * (height - 1);
     uint32_t layer;
     uint16_t *subptr;
+    const uint32_t shift = negmap - map;
     const uint16_t tmpWidth = (width + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     const uint16_t tmpHeight = (height + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     while (ptr > end) {
@@ -129,7 +132,8 @@ SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
             if (*subptr >= tmpWidth) {
                 subptr += lineSize;
             } else {
-                ptr += (*subptr) + 1;
+                ptr += *subptr;
+                ptr += subptr[shift];
                 continue;
             }
         }
@@ -152,11 +156,12 @@ void TileMap::reserveSpace(uint32_t x, uint32_t y, uint32_t width, uint32_t heig
     y /= CHUNK_SIZE;
     width /= CHUNK_SIZE;
     height /= CHUNK_SIZE;
-    width *= 2;
     uint16_t *ptr = map + x + y * lineSize;
+    const uint32_t shift = negmap - map + width;
     while (height--) {
-        memset(ptr, 0, width);
+        memset(ptr, 0, width * sizeof(*ptr));
         propagate(ptr);
+        propagate(ptr + shift, width);
         ptr += lineSize;
     }
 }
@@ -169,9 +174,12 @@ void TileMap::releaseSpace(uint32_t x, uint32_t y, uint32_t width, uint32_t heig
     y /= CHUNK_SIZE;
     width /= CHUNK_SIZE;
     height /= CHUNK_SIZE;
-    uint16_t *ptr = map + x + width + y * lineSize;
+    uint16_t *ptr = map + x + y * lineSize;
+    const uint32_t shift = negmap - map;
     while (height--) {
-        propagate(ptr, width);
+        memset(ptr + shift, 0, width * sizeof(*ptr));
+        propagate(ptr + shift);
+        propagate(ptr + width, width);
         ptr += lineSize;
     }
 }
