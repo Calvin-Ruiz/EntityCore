@@ -6,10 +6,11 @@
 
 std::string ComputePipeline::shaderDir = "./";
 
-ComputePipeline::ComputePipeline(VulkanMgr &master, PipelineLayout *layout) : master(master)
+ComputePipeline::ComputePipeline(VulkanMgr &master, PipelineLayout *layout, VkPipelineCreateFlags flags) : master(master)
 {
     pipelineInfo.layout = layout->getPipelineLayout();
     isOk = (pipelineInfo.layout != VK_NULL_HANDLE);
+    pipelineInfo.flags = flags;
 }
 
 ComputePipeline::~ComputePipeline()

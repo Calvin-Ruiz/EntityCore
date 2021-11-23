@@ -133,10 +133,10 @@ void GPUEntityMgr::buildCompute()
     updatePipeline = std::make_unique<ComputePipeline>(vkmgr, updatePLayout.get());
     updatePipeline->bindShader("update.comp.spv");
     updatePipeline->build();
-    collidePipeline = std::make_unique<ComputePipeline>(vkmgr, collidePLayout.get());
+    collidePipeline = std::make_unique<ComputePipeline>(vkmgr, collidePLayout.get(), VK_PIPELINE_CREATE_DISPATCH_BASE);
     collidePipeline->bindShader("collide.comp.spv");
     collidePipeline->build();
-    pcollidePipeline = std::make_unique<ComputePipeline>(vkmgr, collidePLayout.get());
+    pcollidePipeline = std::make_unique<ComputePipeline>(vkmgr, collidePLayout.get(), VK_PIPELINE_CREATE_DISPATCH_BASE);
     pcollidePipeline->bindShader("pcollide.comp.spv");
     pcollidePipeline->build();
     VkCommandBufferBeginInfo tmp {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};

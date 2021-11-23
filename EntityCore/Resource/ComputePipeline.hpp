@@ -13,7 +13,7 @@ class PipelineLayout;
 */
 class ComputePipeline {
 public:
-    ComputePipeline(VulkanMgr &master, PipelineLayout *layout);
+    ComputePipeline(VulkanMgr &master, PipelineLayout *layout, VkPipelineCreateFlags flags = 0);
     ~ComputePipeline();
     //! Define which shader must be used
     void bindShader(const std::string &filename, const std::string entry = "main");
