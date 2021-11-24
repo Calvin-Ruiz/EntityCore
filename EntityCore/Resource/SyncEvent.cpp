@@ -88,16 +88,19 @@ void SyncEvent::build()
         dep.pImageMemoryBarriers = image.data();
     } else {
         // compatibility mode
+        compatGlobal.clear();
         for (auto &b : global) {
             compatGlobal.push_back({VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, compatConvAccess(b.srcAccessMask), compatConvAccess(b.dstAccessMask)});
             compatSrc |= compatConvStage(b.srcStageMask);
             compatDst |= compatConvStage(b.dstStageMask);
         }
+        compatBuffers.clear();
         for (auto &b : buffers) {
             compatBuffers.push_back({VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, nullptr, compatConvAccess(b.srcAccessMask), compatConvAccess(b.dstAccessMask), b.srcQueueFamilyIndex, b.dstQueueFamilyIndex, b.buffer, b.offset, b.size});
             compatSrc |= compatConvStage(b.srcStageMask);
             compatDst |= compatConvStage(b.dstStageMask);
         }
+        compatImage.clear();
         for (auto &b : image) {
             compatImage.push_back({VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, compatConvAccess(b.srcAccessMask), compatConvAccess(b.dstAccessMask), b.oldLayout, b.newLayout, b.srcQueueFamilyIndex, b.dstQueueFamilyIndex, b.image, b.subresourceRange});
             compatSrc |= compatConvStage(b.srcStageMask);
