@@ -63,10 +63,10 @@ void TileMap::writeInSurface(SubTexture &surface, uint32_t x, uint32_t y, uint32
 void TileMap::writeAt(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const int *data)
 {
     VkDeviceSize offset = x + info.extent.width * y;
-    writes.push_back({offset * 4, info.extent.width, 0, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {x, y, 0}, {width, height, 1}});
+    writes.push_back({staging.offset + offset * 4, info.extent.width, 0, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}, {x, y, 0}, {width, height, 1}});
     if ((width | x) & 1) {
         int *dst = ptr + offset;
-        const uint16_t nextLine = lineSize - width;
+        const uint16_t nextLine = info.extent.width - width;
         while (height--) {
             for (uint16_t i = width; i--;)
                 *(dst++) = *(data++);
@@ -76,7 +76,7 @@ void TileMap::writeAt(uint16_t x, uint16_t y, uint16_t width, uint16_t height, c
         // Memory alignment optimal for 64-bit copy
         long *dst = (long *) (ptr + offset);
         const long *src = (const long *) data;
-        const uint16_t nextLine = (lineSize - width) / 2;
+        const uint16_t nextLine = (info.extent.width - width) / 2;
         width /= 2;
         while (height--) {
             for (uint16_t i = width; i--;)
@@ -130,7 +130,7 @@ SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
     const uint32_t shift = negmap - map;
     const uint16_t tmpWidth = (width + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     const uint16_t tmpHeight = (height + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
-    while (ptr > end) {
+    while (ptr < end) {
         subptr = ptr;
         layer = tmpHeight;
         while (layer--) {
