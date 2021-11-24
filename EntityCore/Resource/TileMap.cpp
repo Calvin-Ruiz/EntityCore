@@ -7,6 +7,7 @@
 TileMap::TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name, uint8_t chunkSize, VkImageUsageFlags usage, VkFormat format) :
     Texture(master, mgr, usage, name, format), CHUNK_SIZE(chunkSize)
 {
+    aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     switch (format) {
         case VK_FORMAT_R8G8B8A8_UNORM:
         case VK_FORMAT_B8G8R8A8_UNORM:
