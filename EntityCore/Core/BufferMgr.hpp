@@ -26,8 +26,11 @@ public:
     SubBuffer fastAcquireBuffer(uint32_t size);
     // Release every previously acquired SubBuffer, mustn't be used with acquireBuffer
     void reset();
-    // Return a pointer to
+    // Return a pointer to the beginning of the SubBuffer
+    // If BufferMgr is not HOST_VISIBLE, return (void *) subBuffer.offset
     void *getPtr(SubBuffer &subBuffer);
+    // Return a pointer to the beginning of the BufferMgr, or nullptr if not HOST_VISIBLE
+    void *getPtr() {return data;}
     // Make the changes from the device visible (if host_cached)
     void invalidate();
     // Make the changes from the device visible (if host_cached)
