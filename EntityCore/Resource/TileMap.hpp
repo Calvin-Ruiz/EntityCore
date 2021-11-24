@@ -4,6 +4,14 @@
 #include "Texture.hpp"
 #include "EntityCore/SubTexture.hpp"
 
+enum class Implicit : uint8_t
+{
+    NOTHING = 0x00,
+    SRC_LAYOUT = 0x01,
+    DST_LAYOUT = 0x02,
+    LAYOUT = SRC_LAYOUT | DST_LAYOUT,
+};
+
 /**
 *   \brief Dynamic creation and usage of tile map
 */
@@ -20,7 +28,7 @@ public:
     void writeInSurface(SubTexture &surface, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void *data);
     // Create a SubTexture at specific coordinates. You are responsible for the validity of the area acquired by this way.
     SubTexture makeSubTexture(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
-    void uploadChanges(VkCommandBuffer cmd, bool includeTransition = true, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    void uploadChanges(VkCommandBuffer cmd, Implicit implicit = Implicit::LAYOUT, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     // For set binding
     inline Texture &operator*() {return *(Texture *) this;}
 private:
