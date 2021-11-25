@@ -31,6 +31,8 @@ public:
     void uploadChanges(VkCommandBuffer cmd, Implicit implicit = Implicit::LAYOUT, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     // For set binding
     inline Texture &operator*() {return *(Texture *) this;}
+    // For debug purpose only
+    void dumpMap();
 private:
     void reserveSpace(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
     void releaseSpace(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
@@ -47,12 +49,17 @@ private:
         while (*--ptr)
             *ptr = ptr[1] + 1;
     }
+    inline void propagateIn(uint16_t *ptr, uint16_t range) {
+        while (range--) {
+            --ptr;
+            *ptr = ptr[1] + 1;
+        }
+    }
     std::vector<VkBufferImageCopy> writes;
     int *ptr;
     uint16_t *map = nullptr;
     uint16_t *negmap = nullptr;
     uint16_t lineSize = 0;
-    uint16_t *end;
     const uint8_t CHUNK_SIZE;
     bool loaded = false;
 

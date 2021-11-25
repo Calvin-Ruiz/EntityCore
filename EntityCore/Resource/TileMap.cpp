@@ -3,6 +3,7 @@
 #include "EntityCore/Core/MemoryManager.hpp"
 #include "TileMap.hpp"
 #include <cstring>
+#include <sstream>
 
 TileMap::TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name, uint8_t chunkSize, VkImageUsageFlags usage, VkFormat format) :
     Texture(master, mgr, usage, name, format), CHUNK_SIZE(chunkSize)
@@ -43,11 +44,32 @@ bool TileMap::createMap(uint32_t width, uint32_t height)
     for (uint32_t i = 0; i++ < height;) {
         map[i * lineSize] = 0;
         map[(height + i) * lineSize] = 1;
-        propagate(map + i * lineSize);
+        propagateIn(map + i * lineSize, lineSize - 1);
     }
     negmap = ((++map) + lineSize * height);
     loaded = false;
     return true;
+}
+
+void TileMap::dumpMap()
+{
+    std::ostringstream ss;
+    ss << "Allocation space representation for TileMap '" << name << "'";
+    uint16_t *ptr = map;
+    int j = 0;
+    const char *adapter = " 123456789abcdefghijklmnopqrstuvwxyz#";
+    while (ptr < negmap) {
+        ss << '\n' << j++ << '\t';
+        for (int i = 0; i < (lineSize - 1); ++i) {
+            uint16_t v = ptr[i];
+            if (v > 36)
+                ss << '#';
+            else
+                ss << adapter[v];
+        }
+        ptr += lineSize;
+    }
+    master.putLog(ss.str(), LogType::DEBUG);
 }
 
 void TileMap::writeSurface(SubTexture &surface, const void *data)
@@ -131,15 +153,18 @@ SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
     const uint16_t tmpWidth = (width + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     const uint16_t tmpHeight = (height + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     while (ptr < end) {
+        DOBLE_CONTINUE:
         subptr = ptr;
         layer = tmpHeight;
         while (layer--) {
             if (*subptr >= tmpWidth) {
                 subptr += lineSize;
             } else {
-                ptr += *subptr;
-                ptr += subptr[shift];
-                continue;
+                int jump = *subptr;
+                while (subptr[jump + shift])
+                    jump += subptr[jump + shift];
+                ptr += jump;
+                goto DOBLE_CONTINUE;
             }
         }
         uint32_t pos = ptr - map;
@@ -166,7 +191,7 @@ void TileMap::reserveSpace(uint32_t x, uint32_t y, uint32_t width, uint32_t heig
     while (height--) {
         memset(ptr, 0, width * sizeof(*ptr));
         propagate(ptr);
-        propagate(ptr + shift, width);
+        propagateIn(ptr + shift, width);
         ptr += lineSize;
     }
 }
