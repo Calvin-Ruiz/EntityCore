@@ -34,6 +34,7 @@ private:
     int offset;
     const int size;
     const int binding;
+    const int stride;
 };
 
 #endif /* end of include guard: VERTEX_BUFFER_HPP */

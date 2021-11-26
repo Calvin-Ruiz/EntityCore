@@ -2,7 +2,7 @@
 #include "VertexBuffer.hpp"
 #include <cassert>
 
-VertexBuffer::VertexBuffer(BufferMgr &mgr, int size, int stride, int alignment, int binding) : mgr(mgr), size(size), binding(binding)
+VertexBuffer::VertexBuffer(BufferMgr &mgr, int size, int stride, int alignment, int binding) : mgr(mgr), size(size), binding(binding), stride(stride/4)
 {
     VkDeviceSize bufferSize = ((stride * size - 1) / alignment + 1) * alignment;
 
@@ -24,7 +24,6 @@ void VertexBuffer::bind(VkCommandBuffer &cmd)
 
 void VertexBuffer::fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst)
 {
-    const unsigned char stride = vertexBuffer.size / size / 4;
     while (count--) {
         for (unsigned char i = 0; i < elemSize; ++i)
             dst[i] = *(src++);
