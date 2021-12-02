@@ -23,7 +23,7 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-enum class LogType {
+enum class LogType : unsigned char {
     INFO,
     DEBUG,
     LAYER,
