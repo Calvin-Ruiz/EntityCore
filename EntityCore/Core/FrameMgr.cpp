@@ -99,6 +99,15 @@ void FrameMgr::begin(VkCommandBuffer cmd, int layerIdx)
     vkBeginCommandBuffer(cmd, &tmpCmdInfo);
 }
 
+void FrameMgr::beginAsync(VkCommandBuffer cmd, int layerIdx)
+{
+    auto tmp1 = tmpCmdInfo;
+    auto tmp2 = inheritance;
+    tmp1.pInheritanceInfo = &tmp2;
+    tmp2.subpass = layerIdx;
+    vkBeginCommandBuffer(cmd, &tmp1);
+}
+
 VkCommandBuffer &FrameMgr::begin(int idx, int layerIdx)
 {
     inheritance.subpass = layerIdx;
