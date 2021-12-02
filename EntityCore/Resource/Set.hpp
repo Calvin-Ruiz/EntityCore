@@ -58,6 +58,8 @@ public:
     void update();
     //! Destroy descriptor set hold, require the Set to be temporary
     void uninit();
+    //! Assume the descriptor set is no longer in use, bypass security
+    void unGet() {used = false;}
     //! Push set to command
     void push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
     //! Get descriptor set
@@ -79,6 +81,7 @@ private:
     VkDescriptorSet set = VK_NULL_HANDLE;
     bool initialized = false;
     bool temporary = false;
+    bool used = false;
     static PFN_vkCmdPushDescriptorSetKHR pushSet;
 };
 

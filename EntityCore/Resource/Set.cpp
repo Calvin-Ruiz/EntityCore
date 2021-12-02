@@ -137,6 +137,7 @@ void Set::update()
 {
     init();
     if (set) {
+        assert(!used);
         vkUpdateDescriptorSets(master.refDevice, writeSet.size(), writeSet.data(), 0, nullptr);
         writeSet.clear();
         bufferInfo.clear();
@@ -148,6 +149,7 @@ VkDescriptorSet *Set::get()
 {
     if (!writeSet.empty())
         update();
+    used = true;
     return &set;
 }
 
