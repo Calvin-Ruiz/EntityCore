@@ -67,6 +67,10 @@ public:
     VkCommandBuffer createMain();
     // Start recording
     VkCommandBuffer &begin(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE, int nbTextures = 0, Texture **textures = nullptr, SyncEvent *sync = nullptr);
+    // Start recording, without starting render pass, can be used instead of begin
+    VkCommandBuffer preBegin();
+    // Start render pass, must be called after preBegin
+    void postBegin(VkSubpassContents content = VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     // Next rendering layer
     void next(VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE);
     // Execute command

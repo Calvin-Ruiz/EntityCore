@@ -181,6 +181,18 @@ VkCommandBuffer &FrameMgr::begin(VkSubpassContents content, int nbTexture, Textu
     return mainCmd;
 }
 
+VkCommandBuffer FrameMgr::preBegin()
+{
+    vkResetCommandPool(master.refDevice, graphicPool, 0);
+    vkBeginCommandBuffer(mainCmd, &cmdInfo);
+    return mainCmd;
+}
+
+void FrameMgr::postBegin(VkSubpassContents content)
+{
+    renderer.begin(id, mainCmd, content);
+}
+
 void FrameMgr::next(VkSubpassContents content)
 {
     vkCmdNextSubpass(mainCmd, content);
