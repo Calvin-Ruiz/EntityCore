@@ -110,6 +110,8 @@ public:
 private:
     const bool drawLogs;
     const bool saveLogs;
+    bool canSynchronization2 = false;
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2 {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, nullptr, VK_TRUE};
     logger_t redirectLog;
     std::ofstream logs;
     std::string cachePath;

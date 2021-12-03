@@ -268,10 +268,6 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
         std::this_thread::sleep_for(std::chrono::seconds(3));
         exit(-1);
     }
-    if (_hasLayer) {
-        putLog("Debug layer used, enfore compatibility mode for SyncEvent", LogType::WARNING);
-        return;
-    }
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
@@ -279,8 +275,7 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
     for (const auto& extension : availableExtensions) {
         if (extension.extensionName == std::string("VK_KHR_synchronization2")) {
-            SyncEvent::enable();
-            deviceExtension.push_back("VK_KHR_synchronization2");
+            canSynchronization2 = true;
             break;
         }
     }
@@ -389,8 +384,10 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
 
 void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures)
 {
-    VkPhysicalDeviceFeatures supportedDeviceFeatures;
-    vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);
+    VkPhysicalDeviceFeatures2 supportedDeviceFeatures;
+    supportedDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    supportedDeviceFeatures.pNext = &sync2;
+    vkGetPhysicalDeviceFeatures2(physicalDevice, &supportedDeviceFeatures);
 
     const VkBool32 *src = reinterpret_cast<const VkBool32 *>(&requiredFeatures);
     VkBool32 *dst = reinterpret_cast<VkBool32 *>(&preferedFeatures);
@@ -399,7 +396,7 @@ void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkP
         *(dst++) |= *(src++);
     }
     src = reinterpret_cast<const VkBool32 *>(&preferedFeatures);
-    const VkBool32 *src2 = reinterpret_cast<const VkBool32 *>(&supportedDeviceFeatures);
+    const VkBool32 *src2 = reinterpret_cast<const VkBool32 *>(&supportedDeviceFeatures.features);
     dst = reinterpret_cast<VkBool32 *>(&deviceFeatures);
     for (int i = 0; i < size; ++i) {
         *(dst++) = *(src++) & *(src2++);
@@ -408,11 +405,17 @@ void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkP
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext = &supportedDeviceFeatures;
 
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.pEnabledFeatures = nullptr;
+
+    if (canSynchronization2 && sync2.synchronization2 == VK_TRUE) {
+        SyncEvent::enable();
+        deviceExtension.push_back("VK_KHR_synchronization2");
+    }
 
     createInfo.enabledExtensionCount = deviceExtension.size();
     createInfo.ppEnabledExtensionNames = deviceExtension.data();
