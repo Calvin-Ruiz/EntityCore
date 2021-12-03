@@ -36,7 +36,7 @@ public:
     // Add dependency between actual layer and next layer
     void addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Add dependency inside this layer
-    void addSelfDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess);
+    void addSelfDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Bind input attachment to use
     void bindInput(int id, VkImageLayout layout);
     // Bind color attachment to use
