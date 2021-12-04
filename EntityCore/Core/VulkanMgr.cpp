@@ -386,7 +386,7 @@ void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkP
 {
     VkPhysicalDeviceFeatures2 supportedDeviceFeatures;
     supportedDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    supportedDeviceFeatures.pNext = &sync2;
+    supportedDeviceFeatures.pNext = (canSynchronization2) ? &sync2 : nullptr;
     vkGetPhysicalDeviceFeatures2(physicalDevice, &supportedDeviceFeatures);
 
     const VkBool32 *src = reinterpret_cast<const VkBool32 *>(&requiredFeatures);
