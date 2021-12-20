@@ -52,6 +52,8 @@ public:
     void disableSampleShading() {multisampling.sampleShadingEnable = VK_FALSE;}
     //! Set polygon mode, default is VK_POLYGON_MODE_FILL
     void setPolygonMode(VkPolygonMode polygonMode) {rasterizer.polygonMode = polygonMode;}
+    //! Set custom viewport, which MUSTN'T be destroyed until this pipeline was build();
+    void setViewportState(VkPipelineViewportStateCreateInfo *viewport);
     //! Build pipeline for use
     void build(const std::string &customName = "\0");
     //! Bind pipeline in command buffer

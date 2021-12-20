@@ -223,6 +223,11 @@ void Pipeline::removeVertexEntry(uint32_t location)
     master.putLog("Failed to remove entry", LogType::DEBUG);
 }
 
+void Pipeline::setViewportState(VkPipelineViewportStateCreateInfo *viewport)
+{
+    pipelineInfo.pViewportState = viewport;
+}
+
 void Pipeline::build(const std::string &customName)
 {
     if (!isOk || shaderStages.empty()) {
