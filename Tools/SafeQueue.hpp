@@ -107,7 +107,30 @@ public:
         blocking = false;
         cv.notify_one();
     }
+    static unsigned char *trace(void *data, unsigned char *buffer) {
+        return reinterpret_cast<WorkQueue *>(data)->traceInternal(buffer);
+    }
+    unsigned char *traceInternal(unsigned char *buffer) {
+        memcpy(buffer, "{size:", 6);
+        buffer += 6;
+        traceNbr(count, buffer);
+        *(buffer++) = '/';
+        traceNbr(capacity, buffer);
+        memcpy(buffer, ", rd:", 5);
+        buffer += 5;
+        traceNbr(readIdx, buffer);
+        memcpy(buffer, ", wr:", 5);
+        buffer += 5;
+        traceNbr(writeIdx, buffer);
+        *(buffer++) = '}';
+        return buffer;
+    }
 private:
+    void traceNbr(unsigned short value, unsigned char *&buffer) {
+        if (value > 9)
+            traceNbr(value / 10, buffer);
+        *(buffer++) = '0' + value % 10;
+    }
     T datas[capacity + 1];
     unsigned short readIdx = 0;
     std::atomic<unsigned short> writeIdx;
@@ -174,7 +197,30 @@ public:
     bool empty() const {
         return count == 0;
     }
+    static unsigned char *trace(void *data, unsigned char *buffer) {
+        return reinterpret_cast<WorkQueue<T, capacity> *>(data)->traceInternal(buffer);
+    }
+    unsigned char *traceInternal(unsigned char *buffer) {
+        memcpy(buffer, "{size:", 6);
+        buffer += 6;
+        traceNbr(count, buffer);
+        *(buffer++) = '/';
+        traceNbr(capacity, buffer);
+        memcpy(buffer, ", rd:", 5);
+        buffer += 5;
+        traceNbr(readIdx, buffer);
+        memcpy(buffer, ", wr:", 5);
+        buffer += 5;
+        traceNbr(writeIdx, buffer);
+        *(buffer++) = '}';
+        return buffer;
+    }
 private:
+    void traceNbr(unsigned short value, unsigned char *&buffer) {
+        if (value > 9)
+            traceNbr(value / 10, buffer);
+        *(buffer++) = '0' + value % 10;
+    }
     T datas[capacity + 1];
     unsigned short readIdx = 0;
     std::atomic<unsigned short> writeIdx;
@@ -216,7 +262,30 @@ public:
     bool empty() const {
         return count == 0;
     }
+    static unsigned char *trace(void *data, unsigned char *buffer) {
+        return reinterpret_cast<WorkQueue<T, capacity> *>(data)->traceInternal(buffer);
+    }
+    unsigned char *traceInternal(unsigned char *buffer) {
+        memcpy(buffer, "{size:", 6);
+        buffer += 6;
+        traceNbr(count, buffer);
+        *(buffer++) = '/';
+        traceNbr(capacity, buffer);
+        memcpy(buffer, ", rd:", 5);
+        buffer += 5;
+        traceNbr(readIdx, buffer);
+        memcpy(buffer, ", wr:", 5);
+        buffer += 5;
+        traceNbr(writeIdx, buffer);
+        *(buffer++) = '}';
+        return buffer;
+    }
 private:
+    void traceNbr(unsigned short value, unsigned char *&buffer) {
+        if (value > 9)
+            traceNbr(value / 10, buffer);
+        *(buffer++) = '0' + value % 10;
+    }
     T datas[capacity + 1];
     std::atomic<unsigned short> readIdx;
     unsigned short writeIdx;
