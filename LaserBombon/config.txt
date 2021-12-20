@@ -1,3 +1,0 @@
-debug = 1
-debugLayer = 0
-writeLog = 0
