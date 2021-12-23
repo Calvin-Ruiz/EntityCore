@@ -18,9 +18,9 @@ public:
     void planCopyBetween(SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);
     void copy(VkCommandBuffer &cmd); // Record copy and reset allocation
     // Return amount of memory currently used
-    void getUsedSpace() const {return buffer.size;};
+    uint32_t getUsedSpace() const {return buffer.size;};
     // Return amount of memory which can be used until next copy()
-    void getRemainingSpace() const {return size - buffer.size;};
+    uint32_t getRemainingSpace() const {return size - buffer.size;};
     // Return the ratio of memory used
     float getUsedRatio() const {return buffer.size / (float) size;}
 private:
