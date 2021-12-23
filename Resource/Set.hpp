@@ -66,6 +66,8 @@ public:
     operator VkDescriptorSet() {return *get();}
     //! Internally used
     static void setupPFN(VkInstance instance);
+    //! Create several sets in an optimized way
+    static Set *createSets(VulkanMgr &master, SetMgr &mgr, int nbSets, PipelineLayout *_layout, int setBinding = -1, bool temporary = true);
 private:
     //! Allocate descriptorSet from SetMgr
     void init();
