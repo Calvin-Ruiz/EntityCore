@@ -7,7 +7,7 @@ class VulkanMgr;
 
 class SetMgr {
 public:
-    SetMgr(VulkanMgr &master, int maxSet, uint32_t maxUniformSet = 0, uint32_t maxTextureSet = 0, uint32_t maxStorageBufferSet = 0, bool temporarySets = false);
+    SetMgr(VulkanMgr &master, int maxSet, uint32_t maxUniformSet = 0, uint32_t maxTextureSet = 0, uint32_t maxStorageBufferSet = 0, uint32_t maxStorageImageSet = 0, bool temporarySets = false);
     ~SetMgr();
     //! Effectively destroy previously created descriptor set
     void update();

@@ -155,6 +155,17 @@ Texture::~Texture()
         vkDestroyImage(master.refDevice, image, nullptr);
 }
 
+VkImageView Texture::createView(uint32_t baseMipLevel, uint32_t mipLevels, uint32_t baseArrayLevel, uint32_t arrayLevels)
+{
+    VkImageView v;
+    VkImageViewCreateInfo viewInfo {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr, 0, image, (VkImageViewType) info.imageType, info.format, {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY}, {aspect, baseMipLevel, mipLevels, baseArrayLevel, arrayLevels}};
+    if (vkCreateImageView(master.refDevice, &viewInfo, nullptr, &v) != VK_SUCCESS) {
+        master.putLog("Failed to create view on '" + name + "'", LogType::ERROR);
+        return VK_NULL_HANDLE;
+    }
+    return v;
+}
+
 void *Texture::acquireStagingMemoryPtr()
 {
     return mgr->getPtr(staging);

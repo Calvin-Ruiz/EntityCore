@@ -53,6 +53,7 @@ public:
     void getDimensions(int &width, int &height, int &depth) const {width=info.extent.width;height=info.extent.height;depth=info.extent.depth;}
     int getMipmapCount() const {return info.mipLevels;}
     VkImageAspectFlags getAspect() const {return aspect;}
+    VkImageView createView(uint32_t baseMipLevel, uint32_t mipLevels = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevels = VK_REMAINING_ARRAY_LAYERS);
 protected:
     //! Pre-create image on GPU
     bool preCreateImage();
