@@ -17,8 +17,12 @@ public:
     void setupReadback(VkCommandBuffer cmd, unsigned char frameIdx);
     void acquireFrame(uint32_t &frameIdx);
     void presentFrame(uint32_t frameIdx);
-private:
+protected:
     virtual void submitFrame(void *data) = 0;
+    // Mustn't be modified outside of FrameSender, only read them
+    int width;
+    int height;
+private:
     void mainloop();
     VulkanMgr &vkmgr;
     std::vector<std::unique_ptr<Texture>> &frames;
@@ -27,8 +31,6 @@ private:
     std::vector<SubBuffer> readback;
     std::vector<void *> readbackPtr;
     VkFence *fences;
-    int width;
-    int height;
     bool alive = true;
     unsigned char pendingFrameIdx = 2; // Frame waiting to be presented
     unsigned char blockedFrameIdx = 2; // Frame currently presented
