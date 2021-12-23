@@ -23,18 +23,18 @@ Set::~Set()
     uninit();
 }
 
-Set *Set::createSets(VulkanMgr &master, SetMgr &mgr, int nbSets, PipelineLayout *_layout, int setBinding, bool temporary)
-{
-    Set *sets = new Set[nbSets] {{master, mgr, _layout, setBinding, false, temporary}, ...};
-    VkDescriptorSet *_sets = alloca(sizeof(VkDescriptorSet) * nbSets); // Stack allocation of dynamic size
-    sets->allocInfo.descriptorSetCount = nbSets;
-    vkAllocateDescriptorSets(master.refDevice, &sets->allocInfo, _sets);
-    for (int i = 0; i < nbSets; ++i) {
-        sets[i].set = _sets[i];
-        sets[i].initialized = true;
-    }
-    return sets;
-}
+// Set *Set::createSets(VulkanMgr &master, SetMgr &mgr, int nbSets, PipelineLayout *_layout, int setBinding, bool temporary)
+// {
+//     Set *sets = new Set[nbSets] {{master, mgr, _layout, setBinding, false, temporary}, ...};
+//     VkDescriptorSet *_sets = alloca(sizeof(VkDescriptorSet) * nbSets); // Stack allocation of dynamic size
+//     sets->allocInfo.descriptorSetCount = nbSets;
+//     vkAllocateDescriptorSets(master.refDevice, &sets->allocInfo, _sets);
+//     for (int i = 0; i < nbSets; ++i) {
+//         sets[i].set = _sets[i];
+//         sets[i].initialized = true;
+//     }
+//     return sets;
+// }
 
 void Set::init()
 {
