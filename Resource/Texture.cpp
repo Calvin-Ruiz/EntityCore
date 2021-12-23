@@ -72,7 +72,7 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
     info.extent.height = height;
     info.extent.depth = depth;
     info.samples = sampleCount;
-    widthSplit = 1 << ((static_cast<int>(std::log2(depth)) - 1) / 2);
+    widthSplit = 1 << (static_cast<int>(std::log2(depth)) / 2);
     info.mipLevels = (mipmap) ? static_cast<uint32_t>(std::log2(std::max(width, height))) + 1 : 1;
     if (content) {
         VkDeviceSize size = width * height * depth * nbChannels * elemSize;
