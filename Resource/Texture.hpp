@@ -43,9 +43,9 @@ public:
     static void setTextureDir(std::string _textureDir) {textureDir = _textureDir;}
     bool isOnCPU() const {return onCPU;}
     bool isOnGPU() const {return onGPU;}
-    //! Internal use only
+    //! Return internal VkImage
     VkImage getImage();
-    //! Internal use only
+    //! Return internal VkImageView
     VkImageView getView();
     //! Write texture size in width and height arguments
     void getDimensions(int &width, int &height) const {width=info.extent.width;height=info.extent.height;}
