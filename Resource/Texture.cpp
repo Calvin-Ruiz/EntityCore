@@ -322,3 +322,10 @@ VkImageView Texture::getView()
     use();
     return view;
 }
+
+void Texture::rename(const std::string &_name)
+{
+    name = _name;
+    master.setObjectName(image, VK_OBJECT_TYPE_IMAGE, _name);
+    master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, _name);
+}

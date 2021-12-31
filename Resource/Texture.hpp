@@ -54,6 +54,8 @@ public:
     int getMipmapCount() const {return info.mipLevels;}
     VkImageAspectFlags getAspect() const {return aspect;}
     VkImageView createView(uint32_t baseMipLevel, uint32_t mipLevels = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevels = VK_REMAINING_ARRAY_LAYERS);
+    //! Allow renaming a texture on the fly. Usefull when dynamically reusing a texture to save allocation and binding cost.
+    void rename(const std::string &name);
 protected:
     //! Pre-create image on GPU
     bool preCreateImage();
