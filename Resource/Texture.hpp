@@ -16,7 +16,7 @@ class BufferMgr;
 class Texture {
 public:
     // Create a framebuffer attachment
-    Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT);
+    Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT, bool mipmap = false);
     // Create a texture
     Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
     virtual ~Texture();

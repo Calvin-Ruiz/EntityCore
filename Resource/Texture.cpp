@@ -9,7 +9,7 @@
 
 std::string Texture::textureDir = "./";
 
-Texture::Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount, const std::string &name, VkImageUsageFlags usage, VkFormat format, VkImageAspectFlags aspect) : master(master), mgr(nullptr), aspect(aspect), name(name)
+Texture::Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount, const std::string &name, VkImageUsageFlags usage, VkFormat format, VkImageAspectFlags aspect, bool mipmap) : master(master), mgr(nullptr), aspect(aspect), name(name)
 {
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;
@@ -17,7 +17,7 @@ Texture::Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits
     info.imageType = VK_IMAGE_TYPE_2D;
     info.format = format;
     info.extent = {(uint32_t) width, (uint32_t) height, 1};
-    info.mipLevels = 1;
+    info.mipLevels = (mipmap) ? static_cast<uint32_t>(std::log2(std::max(width, height))) + 1 : 1;
     info.arrayLayers = 1;
     info.tiling = VK_IMAGE_TILING_OPTIMAL;
     info.usage = usage;
