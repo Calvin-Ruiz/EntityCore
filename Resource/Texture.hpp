@@ -56,6 +56,8 @@ public:
     VkImageView createView(uint32_t baseMipLevel, uint32_t mipLevels = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevels = VK_REMAINING_ARRAY_LAYERS);
     //! Allow renaming a texture on the fly. Usefull when dynamically reusing a texture to save allocation and binding cost.
     void rename(const std::string &name);
+    //! Return the size of this texture in the GPU memory.
+    VkDeviceSize getTextureSize() const {return sizeInMemory;}
 protected:
     //! Pre-create image on GPU
     bool preCreateImage();
@@ -73,6 +75,7 @@ protected:
     int nbChannels = 4;
     int elemSize = 1;
     std::string name;
+    VkDeviceSize sizeInMemory;
     unsigned short widthSplit = 1;
     bool onCPU = false;
     bool onGPU = false;

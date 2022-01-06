@@ -141,6 +141,7 @@ bool Texture::createImage()
         return false;
     }
     master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, name);
+    sizeInMemory = memRequirements.memoryRequirements.size;
     onGPU = true;
     return true;
 }
