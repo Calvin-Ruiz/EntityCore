@@ -293,4 +293,126 @@ private:
     std::atomic<int> vcount;
 };
 
+template<class T, unsigned char nbWorker, unsigned short capacity>
+class DispatchOutQueue;
+
+
+// Thread-safe blocking-pop queue for work dispatch (maximal capacity of 65535 elements)
+template<class T, unsigned char nbWorker = 1, unsigned short capacity = 255>
+class DispatchInQueue {
+    friend class DispatchOutQueue<T, nbWorker, capacity>;
+public:
+    DispatchInQueue() : readIdx(0), writeIdx(0), count(0), vcount(0) {}
+    ~DispatchInQueue() = default;
+    // Insert element to queue, return true on success
+    bool push(T &data) {
+        if (count >= capacity)
+            return false;
+        datas[++writeIdx & capacity] = std::move(data);
+        ++count;
+        ++vcount;
+        cv.notify_one();
+        return true;
+    }
+    bool emplace(T data) {
+        return push(data);
+    }
+    unsigned char size() const {
+        return count;
+    }
+    bool empty() const {
+        return count == 0;
+    }
+    void close() {
+        blocking = false;
+        cv.notify_one();
+    }
+    void reopen() {
+        blocking = true;
+    }
+    void flush() {
+        cv.notify_all();
+    }
+    static unsigned char *trace(void *data, unsigned char *buffer) {
+        return reinterpret_cast<WorkQueue<T, capacity> *>(data)->traceInternal(buffer);
+    }
+    unsigned char *traceInternal(unsigned char *buffer) {
+        memcpy(buffer, "{size:", 6);
+        buffer += 6;
+        traceNbr(count, buffer);
+        *(buffer++) = '/';
+        traceNbr(capacity, buffer);
+        memcpy(buffer, ", rd:", 5);
+        buffer += 5;
+        traceNbr(readIdx, buffer);
+        memcpy(buffer, ", wr:", 5);
+        buffer += 5;
+        traceNbr(writeIdx, buffer);
+        *(buffer++) = '}';
+        return buffer;
+    }
+private:
+    void traceNbr(unsigned short value, unsigned char *&buffer) {
+        if (value > 9)
+            traceNbr(value / 10, buffer);
+        *(buffer++) = '0' + value % 10;
+    }
+    T datas[capacity + nbWorker];
+    std::atomic<unsigned short> readIdx;
+    unsigned short writeIdx;
+    std::atomic<unsigned short> count;
+    std::atomic<int> vcount;
+    std::condition_variable cv;
+    bool blocking = true;
+};
+
+// Thread-safe blocking-pop queue for work dispatch (worker thread) (maximal capacity of 65535 elements)
+template<class T, unsigned char nbWorker = 1, unsigned short capacity = 255>
+class DispatchOutQueue {
+public:
+    DispatchOutQueue(DispatchInQueue<T, nbWorker, capacity> &master) : master(master) {}
+    ~DispatchOutQueue() = default;
+    // Extract element from queue, return true on success, or false on failure if non-blocking
+    bool pop(T &data) {
+        BEGIN:
+        if (--master.vcount >= 0) {
+            data = std::move(master.datas[++master.readIdx & capacity]);
+            --master.count;
+            return true;
+        }
+        ++master.vcount;
+        if (!master.blocking)
+            return false;
+        master.cv.wait(lock);
+        goto BEGIN;
+    }
+    // Wait for the queue to complete operations, or wait for .release()
+    void waitIdle() {
+        mtx.lock();
+        mtx.unlock();
+    }
+    // Acquire ownership of this queue by this thread for pop operations
+    void acquire() {
+        lock = std::unique_lock<std::mutex>(mtx);
+    }
+    // Release ownership of this queue by this thread for pop operations
+    void release() {
+        lock.release();
+        mtx.unlock();
+    }
+    // Interrupt operations on this worker thread
+    // Return once the worker thread has completed all his tasks
+    void interrupt() {
+        mtx.lock();
+    }
+    // Resume operations on this worker thread
+    void resume() {
+        mtx.unlock();
+    }
+private:
+    DispatchInQueue<T, nbWorker, capacity> &master;
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock;
+};
+
 #endif /* SAFEQUEUE_HPP_ */
