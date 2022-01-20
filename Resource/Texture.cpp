@@ -273,7 +273,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
         return true;
     }
     if (includeTransition) {
-        VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 1}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, 1}}};
+        VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 0}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, (int) info.extent.depth}}};
         if (info.mipLevels > 1) {
             barrier->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier->dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -284,10 +284,13 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
                 iregion.srcSubresource.mipLevel = iregion.dstSubresource.mipLevel++;
                 iregion.srcOffsets[1].x = iregion.dstOffsets[1].x;
                 iregion.srcOffsets[1].y = iregion.dstOffsets[1].y;
+                iregion.srcOffsets[1].z = iregion.dstOffsets[1].z;
                 if (iregion.dstOffsets[1].x > 1)
                     iregion.dstOffsets[1].x /= 2;
                 if (iregion.dstOffsets[1].y > 1)
                     iregion.dstOffsets[1].y /= 2;
+                if (iregion.dstOffsets[1].z > 1)
+                    iregion.dstOffsets[1].z /= 2;
                 vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
                 vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &iregion, VK_FILTER_LINEAR);
                 ++barrier->subresourceRange.baseMipLevel;
