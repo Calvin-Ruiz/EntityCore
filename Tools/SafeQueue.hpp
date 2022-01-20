@@ -107,6 +107,20 @@ public:
         blocking = false;
         cv.notify_one();
     }
+    // Wait for the queue to complete operations, or wait for .release()
+    void waitIdle() {
+        mtx.lock();
+        mtx.unlock();
+    }
+    // Interrupt operations on this worker thread
+    // Return once the worker thread has completed all his tasks
+    void interrupt() {
+        mtx.lock();
+    }
+    // Resume operations on this worker thread
+    void resume() {
+        mtx.unlock();
+    }
     static unsigned char *trace(void *data, unsigned char *buffer) {
         return reinterpret_cast<WorkQueue *>(data)->traceInternal(buffer);
     }
