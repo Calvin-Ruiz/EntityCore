@@ -339,7 +339,7 @@ public:
     }
     void close() {
         blocking = false;
-        cv.notify_one();
+        cv.notify_all();
     }
     void reopen() {
         blocking = true;
