@@ -13,7 +13,13 @@
 #include <mutex>
 #include <cstring>
 
-// Thread-safe queue for insertion with blocking pop operation (maximal capacity of 65535 elements, must be a power-of-two - 1)
+// For thread-safe queue for insertion, the following data race might occur :
+// If an insertion operation start
+// A second insertion operation start and complete
+// Before the first insertion operation complete, a pop operation start
+// Then, the pop operation will move the non-inserted or partially-inserted element of the first insertion operation
+
+// Thread-safe queue for insertion with blocking pop operation (maximal capacity of 65535 elements)
 template<class T, unsigned short capacity = 255>
 class WorkQueue {
 public:
@@ -25,7 +31,7 @@ public:
             --vcount;
             return false;
         }
-        datas[++writeIdx & capacity] = std::move(data);
+        datas[++writeIdx % (capacity + 1)] = std::move(data);
         if (!count++)
             cv.notify_one();
         return true;
@@ -35,7 +41,7 @@ public:
             --vcount;
             return false;
         }
-        datas[++writeIdx & capacity] = data;
+        datas[++writeIdx % (capacity + 1)] = data;
         if (!count++)
             cv.notify_one();
         return true;
@@ -45,7 +51,7 @@ public:
             --vcount;
             return false;
         }
-        std::memcpy(datas[++writeIdx & capacity], data, sizeof(T));
+        std::memcpy(datas[++writeIdx % (capacity + 1)], data, sizeof(T));
         if (!count++)
             cv.notify_one();
         return true;
@@ -60,7 +66,7 @@ public:
         if (!count)
             return false;
         EXTRACT:
-        data = std::move(datas[++readIdx & capacity]);
+        data = std::move(datas[++readIdx % (capacity + 1)]);
         --vcount;
         --count;
         return true;
@@ -76,7 +82,7 @@ public:
         if (!count)
             return false;
         EXTRACT:
-        data = &datas[++readIdx & capacity];
+        data = &datas[++readIdx % (capacity + 1)];
         --vcount;
         --count;
         return true;
@@ -156,7 +162,7 @@ private:
     std::unique_lock<std::mutex> lock;
 };
 
-// Thread-safe queue for insertion (maximal capacity of 65535 elements, must be a power-of-two - 1)
+// Mostly thread-safe queue for insertion (maximal capacity of 65535 elements)
 template<class T, unsigned short capacity = 255>
 class PushQueue {
 public:
@@ -168,7 +174,7 @@ public:
             --vcount;
             return false;
         }
-        datas[++writeIdx & capacity] = std::move(data);
+        datas[++writeIdx % (capacity + 1)] = std::move(data);
         ++count;
         return true;
     }
@@ -177,7 +183,7 @@ public:
             --vcount;
             return false;
         }
-        std::memcpy(datas[++writeIdx & capacity], data, sizeof(T));
+        std::memcpy(datas[++writeIdx % (capacity + 1)], data, sizeof(T));
         ++count;
         return true;
     }
@@ -187,7 +193,7 @@ public:
     // Extract element from queue, return true on success
     bool pop(T &data) {
         if (count) {
-            data = std::move(datas[++readIdx & capacity]);
+            data = std::move(datas[++readIdx % (capacity + 1)]);
             --count;
             --vcount;
             return true;
@@ -198,7 +204,7 @@ public:
     // return true on success, false on failure
     bool popRaw(void *&data) {
         if (count) {
-            data = &datas[++readIdx & capacity];
+            data = &datas[++readIdx % (capacity + 1)];
             --count;
             --vcount;
             return true;
@@ -252,7 +258,7 @@ public:
     bool push(T &data) {
         if (count >= capacity)
             return false;
-        datas[++writeIdx & capacity] = std::move(data);
+        datas[++writeIdx % (capacity + 1)] = std::move(data);
         ++count;
         ++vcount;
         return true;
@@ -263,7 +269,7 @@ public:
     // Extract element from thread-safe queue, return true on success
     bool pop(T &data) {
         if (--vcount >= 0) {
-            data = std::move(datas[++readIdx & capacity]);
+            data = std::move(datas[++readIdx % (capacity + 1)]);
             --count;
             return true;
         }
@@ -311,7 +317,7 @@ template<class T, unsigned char nbWorker, unsigned short capacity>
 class DispatchOutQueue;
 
 
-// Thread-safe blocking-pop queue for work dispatch (maximal capacity of 65535 elements)
+// Thread-safe blocking-pop queue for work dispatch (maximal capacity of 65536 - nbWorker elements)
 template<class T, unsigned char nbWorker = 1, unsigned short capacity = 255>
 class DispatchInQueue {
     friend class DispatchOutQueue<T, nbWorker, capacity>;
@@ -322,14 +328,21 @@ public:
     bool push(T &data) {
         if (count >= capacity)
             return false;
-        datas[++writeIdx & capacity] = std::move(data);
+        datas[++writeIdx % (capacity + nbWorker)] = std::move(data);
         ++count;
         ++vcount;
         cv.notify_one();
         return true;
     }
-    bool emplace(T data) {
-        return push(data);
+    // Insert element to queue, return true on success
+    bool emplace(const T &data) {
+        if (count >= capacity)
+            return false;
+        datas[++writeIdx % (capacity + nbWorker)] = data;
+        ++count;
+        ++vcount;
+        cv.notify_one();
+        return true;
     }
     unsigned char size() const {
         return count;
@@ -380,7 +393,7 @@ private:
     bool blocking = true;
 };
 
-// Thread-safe blocking-pop queue for work dispatch (worker thread) (maximal capacity of 65535 elements)
+// Thread-safe blocking-pop queue for work dispatch (worker thread) (maximal capacity of 65536 - nbWorker elements)
 template<class T, unsigned char nbWorker = 1, unsigned short capacity = 255>
 class DispatchOutQueue {
 public:
@@ -390,7 +403,7 @@ public:
     bool pop(T &data) {
         BEGIN:
         if (--master.vcount >= 0) {
-            data = std::move(master.datas[++master.readIdx & capacity]);
+            data = std::move(master.datas[++master.readIdx % (capacity + nbWorker)]);
             --master.count;
             return true;
         }
