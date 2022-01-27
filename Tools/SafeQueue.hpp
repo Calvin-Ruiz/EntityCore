@@ -145,6 +145,11 @@ public:
         *(buffer++) = '}';
         return buffer;
     }
+    // Call this function at least once every 65535 push operations if (capacity + 1) is not a power-of-two
+    void fixNonPowerOfTwo() {
+        readIdx -= readIdx / (capacity + nbWorker) * (capacity + nbWorker);
+        writeIdx -= writeIdx / (capacity + nbWorker) * (capacity + nbWorker);
+    }
 private:
     void traceNbr(unsigned short value, unsigned char *&buffer) {
         if (value > 9)
@@ -235,6 +240,11 @@ public:
         *(buffer++) = '}';
         return buffer;
     }
+    // Call this function at least once every 65535 push operations if (capacity + 1) is not a power-of-two
+    void fixNonPowerOfTwo() {
+        readIdx -= readIdx / (capacity + nbWorker) * (capacity + nbWorker);
+        writeIdx -= writeIdx / (capacity + nbWorker) * (capacity + nbWorker);
+    }
 private:
     void traceNbr(unsigned short value, unsigned char *&buffer) {
         if (value > 9)
@@ -299,6 +309,11 @@ public:
         traceNbr(writeIdx, buffer);
         *(buffer++) = '}';
         return buffer;
+    }
+    // Call this function at least once every 65535 push operations if (capacity + 1) is not a power-of-two
+    void fixNonPowerOfTwo() {
+        readIdx -= readIdx / (capacity + nbWorker) * (capacity + nbWorker);
+        writeIdx -= writeIdx / (capacity + nbWorker) * (capacity + nbWorker);
     }
 private:
     void traceNbr(unsigned short value, unsigned char *&buffer) {
@@ -377,6 +392,11 @@ public:
         traceNbr(writeIdx, buffer);
         *(buffer++) = '}';
         return buffer;
+    }
+    // Call this function at least once every 65535 push operations if (capacity + nbWorker) is not a power-of-two
+    void fixNonPowerOfTwo() {
+        readIdx -= readIdx / (capacity + nbWorker) * (capacity + nbWorker);
+        writeIdx -= writeIdx / (capacity + nbWorker) * (capacity + nbWorker);
     }
 private:
     void traceNbr(unsigned short value, unsigned char *&buffer) {
