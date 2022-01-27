@@ -127,6 +127,12 @@ public:
     void resume() {
         mtx.unlock();
     }
+    // Abort every pending execution. Mustn't be called concurrently to push/pop operations
+    void abortPending() {
+        count = 0;
+        vcount = 0;
+        readIdx = writeIdx;
+    }
     static unsigned char *trace(void *data, unsigned char *buffer) {
         return reinterpret_cast<WorkQueue *>(data)->traceInternal(buffer);
     }
