@@ -73,7 +73,7 @@ void CaptureMetrics::analyze()
         if (diff) {
             sequences.push_back(sequence);
             sequence.types.resize(0);
-            sequence.ptr = &frames.front();
+            sequence.ptr = &f;
             sequence.size = 0;
             for (int i = 0; i < f.size; ++i)
                 sequence.types.push_back(f.ptr[i].type);
@@ -128,7 +128,7 @@ void CaptureMetrics::display()
         std::cout << "\nSequence of " << s.metrics->size << " frames\n";
         std::cout << "minRel\tmaxRel\tavrRel\tmin\tmax\tavr\tname\n";
         for (auto &m : s.markStat) {
-            std::cout << (int) (m.minRel * 1000000) << (int) (m.maxRel * 1000000) << (int) (m.avrRel * 1000000) << (int) (m.min * 1000000) << (int) (m.max * 1000000) << (int) (m.avr * 1000000) << names[m.type] << '\n';
+            std::cout << (int) (m.minRel * 1000000) << '\t' << (int) (m.maxRel * 1000000) << '\t' << (int) (m.avrRel * 1000000) << '\t' << (int) (m.min * 1000000) << '\t' << (int) (m.max * 1000000) << '\t' << (int) (m.avr * 1000000) << '\t' << names[m.type] << '\n';
         }
     }
     std::cout << "=====================================\n";
