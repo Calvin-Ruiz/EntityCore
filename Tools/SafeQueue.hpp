@@ -11,6 +11,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 #include <cstring>
 
 // For thread-safe queue for insertion, the following data race might occur :
@@ -115,8 +116,14 @@ public:
     }
     // Wait for the queue to complete operations, or wait for .release()
     void waitIdle() {
+        WAIT_JOIN:
         mtx.lock();
         mtx.unlock();
+        if (count && blocking) {
+            cv.notify_one();
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            goto WAIT_JOIN;
+        }
     }
     // Interrupt operations on this worker thread
     // Return once the worker thread has completed all his tasks
@@ -441,8 +448,14 @@ public:
     }
     // Wait for the queue to complete operations, or wait for .release()
     void waitIdle() {
+        WAIT_JOIN:
         mtx.lock();
         mtx.unlock();
+        if (master.count && master.blocking) {
+            master.cv.notify_all();
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            goto WAIT_JOIN;
+        }
     }
     // Acquire ownership of this queue by this thread for pop operations
     void acquire() {
