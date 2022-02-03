@@ -18,6 +18,7 @@ private:
     const int fence;
     static void concurrencyAlert(int fence, int owner);
     static std::atomic<int> fences[NB_THREAD_FENCES];
+    static std::atomic<int> useCount[NB_THREAD_FENCES];
 };
 
 #define TRACK_HERE(fence) TrackPoint _tp(fence)

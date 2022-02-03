@@ -2,7 +2,8 @@
 #include "ConcurrencyTracker.hpp"
 #include <iostream>
 
-int TrackPoint::fences[NB_THREAD_FENCES] {}
+std::atomic<int> TrackPoint::fences[NB_THREAD_FENCES] {}
+std::atomic<int> TrackPoint::useCount[NB_THREAD_FENCES] {}
 
 TrackPoint::TrackPoint(int fence) : fence(fence)
 {
@@ -16,14 +17,17 @@ TrackPoint::~TrackPoint()
 
 void TrackPoint::begin(int fence)
 {
-    int owner = fences[fence].exchange(std::this_thread::get_id());
-    if (owner)
+    const int me = std::this_thread::get_id();
+    int owner = fences[fence].exchange(me);
+    ++useCount[fence];
+    if (owner != 0 && owner != me)
         concurrencyAlert(fence, owner);
 }
 
 void TrackPoint::end(int fence)
 {
-    fences[fence] = 0;
+    if (--useCount[fence] == 0)
+        fences[fence] = 0;
 }
 
 void TrackPoint::concurrencyAlert(int fence, int owner)
