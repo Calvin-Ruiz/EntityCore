@@ -16,8 +16,8 @@ public:
     static void end(int fence);
 private:
     const int fence;
-    static void concurrencyAlert(int fence, int owner);
-    static std::atomic<int> fences[NB_THREAD_FENCES];
+    static void concurrencyAlert(int fence, std::thread::id owner);
+    static std::atomic<std::thread::id> fences[NB_THREAD_FENCES];
     static std::atomic<int> useCount[NB_THREAD_FENCES];
 };
 
