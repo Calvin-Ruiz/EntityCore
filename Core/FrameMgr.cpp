@@ -93,6 +93,11 @@ int FrameMgr::create(uint32_t count)
     return (first);
 }
 
+void FrameMgr::destroy(int idx)
+{
+    vkFreeCommandBuffers(master.refDevice, secondaryPool, 1, &cmds[idx]);
+}
+
 void FrameMgr::begin(VkCommandBuffer cmd, int layerIdx)
 {
     inheritance.subpass = layerIdx;

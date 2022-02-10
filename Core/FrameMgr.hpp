@@ -43,6 +43,8 @@ public:
     // ===== USE ===== //
     // Create count subCommands and return the id of the first newly created subCommand
     int create(uint32_t count);
+    // Destroy one subCommand. The subcommand mustn't be in use.
+    void destroy(int idx);
     // Start recording subCommand for use in layerIdx layer
     void begin(VkCommandBuffer cmd, int layerIdx);
     // Slower than begin, this can be called concurrently to begin and beginAsync calls
