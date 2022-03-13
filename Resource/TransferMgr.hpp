@@ -6,7 +6,7 @@ class BufferMgr;
 
 class TransferMgr {
 public:
-    TransferMgr(BufferMgr &mgr, int size);
+    TransferMgr(BufferMgr &mgr, uint32_t size);
     ~TransferMgr();
 
     void *beginPlanCopy(uint32_t size); // pre-plan copy with a maximal size
@@ -30,6 +30,6 @@ private:
     std::map<VkBuffer, std::vector<VkBufferCopy>> pendingCopy;
     std::map<std::pair<VkBuffer, VkBuffer>, std::vector<VkBufferCopy>> pendingExternalCopy;
     SubBuffer buffer; // note : buffer.size is the size of currently used SubBuffer space
-    const int size;
+    const uint32_t size;
     bool planningCopy = false;;
 };

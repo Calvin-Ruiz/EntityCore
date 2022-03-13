@@ -34,14 +34,14 @@ FrameMgr::~FrameMgr()
     }
 }
 
-void FrameMgr::bind(int id, Texture &texture)
+void FrameMgr::bind(unsigned int id, Texture &texture)
 {
     if (id >= views.size())
         views.resize(id + 1);
     views[id] = texture.getView();
 }
 
-void FrameMgr::bind(int id, VkImageView &v)
+void FrameMgr::bind(unsigned int id, VkImageView &v)
 {
     if (id >= views.size())
         views.resize(id + 1);

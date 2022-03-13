@@ -2,7 +2,7 @@
 #include "TransferMgr.hpp"
 #include <cassert>
 
-TransferMgr::TransferMgr(BufferMgr &mgr, int size) : mgr(mgr), size(size)
+TransferMgr::TransferMgr(BufferMgr &mgr, uint32_t size) : mgr(mgr), size(size)
 {
     buffer = mgr.acquireBuffer(size);
     ptr = mgr.getPtr(buffer);

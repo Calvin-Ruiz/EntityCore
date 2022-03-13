@@ -32,7 +32,7 @@ BufferMgr::~BufferMgr()
     master.free(memory);
 }
 
-SubBuffer BufferMgr::acquireBuffer(int size)
+SubBuffer BufferMgr::acquireBuffer(unsigned int size)
 {
     if (uniformBuffer) {
         size = ((size - 1) / uniformOffsetAlignment + 1) * uniformOffsetAlignment;
@@ -42,7 +42,7 @@ SubBuffer BufferMgr::acquireBuffer(int size)
     buffer.buffer = VK_NULL_HANDLE;
     std::list<std::list<SubBuffer>>::iterator availableSubBuffer;
     availableSubBuffer = std::find_if(availableSubBufferZones.begin(), availableSubBufferZones.end(),
-      [size](auto &value){return (value.back().size >= size);});
+      [size](auto &value){return (value.back().size >= (unsigned int) size);});
     if (availableSubBuffer != availableSubBufferZones.end()) {
         buffer = availableSubBuffer->back();
         availableSubBuffer->pop_back();
@@ -52,7 +52,7 @@ SubBuffer BufferMgr::acquireBuffer(int size)
     if (buffer.buffer == VK_NULL_HANDLE) {
         master.putLog("Can't allocate buffer in '" + name + "' !", LogType::ERROR);
     } else {
-        if (buffer.size > size) {
+        if (buffer.size > (unsigned int) size) {
             SubBuffer tmp = buffer;
             tmp.size -= size;
             tmp.offset += size;
@@ -102,8 +102,8 @@ void BufferMgr::releaseBuffer()
     SubBuffer subBuffer = releaseStack.back();
     releaseStack.pop_back();
     // mutexQueue.unlock();
-    int buffBegin = subBuffer.offset;
-    int buffEnd = buffBegin + subBuffer.size;
+    auto buffBegin = subBuffer.offset;
+    auto buffEnd = buffBegin + subBuffer.size;
 
     // mutex.lock();
     for (auto availableSubBuffer = availableSubBufferZones.begin(); availableSubBuffer != availableSubBufferZones.end(); ++availableSubBuffer) {

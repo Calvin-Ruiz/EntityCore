@@ -505,7 +505,7 @@ void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchain
     vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, nullptr);
     swapChainImages.resize(finalImageCount);
     vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, swapChainImages.data());
-    for (int i = 0; i < finalImageCount; ++i) {
+    for (unsigned int i = 0; i < finalImageCount; ++i) {
         setObjectName(swapChainImages[i], VK_OBJECT_TYPE_IMAGE, "Swapchain Image " + std::to_string(i));
     }
 }

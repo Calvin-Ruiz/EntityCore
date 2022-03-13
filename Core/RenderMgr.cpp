@@ -29,7 +29,7 @@ int RenderMgr::attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLay
     return (attachment.size() - 1);
 }
 
-void RenderMgr::setupClear(int id, VkClearColorValue color)
+void RenderMgr::setupClear(unsigned int id, VkClearColorValue color)
 {
     attachment[id].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     if (clears.size() <= id)
@@ -37,7 +37,7 @@ void RenderMgr::setupClear(int id, VkClearColorValue color)
     clears[id].color = color;
 }
 
-void RenderMgr::setupClear(int id, float value)
+void RenderMgr::setupClear(unsigned int id, float value)
 {
     attachment[id].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     if (clears.size() <= id)
@@ -47,17 +47,17 @@ void RenderMgr::setupClear(int id, float value)
 
 void RenderMgr::addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(id == -1) ? VK_SUBPASS_EXTERNAL : id, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlags) 0});
+    dep.push_back({(id == -1) ? VK_SUBPASS_EXTERNAL : id, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
 }
 
 void RenderMgr::addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(subpass == -1) ? VK_SUBPASS_EXTERNAL : subpass, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlags) 0});
+    dep.push_back({(subpass == -1) ? VK_SUBPASS_EXTERNAL : subpass, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
 }
 
 void RenderMgr::addSelfDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(uint32_t) subpass, (uint32_t) subpass, srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlags) 0});
+    dep.push_back({(uint32_t) subpass, (uint32_t) subpass, srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
 }
 
 void RenderMgr::bindInput(int id, VkImageLayout layout)
@@ -109,7 +109,7 @@ bool RenderMgr::build(int maxFrameBuffer)
         ++subpass;
         const auto end = dep.rend();
         for (auto it = dep.rbegin(); it != end; ++it) {
-            if (it->dstSubpass != subpass)
+            if (it->dstSubpass != (unsigned int) subpass)
                 break;
             it->dstSubpass = VK_SUBPASS_EXTERNAL;
         }

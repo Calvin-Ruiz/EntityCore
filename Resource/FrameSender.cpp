@@ -9,7 +9,7 @@ FrameSender::FrameSender(VulkanMgr &vkmgr, std::vector<std::unique_ptr<Texture>>
     frames[0]->getDimensions(width, height);
     readbackMgr = std::make_unique<BufferMgr>(vkmgr, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT, 0, frames.size()*4*width*height);
     readbackMgr->setName("FrameSender readback buffer");
-    for (int i = 0; i < frames.size(); ++i) {
+    for (unsigned int i = 0; i < frames.size(); ++i) {
         readback.push_back(readbackMgr->acquireBuffer(4*width*height));
         readbackPtr.push_back(readbackMgr->getPtr(readback.back()));
     }

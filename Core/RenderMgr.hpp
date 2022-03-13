@@ -28,9 +28,9 @@ public:
     // Attach a resources and return his attachment id
     int attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout, VkImageLayout finalLayout, bool store = true, bool load = false);
     // Color attachment
-    void setupClear(int id, VkClearColorValue color);
+    void setupClear(unsigned int id, VkClearColorValue color);
     // Depth buffer
-    void setupClear(int id, float value);
+    void setupClear(unsigned int id, float value);
     // Add dependency between specific layer and next layer
     void addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal = true);
     // Add dependency between actual layer and next layer

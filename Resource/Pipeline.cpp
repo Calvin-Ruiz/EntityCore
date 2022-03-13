@@ -284,7 +284,7 @@ void Pipeline::build(const std::string &customName)
             master.putLog("Faild to create Pipelines", LogType::ERROR);
             return;
         }
-        for (int i = 0; i < childs.size(); ++i) {
+        for (unsigned int i = 0; i < childs.size(); ++i) {
             childs[i]->graphicsPipeline = pipelines[i];
             childs[i]->postBuild();
         }

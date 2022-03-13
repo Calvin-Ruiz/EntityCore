@@ -280,7 +280,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
             barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier->newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
             barrier->subresourceRange.levelCount = 1;
-            for (int i = 1; i < info.mipLevels; ++i) {
+            for (unsigned int i = 1; i < info.mipLevels; ++i) {
                 iregion.srcSubresource.mipLevel = iregion.dstSubresource.mipLevel++;
                 iregion.srcOffsets[1].x = iregion.dstOffsets[1].x;
                 iregion.srcOffsets[1].y = iregion.dstOffsets[1].y;

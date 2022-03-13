@@ -33,8 +33,8 @@ public:
 
     // ===== SETUP ===== //
     // Bind texture at the RenderMgr's id
-    void bind(int id, Texture &texture);
-    void bind(int id, VkImageView &view);
+    void bind(unsigned int id, Texture &texture);
+    void bind(unsigned int id, VkImageView &view);
     // alwaysRecord : record the main command every frame
     // useSecondary : enable use of subCommand
     // staticSecondary : if true, the only way to re-record a subCommand is to call discardRecord and record every subCommand again

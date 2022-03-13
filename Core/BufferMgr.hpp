@@ -20,7 +20,7 @@ class BufferMgr {
 public:
     BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false);
     ~BufferMgr();
-    SubBuffer acquireBuffer(int size);
+    SubBuffer acquireBuffer(unsigned int size);
     void releaseBuffer(SubBuffer &subBuffer);
     //! For per-frame buffer allocation (don't use acquireBuffer nor releaseBuffer on this BufferMgr when using this)
     SubBuffer fastAcquireBuffer(uint32_t size);
