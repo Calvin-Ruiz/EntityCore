@@ -263,7 +263,7 @@ void Pipeline::build(const std::string &customName)
         }
         return;
     }
-    name = (customName.empty()) : "Use" + name" : customName;
+    name = (customName.empty()) ? ("Use" + name) : customName;
     if (bindingDescriptions.empty()) {
         master.putLog("No vertex entry defined for Pipeline \"" + (customName.empty() ? "Use" + name : customName.c_str()) + "\"", LogType::DEBUG);
     }
