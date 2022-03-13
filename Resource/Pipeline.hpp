@@ -55,7 +55,9 @@ public:
     void setPolygonMode(VkPolygonMode polygonMode) {rasterizer.polygonMode = polygonMode;}
     //! Set custom viewport, which MUSTN'T be destroyed until this pipeline was build();
     void setViewportState(VkPipelineViewportStateCreateInfo *viewport);
-    //! Build pipeline for use
+    //! Clone unbuild pipeline, the methods bindShader, setSpecializedConstant, build and clone mustn't be used on cloned pipeline. A cloned pipeline is build when calling build() on the parent pipeline.
+    Pipeline *clone(const std::string &customName = "\0");
+    //! Build pipeline for use, built pipeline allow calling bind() and get(), but disallow every other methods
     void build(const std::string &customName = "\0");
     //! Bind pipeline in command buffer
     inline void bind(VkCommandBuffer &cmd) {
@@ -68,6 +70,10 @@ public:
     //! Set default line width for all pipelines created after this call (default : 1.0f)
     static void setDefaultLineWidth(float _defaultLineWidth) {defaultLineWidth = _defaultLineWidth;}
 private:
+    VkGraphicsPipelineCreateInfo &preBuild(const std::string &customName = "\0");
+    void postBuild();
+    void initPtr();
+    Pipeline(Pipeline *parent);
     static std::string shaderDir;
     static float defaultLineWidth;
     VulkanMgr &master;
@@ -78,10 +84,11 @@ private:
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    VkPipelineDynamicStateCreateInfo dynamicState{};
+    VkPipelineDynamicStateCreateInfo dynamicState{}; // UNUSED
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     VkPipelineTessellationStateCreateInfo tessellation{};
     VkPipelineMultisampleStateCreateInfo multisampling{};
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 
     struct SpecializationInfo {
         VkSpecializationInfo info;
@@ -94,6 +101,7 @@ private:
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    std::vector<Pipeline *> childs;
 };
 
 #endif /* end of include guard: PIPELINE_HPP */

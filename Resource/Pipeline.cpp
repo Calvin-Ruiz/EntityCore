@@ -11,13 +11,13 @@ float Pipeline::defaultLineWidth = 1.0f;
 
 Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLayout *layout, std::vector<VkDynamicState> _dynamicStates) : master(master)
 {
+    initPtr();
     colorBlendAttachment = BLEND_SRC_ALPHA;
 
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optionnel
     colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
     colorBlending.blendConstants[0] = 0.0f; // Optionnel
     colorBlending.blendConstants[1] = 0.0f; // Optionnel
     colorBlending.blendConstants[2] = 0.0f; // Optionnel
@@ -43,10 +43,6 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.pViewportState = &master.getViewportState();
 
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pDepthStencilState = &depthStencil; // Optionnel
-    pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = nullptr; // Optionnel
     pipelineInfo.layout = layout->getPipelineLayout();
     pipelineInfo.renderPass = render.renderPass;
@@ -72,6 +68,16 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     multisampling.alphaToOneEnable = VK_FALSE;
 
     isOk = (pipelineInfo.layout != VK_NULL_HANDLE);
+}
+
+void Pipeline::initPtr()
+{
+    colorBlending.pAttachments = &colorBlendAttachment;
+
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pDepthStencilState = &depthStencil; // Optionnel
+    pipelineInfo.pColorBlendState = &colorBlending;
 }
 
 Pipeline::~Pipeline()
@@ -228,20 +234,8 @@ void Pipeline::setViewportState(VkPipelineViewportStateCreateInfo *viewport)
     pipelineInfo.pViewportState = viewport;
 }
 
-void Pipeline::build(const std::string &customName)
+VkGraphicsPipelineCreateInfo &Pipeline::preBuild(const std::string &customName)
 {
-    if (!isOk || shaderStages.empty()) {
-        master.putLog("Can't build invalid Pipeline", LogType::ERROR);
-        for (auto &stage : shaderStages) {
-            vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
-        }
-        return;
-    }
-    if (bindingDescriptions.empty()) {
-        master.putLog("No vertex entry defined for Pipeline \"" + (customName.empty() ? "Use" + name : customName.c_str()) + "\"", LogType::DEBUG);
-    }
-
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
     vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
@@ -255,15 +249,78 @@ void Pipeline::build(const std::string &customName)
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optionnel
     pipelineInfo.basePipelineIndex = -1; // Optionnel
 
-    if (vkCreateGraphicsPipelines(master.refDevice, master.getPipelineCache(), 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-        master.putLog("Faild to create Pipeline", LogType::ERROR);
-        graphicsPipeline = VK_NULL_HANDLE;
-    } else {
-        master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, customName.empty() ? "Use" + name : customName.c_str());
+    if (name.empty())
+        name = customName + " clone";
+    return pipelineInfo;
+}
+
+void Pipeline::build(const std::string &customName)
+{
+    if (!isOk || shaderStages.empty()) {
+        master.putLog("Can't build invalid Pipeline", LogType::ERROR);
+        for (auto &stage : shaderStages) {
+            vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
+        }
+        return;
     }
+    name = (customName.empty()) : "Use" + name" : customName;
+    if (bindingDescriptions.empty()) {
+        master.putLog("No vertex entry defined for Pipeline \"" + (customName.empty() ? "Use" + name : customName.c_str()) + "\"", LogType::DEBUG);
+    }
+    if (childs.empty()) {
+        if (vkCreateGraphicsPipelines(master.refDevice, master.getPipelineCache(), 1, &preBuild(), nullptr, &graphicsPipeline) != VK_SUCCESS) {
+            master.putLog("Faild to create Pipeline", LogType::ERROR);
+            return;
+        }
+        postBuild();
+    } else {
+        std::vector<VkGraphicsPipelineCreateInfo> infos;
+        std::vector<VkPipeline> pipelines;
+        childs.push_back(this); // Handle this pipeline like childs pipelines
+        for (auto &c : childs)
+            infos.push_back(c->preBuild(name));
+        pipelines.resize(infos.size());
+        if (vkCreateGraphicsPipelines(master.refDevice, master.getPipelineCache(), infos.size(), infos.data(), nullptr, pipelines.data()) != VK_SUCCESS) {
+            master.putLog("Faild to create Pipelines", LogType::ERROR);
+            return;
+        }
+        for (int i = 0; i < childs.size(); ++i) {
+            childs[i]->graphicsPipeline = pipelines[i];
+            childs[i]->postBuild();
+        }
+    }
+    // Destroy common ressources
     for (auto &stage : shaderStages) {
         vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
     }
     pNames.clear();
+    childs.clear();
+    childs.shrink_to_fit();
+}
+
+void Pipeline::postBuild()
+{
+    if (graphicsPipeline)
+        master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, name.c_str());
+    specializationInfo.clear();
     shaderStages.clear();
+    shaderStages.shrink_to_fit();
+    bindingDescriptions.clear();
+    bindingDescriptions.shrink_to_fit();
+    attributeDescriptions.clear();
+    attributeDescriptions.shrink_to_fit();
+}
+
+Pipeline::Pipeline(Pipeline *parent) :
+    master(parent->master), pipelineInfo(parent->pipelineInfo), inputAssembly(parent->inputAssembly), rasterizer(parent->rasterizer), colorBlendAttachment(parent->colorBlendAttachment), colorBlending(parent->colorBlending), depthStencil(parent->depthStencil), multisampling(parent->multisampling), shaderStages(parent->shaderStages), bindingDescriptions(parent->bindingDescriptions), attributeDescriptions(parent->attributeDescriptions)
+{
+    initPtr();
+}
+
+Pipeline *Pipeline::clone(const std::string &customName)
+{
+    auto p = new Pipeline(this);
+    p->name = customName;
+    childs.push_back(p);
+    return p;
 }
