@@ -14,7 +14,7 @@
 VulkanMgr *VulkanMgr::instance = nullptr;
 
 VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
-    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), redirectLog(redirectLog), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
+    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), redirectLog(redirectLog), customReleaseMemory(nullptr), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
 {
     assert(!instance); // There must be only one VulkanMgr instance
     instance = this;
@@ -571,6 +571,8 @@ void VulkanMgr::unmapMemory(SubMemory& bufferMemory) {memoryManager->unmapMemory
 void VulkanMgr::releaseUnusedMemory()
 {
     putLog("Low GPU memory detected - release unused memory", LogType::WARNING);
+    if (customReleaseMemory)
+        customReleaseMemory();
 }
 
 // =============== DEBUG =============== //

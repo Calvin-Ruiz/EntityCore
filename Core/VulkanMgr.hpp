@@ -84,6 +84,10 @@ public:
     void setObjectName(void *handle, VkObjectType type, const std::string &name);
     //! Called by MemoryManager when getting low of memory,
     void releaseUnusedMemory();
+    //! Define the method called when releaseUnusedMemory is called.
+    void setReleaseUnusedMemoryCustomAction(void (*func)()) {
+        customReleaseMemory = func;
+    }
     //! Redirect every logs
 
     // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
@@ -176,6 +180,7 @@ private:
     std::list<VkSampler> samplers;
     std::vector<VkSamplerCreateInfo> samplersInfo;
     void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
+    void (*customReleaseMemory)();
     int forceSwapchainCount;
     bool hasLayer;
     bool isReady = false;
