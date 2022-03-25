@@ -296,6 +296,8 @@ void Pipeline::build(const std::string &customName)
     pNames.clear();
     childs.clear();
     childs.shrink_to_fit();
+    shaderStages.clear();
+    shaderStages.shrink_to_fit();
 }
 
 void Pipeline::postBuild()
@@ -303,8 +305,6 @@ void Pipeline::postBuild()
     if (graphicsPipeline)
         master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, name.c_str());
     specializationInfo.clear();
-    shaderStages.clear();
-    shaderStages.shrink_to_fit();
     bindingDescriptions.clear();
     bindingDescriptions.shrink_to_fit();
     attributeDescriptions.clear();
