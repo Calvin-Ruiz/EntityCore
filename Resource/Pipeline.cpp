@@ -191,7 +191,7 @@ void Pipeline::setSpecializedConstantOf(const std::string &name, uint32_t consta
             SpecializationInfo &specInfo = *it;
             for (auto &entry : specInfo.entry) {
                 if (entry.constantID == constantID) { // Already set, only modify the value
-                    memcpy(specInfo.data() + entry.offset, data, entry.size);
+                    memcpy(specInfo.data.data() + entry.offset, data, entry.size);
                 }
             }
             specInfo.entry.push_back({constantID, static_cast<uint32_t>(specInfo.data.size()), size});
