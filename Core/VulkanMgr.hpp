@@ -88,7 +88,8 @@ public:
     void setReleaseUnusedMemoryCustomAction(void (*func)()) {
         customReleaseMemory = func;
     }
-    //! Redirect every logs
+    //! Call this method once per frame for garbage collector as various optimisations to work
+    void update();
 
     // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
     // Return the queue family from which the queue was created, or nullptr in case of failure

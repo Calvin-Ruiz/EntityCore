@@ -884,3 +884,8 @@ VkSampler &VulkanMgr::getSampler(const VkSamplerCreateInfo &createInfo)
     }
     return samplers.back();
 }
+
+void VulkanMgr::update()
+{
+    // Nothing done yet
+}
