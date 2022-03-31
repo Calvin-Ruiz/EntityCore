@@ -82,6 +82,11 @@ void Pipeline::initPtr()
 
 Pipeline::~Pipeline()
 {
+    if (canRebuild) {
+        for (auto &stage : shaderStages) {
+            vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
+        }
+    }
     if (graphicsPipeline != VK_NULL_HANDLE) {
         vkDestroyPipeline(master.refDevice, graphicsPipeline, nullptr);
     }
@@ -147,6 +152,7 @@ void Pipeline::bindShader(const std::string &filename, VkShaderStageFlagBits sta
 
     pNames.push_front(entry);
     tmp.pName = pNames.front().c_str();
+    sNames.push_front(filename);
 
     SpecializationInfo specInfo;
     specInfo.info.mapEntryCount = 0;
@@ -175,6 +181,31 @@ void Pipeline::setSpecializedConstant(uint32_t constantID, void *data, size_t si
     specInfo.info.pMapEntries = specInfo.entry.data();
     specInfo.info.dataSize = specInfo.data.size();
     specInfo.info.pData = reinterpret_cast<void *>(specInfo.data.data());
+}
+
+void Pipeline::setSpecializedConstantOf(const std::string &name, uint32_t constantID, void *data, size_t size)
+{
+    auto it = specializationInfo.begin();
+    for (const auto &n : sNames) {
+        if (n == name) {
+            SpecializationInfo &specInfo = *it;
+            for (auto &entry : specInfo.entry) {
+                if (entry.constantID == constantID) { // Already set, only modify the value
+                    memcpy(specInfo.data() + entry.offset, data, entry.size);
+                }
+            }
+            specInfo.entry.push_back({constantID, static_cast<uint32_t>(specInfo.data.size()), size});
+            specInfo.data.resize(specInfo.data.size() + size);
+            memcpy(specInfo.data.data() + specInfo.entry.back().offset, data, size);
+            specInfo.info.mapEntryCount = specInfo.entry.size();
+            specInfo.info.pMapEntries = specInfo.entry.data();
+            specInfo.info.dataSize = specInfo.data.size();
+            specInfo.info.pData = reinterpret_cast<void *>(specInfo.data.data());
+            return;
+        }
+        ++it;
+    }
+    master.putLog("Failed to find shader '" + name + "' for specialized constant modification.", LogType::WARNING);
 }
 
 void Pipeline::setTopology(VkPrimitiveTopology state, bool enableStripBreaks)
@@ -254,7 +285,7 @@ VkGraphicsPipelineCreateInfo &Pipeline::preBuild(const std::string &customName)
     return pipelineInfo;
 }
 
-void Pipeline::build(const std::string &customName)
+void Pipeline::build(const std::string &customName, bool allowRebuild)
 {
     if (!isOk || shaderStages.empty()) {
         master.putLog("Can't build invalid Pipeline", LogType::ERROR);
@@ -272,7 +303,7 @@ void Pipeline::build(const std::string &customName)
             master.putLog("Faild to create Pipeline", LogType::ERROR);
             return;
         }
-        postBuild();
+        postBuild(allowRebuild);
     } else {
         std::vector<VkGraphicsPipelineCreateInfo> infos;
         std::vector<VkPipeline> pipelines;
@@ -286,24 +317,31 @@ void Pipeline::build(const std::string &customName)
         }
         for (unsigned int i = 0; i < childs.size(); ++i) {
             childs[i]->graphicsPipeline = pipelines[i];
-            childs[i]->postBuild();
+            childs[i]->postBuild(false);
         }
     }
+    if (canRebuild)
+        return;
     // Destroy common ressources
     for (auto &stage : shaderStages) {
         vkDestroyShaderModule(master.refDevice, stage.module, nullptr);
     }
     pNames.clear();
+    sNames.clear();
     childs.clear();
     childs.shrink_to_fit();
     shaderStages.clear();
     shaderStages.shrink_to_fit();
+    isOk = false; // Don't let any chance to rebuild this pipeline
 }
 
-void Pipeline::postBuild()
+void Pipeline::postBuild(bool canRebuild)
 {
     if (graphicsPipeline)
         master.setObjectName(graphicsPipeline, VK_OBJECT_TYPE_PIPELINE, name.c_str());
+    this->canRebuild = canRebuild;
+    if (canRebuild)
+        return;
     specializationInfo.clear();
     bindingDescriptions.clear();
     bindingDescriptions.shrink_to_fit();

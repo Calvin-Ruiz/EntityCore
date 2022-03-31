@@ -30,6 +30,8 @@ public:
     void bindShader(const std::string &filename, VkShaderStageFlagBits stage, const std::string entry = "main");
     //! Set specialized constant value to previously binded shader
     void setSpecializedConstant(uint32_t constantID, void *data, size_t size);
+    //! Set or modify specialized constant value of specific binded shader
+    void setSpecializedConstantOf(const std::string &name, uint32_t constantID, void *data, size_t size = 0);
     //! Define VertexArray layout (registered vertex and instance entry)
     void bindVertex(VertexArray &vertex);
     //! Remove vertex/instance location, so that it won't be send to the vertex shader
@@ -57,8 +59,8 @@ public:
     void setViewportState(VkPipelineViewportStateCreateInfo *viewport);
     //! Clone unbuild pipeline, the methods bindShader, setSpecializedConstant, build and clone mustn't be used on cloned pipeline. A cloned pipeline is build when calling build() on the parent pipeline.
     Pipeline *clone(const std::string &customName = "\0");
-    //! Build pipeline for use, built pipeline allow calling bind() and get(), but disallow every other methods
-    void build(const std::string &customName = "\0");
+    //! Build pipeline for use, built pipeline allow calling bind() and get(), but disallow every other methods unless allowRebuild is true and this pipeline have not been cloned. Previous pipeline is destroyed 3 calls to VulkanMgr::update() later.
+    vsoid build(const std::string &customName = "\0", bool allowRebuild = false);
     //! Bind pipeline in command buffer
     inline void bind(VkCommandBuffer &cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -71,7 +73,7 @@ public:
     static void setDefaultLineWidth(float _defaultLineWidth) {defaultLineWidth = _defaultLineWidth;}
 private:
     VkGraphicsPipelineCreateInfo &preBuild(const std::string &customName = "\0");
-    void postBuild();
+    void postBuild(bool canRebuild);
     void initPtr();
     Pipeline(Pipeline *parent);
     static std::string shaderDir;
@@ -79,6 +81,7 @@ private:
     VulkanMgr &master;
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     bool isOk = true;
+    bool canRebuild = false;
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -96,7 +99,8 @@ private:
         std::vector<char> data;
     };
     std::string name;
-    std::forward_list<std::string> pNames;
+    std::forward_list<std::string> pNames; // Shader entry point
+    std::forward_list<std::string> sName; // Shader names
     std::forward_list<SpecializationInfo> specializationInfo;
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
