@@ -153,7 +153,6 @@ SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
     const uint16_t tmpWidth = (width + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     const uint16_t tmpHeight = (height + (CHUNK_SIZE - 1)) / CHUNK_SIZE;
     while (ptr < end) {
-        DOBLE_CONTINUE:
         subptr = ptr;
         layer = tmpHeight;
         while (layer--) {
@@ -167,8 +166,11 @@ SubTexture TileMap::acquireSurface(uint32_t width, uint32_t height)
                 goto DOBLE_CONTINUE;
             }
         }
-        uint32_t pos = ptr - map;
-        return makeSubTexture((pos % lineSize) * CHUNK_SIZE, (pos / lineSize) * CHUNK_SIZE, width, height);
+        {
+            uint32_t pos = ptr - map;
+            return makeSubTexture((pos % lineSize) * CHUNK_SIZE, (pos / lineSize) * CHUNK_SIZE, width, height);
+        }
+        DOBLE_CONTINUE:;
     }
     return {};
 }
