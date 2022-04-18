@@ -13,64 +13,76 @@
 
 VulkanMgr *VulkanMgr::instance = nullptr;
 
-VulkanMgr::VulkanMgr(const char *_AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string _cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
-    refDevice(device), drawLogs(drawLogs), saveLogs(saveLogs), redirectLog(redirectLog), customReleaseMemory(nullptr), forceSwapchainCount(forceSwapchainCount), presenting(window != nullptr)
+VulkanMgr::VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
+    VulkanMgr({.AppName=AppName, .appVersion=appVersion, .window=window, .width=width, .height=height,
+        .queueRequest=queueRequest, .requiredFeatures=requiredFeatures, .preferedFeatures=preferedFeatures,
+        .requiredExtensions=(usePushSet ? std::vector<const char *>{"VK_KHR_push_descriptor"} : std::vector<const char*>{}),
+        .redirectLog=redirectLog, .cachePath=cachePath, .swapchainUsage=swapchainUsage, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
+        .enableDebugLayers=enableDebugLayers, .drawLogs=drawLogs, .saveLogs=saveLogs})
+{
+}
+
+VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
+    refDevice(device), drawLogs(createInfo.drawLogs), saveLogs(createInfo.saveLogs), redirectLog(createInfo.redirectLog),
+    customReleaseMemory(createInfo.customReleaseMemory), forceSwapchainCount(createInfo.forceSwapchainCount), presenting(createInfo.window != nullptr),
+    minLogPrintLevel(createInfo.minLogPrintLevel), minLogWriteLevel(createInfo.minLogWriteLevel)
 {
     assert(!instance); // There must be only one VulkanMgr instance
     instance = this;
-    cachePath = _cachePath;
-    if (usePushSet)
-        deviceExtension.push_back("VK_KHR_push_descriptor");
+    cachePath = createInfo.cachePath;
+    auto swapchainUsage = createInfo.swapchainUsage;
+    if (!createInfo.requiredExtensions.empty())
+        deviceExtension.insert(deviceExtension.end(), createInfo.requiredExtensions.begin(), createInfo.requiredExtensions.end());
     if (saveLogs) {
-        logs.open(_cachePath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
+        logs.open(cachePath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
     }
     if (presenting) {
         uint32_t sdl2ExtensionCount = 0;
-        if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, nullptr))
+        if (!SDL_Vulkan_GetInstanceExtensions(createInfo.window, &sdl2ExtensionCount, nullptr))
             std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
 
         size_t initialSize = instanceExtension.size();
         instanceExtension.resize(initialSize + sdl2ExtensionCount);
-        if (!SDL_Vulkan_GetInstanceExtensions(window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
+        if (!SDL_Vulkan_GetInstanceExtensions(createInfo.window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
             std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
     } else {
         swapchainUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
 
-    initVulkan(_AppName, appVersion, window, enableDebugLayers);
+    initVulkan(createInfo.AppName, createInfo.appVersion, createInfo.window, createInfo.enableDebugLayers, createInfo.preferIntegrated);
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     displayPhysicalDeviceInfo(physicalDeviceProperties);
-    initQueues(queueRequest);
-    initDevice(requiredFeatures, preferedFeatures);
+    initQueues(createInfo.queueRequest);
+    initDevice(createInfo.requiredFeatures, createInfo.preferedFeatures);
     if (presenting) {
-        initSwapchain(width, abs(height), swapchainUsage);
+        initSwapchain(createInfo.width, abs(createInfo.height), swapchainUsage, createInfo.preferedPresentMode);
         createImageViews();
     } else {
-        swapChainExtent.width = width;
-        swapChainExtent.height = abs(height);
+        swapChainExtent.width = createInfo.width;
+        swapChainExtent.height = abs(createInfo.height);
     }
-    memoryManager = new MemoryManager(*this, chunkSize*1024*1024);
+    memoryManager = new MemoryManager(*this, createInfo.chunkSize*1024*1024);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
     Set::setupPFN(vkinstance.get());
 
     // Déformation de l'image
-    viewport.width = width;
-    viewport.height = height;
-    viewport.x = (swapChainExtent.width - width) / 2.f;
-    viewport.y = (swapChainExtent.height - height) / 2.f;
+    viewport.width = createInfo.width;
+    viewport.height = createInfo.height;
+    viewport.x = (swapChainExtent.width - createInfo.width) / 2.f;
+    viewport.y = (swapChainExtent.height - createInfo.height) / 2.f;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     // Découpage de l'image
-    if (height > 0) {
+    if (createInfo.height > 0) {
         scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + 0.001f)};
-        scissor.extent = {(uint32_t) width, (uint32_t) height};
+        scissor.extent = {(uint32_t) createInfo.width, (uint32_t) createInfo.height};
     } else {
         scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + viewport.height + 0.001f)};
-        scissor.extent = {(uint32_t) width, (uint32_t) -height};
+        scissor.extent = {(uint32_t) createInfo.width, (uint32_t) -createInfo.height};
     }
 
     // Viewport
@@ -204,8 +216,8 @@ bool VulkanMgr::isDeviceSuitable(VkPhysicalDevice pDevice) {
 
     bool extensionsSupported = checkDeviceExtensionSupport(pDevice);
 
-    bool swapChainAdequate = false;
-    if (extensionsSupported) {
+    bool swapChainAdequate = !presenting;
+    if (extensionsSupported && !swapChainAdequate) {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(pDevice);
         swapChainAdequate = (!swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty()) || !presenting;
     }
@@ -213,7 +225,7 @@ bool VulkanMgr::isDeviceSuitable(VkPhysicalDevice pDevice) {
     return extensionsSupported && swapChainAdequate;
 }
 
-void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer)
+void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer, bool preferIntegrated)
 {
     hasLayer = _hasLayer;
 
@@ -244,17 +256,18 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window 
     // get a physicalDevice
     bool oneHasBeenSelected = false;
     bool suboptimalSelected = false;
+    const auto preferredGPUType = (preferIntegrated) ? vk::PhysicalDeviceType::eIntegratedGpu : vk::PhysicalDeviceType::eDiscreteGpu;
+    const auto suboptimalGPUType = (preferIntegrated) ? vk::PhysicalDeviceType::eDiscreteGpu : vk::PhysicalDeviceType::eIntegratedGpu;
     for (const auto &pDevice : vkinstance->enumeratePhysicalDevices()) {
         if (isDeviceSuitable(pDevice)) {
-            if (!suboptimalSelected && pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+            if (!suboptimalSelected && pDevice.getProperties().deviceType == suboptimalGPUType) {
                 suboptimalSelected = true;
                 oneHasBeenSelected = false;
-            }
-            if (!oneHasBeenSelected) {
+            } else if (!oneHasBeenSelected) {
                 oneHasBeenSelected = true;
                 physicalDevice = pDevice;
             }
-            if (pDevice.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+            if (pDevice.getProperties().deviceType == preferredGPUType) {
                 physicalDevice = pDevice;
                 break;
             }
@@ -429,6 +442,7 @@ void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkP
 void VulkanMgr::initWindow(SDL_Window *window)
 {
     if (SDL_Vulkan_CreateSurface(window, vkinstance.get(), &surface) != SDL_TRUE) {
+        putLog(SDL_GetError(), LogType::ERROR);
         throw std::runtime_error("Failed to create window surface");
     }
 }
@@ -444,14 +458,13 @@ static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
     return availableFormats[0];
 }
 
-static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes, VkPresentModeKHR preferedPresentMode)
 {
-    return VK_PRESENT_MODE_FIFO_KHR;
     for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+        if (availablePresentMode == preferedPresentMode)
             return availablePresentMode;
-        }
     }
+    return VK_PRESENT_MODE_FIFO_KHR; // This mode is the only mode always available
 }
 
 static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
@@ -469,12 +482,12 @@ static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
     }
 }
 
-void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage)
+void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, preferedPresentMode);
     swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
     swapChainImageFormat = surfaceFormat.format;
 
@@ -795,9 +808,9 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
             header = "(ERROR)\t";
             break;
     }
-    if (drawLogs)
+    if (drawLogs && type >= minLogPrintLevel)
         std::cerr << header << str << std::endl;
-    if (saveLogs)
+    if (saveLogs && type >= minLogWriteLevel)
         logs << header << str << std::endl;
 }
 

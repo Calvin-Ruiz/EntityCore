@@ -121,7 +121,7 @@ void Tracer::draw()
     while (lastSize < tracing.size()) {
         insert(tracing[lastSize++]);
     }
-    std::cout.write(reinterpret_cast<char *>(buffer), (long) (pbuffer - buffer));
+    std::cout.write(reinterpret_cast<char *>(buffer), (int64_t) (pbuffer - buffer));
     std::cout.flush();
 }
 
@@ -218,10 +218,10 @@ void Tracer::subdraw(TraceData &data, int y)
             putNbr<unsigned int>(*((unsigned int *) data.pdata));
             break;
         case Trace::LONG:
-            putNbr<unsigned long>(*((long *) data.pdata));
+            putNbr<uint64_t>(*((int64_t *) data.pdata));
             break;
         case Trace::ULONG:
-            putNbr<unsigned long>(*((unsigned long *) data.pdata));
+            putNbr<uint64_t>(*((uint64_t *) data.pdata));
             break;
         case Trace::FLOAT:
             putReal(*((float *) data.pdata));
@@ -230,7 +230,7 @@ void Tracer::subdraw(TraceData &data, int y)
             putReal(*((double *) data.pdata));
             break;
         case Trace::PTR:
-            putPtr(*((unsigned long *) data.pdata));
+            putPtr(*((uint64_t *) data.pdata));
             break;
         case Trace::STRING:
             *(pbuffer++) = '\"';
@@ -266,10 +266,10 @@ void Tracer::jmp(int x, int y)
     *(pbuffer++) = 'H';
 }
 
-void Tracer::putPtr(unsigned long ptr)
+void Tracer::putPtr(uint64_t ptr)
 {
     const char table[] = "0123456789abcdef";
-    unsigned long mask = 0xf000000000000000;
+    uint64_t mask = 0xf000000000000000;
     int level = 60;
 
     *(pbuffer++) = '0';

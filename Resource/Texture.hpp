@@ -5,10 +5,10 @@
 #include "EntityCore/SubBuffer.hpp"
 #include "EntityCore/SubMemory.hpp"
 #include <string>
-#include <SDL2/SDL.h>
 
 class VulkanMgr;
 class BufferMgr;
+struct SDL_Surface;
 
 /**
 *   \brief Manage texture, including mipmapping, writing, reading and sample

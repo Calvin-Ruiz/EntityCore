@@ -3,6 +3,7 @@
 #include "EntityCore/Core/MemoryManager.hpp"
 #include "Texture.hpp"
 #include "PipelineLayout.hpp"
+#include <SDL2/SDL.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -79,18 +80,18 @@ bool Texture::init(int width, int height, void *content, bool mipmap, int _nbCha
         staging = mgr->acquireBuffer(size);
         onCPU = true;
         if (flipHorizontal) {
-            const int lineSize = width * nbChannels * elemSize / sizeof(long); // Only work for multiple of 8
-            long *src = ((long *) content) + lineSize * (height + 1);
-            long *dst = (long *) mgr->getPtr(staging);
+            const int lineSize = width * nbChannels * elemSize / sizeof(uint64_t); // Only work for multiple of 8
+            uint64_t *src = ((uint64_t *) content) + lineSize * (height + 1);
+            uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
             for (int i = height; i--;) {
                 src -= lineSize * 2;
                 for (int j = lineSize; j--;)
                     *(dst++) = *(src++);
             }
         } else {
-            long *src = (long *) content;
-            long *dst = (long *) mgr->getPtr(staging);
-            for (int i = size / sizeof(long); i > 0; --i)
+            uint64_t *src = (uint64_t *) content;
+            uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
+            for (int i = size / sizeof(uint64_t); i > 0; --i)
                 *(dst++) = *(src++);
         }
     } else

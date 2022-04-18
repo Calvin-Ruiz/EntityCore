@@ -7,12 +7,15 @@
 #include <fstream>
 #include <list>
 
-class SDL_Window;
+struct SDL_Window;
 class MemoryManager;
 
 #ifndef MAX_FRAMES_IN_FLIGHT
 #define MAX_FRAMES_IN_FLIGHT 2
 #endif
+
+// Remove windows macro disturbing everything
+#undef ERROR
 
 // pattern : SETUP_PFN(PFN_#, ptr_#, "#");
 #define SETUP_PFN(pfn, ptr, str) ptr = reinterpret_cast<pfn>(vkGetInstanceProcAddr(instance, str))
@@ -56,6 +59,31 @@ struct QueueRequirement {
 
 typedef void (*logger_t)(const std::string &str, LogType type);
 
+struct VulkanMgrCreateInfo {
+    const char *AppName = nullptr;
+    uint32_t appVersion = 1;
+    SDL_Window *window = nullptr;
+    int width = 600;
+    int height = 600;
+    QueueRequirement queueRequest = {1, 1, 0, 0, 0};
+    VkPhysicalDeviceFeatures requiredFeatures = {};
+    VkPhysicalDeviceFeatures preferedFeatures = {};
+    std::vector<const char *> requiredExtensions = {};
+    logger_t redirectLog = nullptr;
+    std::string cachePath = "\0";
+    VkImageUsageFlags swapchainUsage = 0;
+    VkPresentModeKHR preferedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+    int chunkSize = 64;
+    int forceSwapchainCount = 0;
+    bool enableDebugLayers = true;
+    bool drawLogs = true;
+    bool saveLogs = false;
+    bool preferIntegrated = false;
+    LogType minLogPrintLevel = LogType::INFO;
+    LogType minLogWriteLevel = LogType::INFO;
+    void (*customReleaseMemory)() = nullptr;
+};
+
 /*
 * Core class, manage global ressources
 * Used as base to create any vulkan ressource
@@ -63,6 +91,7 @@ typedef void (*logger_t)(const std::string &str, LogType type);
 class VulkanMgr {
 public:
     VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", int forceSwapchainCount = 0, VkImageUsageFlags swapchainUsage = 0, bool usePushSet = false, logger_t redirectLog = nullptr);
+    VulkanMgr(const VulkanMgrCreateInfo &createInfo);
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
     //! for malloc
@@ -114,7 +143,7 @@ public:
     static VulkanMgr *instance;
 private:
     const bool drawLogs;
-    const bool saveLogs;
+    bool saveLogs;
     bool canSynchronization2 = false;
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2 {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR, nullptr, VK_TRUE};
     logger_t redirectLog;
@@ -128,7 +157,7 @@ private:
     VkPhysicalDeviceFeatures deviceFeatures{};
     VkPipelineCache pipelineCache;
 
-    void initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer = false);
+    void initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer = false, bool preferIntegrated = false);
     vk::UniqueInstance vkinstance;
     vk::PhysicalDevice physicalDevice;
 
@@ -142,7 +171,7 @@ private:
     void initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures);
     VkDevice device;
 
-    void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage);
+    void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode);
     VkSwapchainKHR swapChain;
     uint32_t finalImageCount;
     std::vector<VkImage> swapChainImages;
@@ -186,6 +215,8 @@ private:
     bool hasLayer;
     bool isReady = false;
     bool presenting;
+    LogType minLogPrintLevel;
+    LogType minLogWriteLevel;
 };
 
 #endif

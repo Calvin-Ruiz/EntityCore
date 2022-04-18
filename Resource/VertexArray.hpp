@@ -5,7 +5,6 @@
 #include <vector>
 #include <array>
 #include <cstring>
-#include <alloca.h>
 #include "EntityCore/SubBuffer.hpp"
 
 class VulkanMgr;

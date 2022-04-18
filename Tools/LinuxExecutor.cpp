@@ -431,7 +431,7 @@ void LinuxExecutor::start(bool fortifyCurrent) {
     std::cerr << "LinuxExecutor only work under linux\n";
     instance = this;
 }
-ExecutorContext *LinuxExecutor::create(ExecutorInfo &info) {return nullptr;}
+ExecutorContext *LinuxExecutor::create(const ExecutorInfo &info) {return nullptr;}
 void LinuxExecutor::rewriteContext(ExecutorContext *context, const ExecutorInfo &info) {}
 ExecutorInstance *LinuxExecutor::spawnInstance(const ExecutorInfo &info, std::vector<char> &cache) {return new ExecutorInstance();}
 ExecutorInstance *LinuxExecutor::spawnInstance(ExecutorContext *context) {return new ExecutorInstance();}

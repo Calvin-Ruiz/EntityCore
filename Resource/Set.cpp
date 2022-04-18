@@ -3,7 +3,6 @@
 #include "PipelineLayout.hpp"
 #include "Texture.hpp"
 #include "Set.hpp"
-#include <alloca.h>
 
 PFN_vkCmdPushDescriptorSetKHR Set::pushSet;
 

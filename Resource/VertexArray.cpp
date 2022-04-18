@@ -2,6 +2,10 @@
 #include "VertexArray.hpp"
 #include "VertexBuffer.hpp"
 
+#ifndef WIN32
+#include <alloca.h>
+#endif
+
 static int getFormatSize(VkFormat format)
 {
     switch (format) {

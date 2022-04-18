@@ -60,7 +60,7 @@ private:
     void insert(TraceData &data);
     void jmp(int x, int y);
     void putStr(const char *str);
-    void putPtr(unsigned long ptr);
+    void putPtr(uint64_t ptr);
     bool alive = false;
     bool needRedraw = false;
     std::atomic<bool> interrupt {false};

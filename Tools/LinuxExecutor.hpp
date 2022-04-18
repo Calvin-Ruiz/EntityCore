@@ -45,6 +45,10 @@ struct ExecutorContext {
     bool pipeOutput;
 };
 
+// Patch for Visual Studio under Windows
+#undef stdin
+#undef stdout
+
 struct ExecutorInstance {
     std::vector<char> output; // Reading this is unsafe and undefined until passed to LinuxExecutor::waitInstance
     int stdin = -1;
@@ -98,13 +102,13 @@ private:
         int stdout = -1; // If output must be saved
     };
     struct ExecutorMsgHead {
-        unsigned long size;
+        uint64_t size;
         LEFlag flag = LEFlag::CLOSED;
     };
     struct SpawnHead {
         ExecutorInstance *id;
-        long nbArgs;
-        long nbEnvs;
+        uint64_t nbArgs;
+        uint64_t nbEnvs;
         bool pipeInput;
         bool pipeOutput;
         bool pushInput;
@@ -112,7 +116,7 @@ private:
     };
     struct ExitData {
         ExecutorInstance *instance;
-        unsigned long size;
+        uint64_t size;
         char exitCode;
         bool exited; // true if exited, false if crashed or killed
         char data[];

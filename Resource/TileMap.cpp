@@ -96,8 +96,8 @@ void TileMap::writeAt(uint16_t x, uint16_t y, uint16_t width, uint16_t height, c
         }
     } else {
         // Memory alignment optimal for 64-bit copy
-        long *dst = (long *) (ptr + offset);
-        const long *src = (const long *) data;
+        uint64_t *dst = (uint64_t *) (ptr + offset);
+        const uint64_t *src = (const uint64_t *) data;
         const uint16_t nextLine = (info.extent.width - width) / 2;
         width /= 2;
         while (height--) {
