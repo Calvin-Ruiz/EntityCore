@@ -79,6 +79,7 @@ struct VulkanMgrCreateInfo {
     bool drawLogs = true;
     bool saveLogs = false;
     bool preferIntegrated = false;
+    bool colorSpaceSRGB = false;
     LogType minLogPrintLevel = LogType::INFO;
     LogType minLogWriteLevel = LogType::INFO;
     void (*customReleaseMemory)() = nullptr;
@@ -171,7 +172,7 @@ private:
     void initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures);
     VkDevice device;
 
-    void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode);
+    void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode, bool expectLinear);
     VkSwapchainKHR swapChain;
     uint32_t finalImageCount;
     std::vector<VkImage> swapChainImages;

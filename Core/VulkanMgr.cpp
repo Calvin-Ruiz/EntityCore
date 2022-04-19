@@ -57,7 +57,7 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     initQueues(createInfo.queueRequest);
     initDevice(createInfo.requiredFeatures, createInfo.preferedFeatures);
     if (presenting) {
-        initSwapchain(createInfo.width, abs(createInfo.height), swapchainUsage, createInfo.preferedPresentMode);
+        initSwapchain(createInfo.width, abs(createInfo.height), swapchainUsage, createInfo.preferedPresentMode, !createInfo.colorSpaceSRGB);
         createImageViews();
     } else {
         swapChainExtent.width = createInfo.width;
@@ -447,11 +447,15 @@ void VulkanMgr::initWindow(SDL_Window *window)
     }
 }
 
-static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool expectLinear)
 {
     for (const auto& availableFormat : availableFormats) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM /*&& availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR*/) {
-            return availableFormat;
+        if (expectLinear) {
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM)
+                return availableFormat;
+        } else {
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+                return availableFormat;
         }
     }
 
@@ -482,11 +486,11 @@ static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
     }
 }
 
-void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode)
+void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode, bool expectLinear)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats, expectLinear);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, preferedPresentMode);
     swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
     swapChainImageFormat = surfaceFormat.format;
