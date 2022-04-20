@@ -3,14 +3,7 @@
 
 #include "Texture.hpp"
 #include "EntityCore/SubTexture.hpp"
-
-enum class Implicit : uint8_t
-{
-    NOTHING = 0x00,
-    SRC_LAYOUT = 0x01,
-    DST_LAYOUT = 0x02,
-    LAYOUT = SRC_LAYOUT | DST_LAYOUT,
-};
+#include "EntityCore/Globals.hpp"
 
 /**
 *   \brief Dynamic creation and usage of tile map

@@ -133,15 +133,17 @@ bool Texture::createImage()
         master.free(memory);
         return false;
     }
-    // Create view
-    VkImageViewCreateInfo viewInfo {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr, 0, image, (VkImageViewType) info.imageType, info.format, {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY}, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
-    if (vkCreateImageView(master.refDevice, &viewInfo, nullptr, &view) != VK_SUCCESS) {
-        master.putLog("Failed to create view for '" + name + "'", LogType::ERROR);
-        vkDestroyImage(master.refDevice, image, nullptr);
-        master.free(memory);
-        return false;
+    if (info.usage & ALL_IMAGE_VIEW_USAGE) {
+        // Create view
+        VkImageViewCreateInfo viewInfo {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr, 0, image, (VkImageViewType) info.imageType, info.format, {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY}, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+        if (vkCreateImageView(master.refDevice, &viewInfo, nullptr, &view) != VK_SUCCESS) {
+            master.putLog("Failed to create view for '" + name + "'", LogType::ERROR);
+            vkDestroyImage(master.refDevice, image, nullptr);
+            master.free(memory);
+            return false;
+        }
+        master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, name);
     }
-    master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, name);
     sizeInMemory = memRequirements.memoryRequirements.size;
     onGPU = true;
     return true;
@@ -177,7 +179,8 @@ void Texture::unuse()
 {
     if (onGPU) {
         master.free(memory);
-        vkDestroyImageView(master.refDevice, view, nullptr);
+        if (view)
+            vkDestroyImageView(master.refDevice, view, nullptr);
         vkDestroyImage(master.refDevice, image, nullptr);
         onGPU = false;
         image = VK_NULL_HANDLE;
@@ -310,6 +313,138 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
     return true;
 }
 
+void Texture::implicitBarrier(VkImageLayout layout, VkAccessFlags &access, VkPipelineStageFlags &stage)
+{
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_GENERAL:
+            access = VK_ACCESS_SHADER_READ_BIT;
+            stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            access = VK_ACCESS_SHADER_READ_BIT;
+            stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            access = VK_ACCESS_TRANSFER_READ_BIT;
+            stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            access = VK_ACCESS_TRANSFER_WRITE_BIT;
+            stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            stage = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            break;
+        default:
+            access = 0;
+    }
+}
+
+bool Texture::use(VkCommandBuffer cmd, Implicit implicit, VkImageLayout layout, VkImageLayout srcLayout)
+{
+    VkImageLayout transferLayout;
+    switch (ImplicitFilter(implicit, LAYOUT)) {
+        case Implicit::NOTHING:
+            srcLayout = layout;
+            transferLayout = layout;
+            break;
+        case Implicit::SRC_LAYOUT:
+            transferLayout = layout;
+            break;
+        case Implicit::DST_LAYOUT:
+            transferLayout = srcLayout;
+            break;
+        case Implicit::LAYOUT:
+            transferLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            break;
+    }
+    VkAccessFlags dstAccess;
+    VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    implicitBarrier(layout, dstAccess, dstStage);
+    VkAccessFlags srcAccess;
+    VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    implicitBarrier(srcLayout, srcAccess, srcStage);
+    if (!onGPU) {
+        if (createImage()) {
+            master.putLog("Created image support for '" + name + "'", LogType::INFO);
+            srcLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        } else {
+            return false;
+        }
+    }
+    if (!onCPU) {
+        if ((uint8_t) implicit & (uint8_t) Implicit::LAYOUT) {
+            VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, srcAccess, dstAccess, srcLayout, layout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+            vkCmdPipelineBarrier(cmd, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+            return true;
+        }
+        master.putLog("Can't upload '" + name + "' datas : not stored in RAM", LogType::WARNING);
+        return false;
+    }
+    if ((uint8_t) implicit & (uint8_t)Implicit::SRC_LAYOUT) {
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, srcAccess, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, transferLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+        vkCmdPipelineBarrier(cmd, srcStage, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
+    VkBufferImageCopy region {(VkDeviceSize) staging.offset, info.extent.width * widthSplit, 0, {aspect, 0, 0, info.arrayLayers}, {0, 0, 0}, info.extent};
+    if (info.extent.depth == 1) {
+        vkCmdCopyBufferToImage(cmd, staging.buffer, image, transferLayout, 1, &region);
+    } else {
+        std::vector<VkBufferImageCopy> regions;
+        regions.reserve(widthSplit);
+        region.imageExtent.depth /= widthSplit;
+        for (int i = 0; i < widthSplit; ++i) {
+            regions.push_back(region);
+            region.bufferOffset += info.extent.width * nbChannels * elemSize;
+            region.imageOffset.z += region.imageExtent.depth;
+        }
+        vkCmdCopyBufferToImage(cmd, staging.buffer, image, transferLayout, regions.size(), regions.data());
+    }
+    if ((uint8_t) implicit & (uint8_t) Implicit::DST_LAYOUT) {
+        if (info.mipLevels > 1) {
+            VkImageMemoryBarrier barrier[2] {
+                {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, srcAccess, VK_ACCESS_TRANSFER_WRITE_BIT, srcLayout, transferLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}},
+                {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, dstAccess, transferLayout, layout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, info.mipLevels - 1, 1, 0, info.arrayLayers}}};
+            VkImageBlit iregion {{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {0, 0, 0}}, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, info.arrayLayers}, {{0, 0, 0}, {(int) info.extent.width, (int) info.extent.height, (int) info.extent.depth}}};
+            barrier->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier->dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier->oldLayout = transferLayout;
+            barrier->newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier->subresourceRange.levelCount = 1;
+            for (unsigned int i = 1; i < info.mipLevels; ++i) {
+                iregion.srcSubresource.mipLevel = iregion.dstSubresource.mipLevel++;
+                iregion.srcOffsets[1].x = iregion.dstOffsets[1].x;
+                iregion.srcOffsets[1].y = iregion.dstOffsets[1].y;
+                iregion.srcOffsets[1].z = iregion.dstOffsets[1].z;
+                if (iregion.dstOffsets[1].x > 1)
+                    iregion.dstOffsets[1].x /= 2;
+                if (iregion.dstOffsets[1].y > 1)
+                    iregion.dstOffsets[1].y /= 2;
+                if (iregion.dstOffsets[1].z > 1)
+                    iregion.dstOffsets[1].z /= 2;
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, barrier);
+                vkCmdBlitImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, transferLayout, 1, &iregion, VK_FILTER_LINEAR);
+                ++barrier->subresourceRange.baseMipLevel;
+            }
+            barrier->srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier->dstAccessMask = dstAccess;
+            barrier->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier->newLayout = layout;
+            barrier->subresourceRange.baseMipLevel = 0;
+            barrier->subresourceRange.levelCount = info.mipLevels - 1;
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, dstStage, 0, 0, nullptr, 0, nullptr, 2, barrier);
+        } else {
+            VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, dstAccess, transferLayout, layout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        }
+    }
+    return true;
+}
+
 VkImage Texture::getImage()
 {
     if (image)
@@ -331,6 +466,8 @@ VkImageView Texture::getView()
 void Texture::rename(const std::string &_name)
 {
     name = _name;
-    master.setObjectName(image, VK_OBJECT_TYPE_IMAGE, _name);
-    master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, _name);
+    if (image)
+        master.setObjectName(image, VK_OBJECT_TYPE_IMAGE, _name);
+    if (view)
+        master.setObjectName(view, VK_OBJECT_TYPE_IMAGE_VIEW, _name);
 }

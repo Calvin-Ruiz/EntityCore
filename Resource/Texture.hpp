@@ -4,11 +4,20 @@
 #include <vulkan/vulkan.h>
 #include "EntityCore/SubBuffer.hpp"
 #include "EntityCore/SubMemory.hpp"
+#include "EntityCore/Globals.hpp"
 #include <string>
 
 class VulkanMgr;
 class BufferMgr;
 struct SDL_Surface;
+
+#define ALL_IMAGE_VIEW_USAGE_EXCEPT_VIDEO VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT
+
+#ifdef VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR
+#define ALL_IMAGE_VIEW_USAGE (ALL_IMAGE_VIEW_USAGE_EXCEPT_VIDEO | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)
+#else
+#define ALL_IMAGE_VIEW_USAGE (ALL_IMAGE_VIEW_USAGE_EXCEPT_VIDEO)
+#endif
 
 /**
 *   \brief Manage texture, including mipmapping, writing, reading and sample
@@ -28,6 +37,8 @@ public:
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
     //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
     bool use(VkCommandBuffer cmd = VK_NULL_HANDLE, bool includeTransition = false);
+    //! Export texture to GPU, return true on success
+    bool use(VkCommandBuffer cmd, Implicit implicit = Implicit::LAYOUT, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VkImageLayout srcLayout = VK_IMAGE_LAYOUT_UNDEFINED);
     //! Release texture on GPU (may invalidate all previous bindings)
     void unuse();
     //! Create texture on RAM with undefined content
@@ -58,6 +69,8 @@ public:
     void rename(const std::string &name);
     //! Return the size of this texture in the GPU memory.
     VkDeviceSize getTextureSize() const {return sizeInMemory;}
+
+    static void implicitBarrier(VkImageLayout layout, VkAccessFlags &access, VkPipelineStageFlags &stage);
 protected:
     //! Pre-create image on GPU
     bool preCreateImage();
@@ -67,7 +80,7 @@ protected:
     VulkanMgr &master;
     BufferMgr *mgr; // Staging memory manager
     VkImage image = VK_NULL_HANDLE;
-    VkImageView view;
+    VkImageView view = VK_NULL_HANDLE;
     SubMemory memory;
     SubBuffer staging;
     VkImageCreateInfo info;
