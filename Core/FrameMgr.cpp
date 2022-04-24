@@ -285,11 +285,7 @@ void FrameMgr::cancelExecution(std::vector<VkCommandBuffer> &cmds)
                 VkCommandBuffer *dst = src;
                 while (size--) {
                     if (*(++src) == target) {
-                        if (beg == end) {
-                            target = VK_NULL_HANDLE;
-                            break;
-                        }
-                        target = *(beg++);
+                        target = (beg == end) ? VK_NULL_HANDLE : *(beg++);
                     } else {
                         *(dst++) = *src;
                     }
