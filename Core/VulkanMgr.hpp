@@ -71,6 +71,7 @@ struct VulkanMgrCreateInfo {
     std::vector<const char *> requiredExtensions = {};
     logger_t redirectLog = nullptr;
     std::string cachePath = "\0";
+    std::string logPath = "\0";
     VkImageUsageFlags swapchainUsage = 0;
     VkPresentModeKHR preferedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     int chunkSize = 64;

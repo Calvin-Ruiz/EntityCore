@@ -17,7 +17,7 @@ VulkanMgr::VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *windo
     VulkanMgr({.AppName=AppName, .appVersion=appVersion, .window=window, .width=width, .height=height,
         .queueRequest=queueRequest, .requiredFeatures=requiredFeatures, .preferedFeatures=preferedFeatures,
         .requiredExtensions=(usePushSet ? std::vector<const char *>{"VK_KHR_push_descriptor"} : std::vector<const char*>{}),
-        .redirectLog=redirectLog, .cachePath=cachePath, .swapchainUsage=swapchainUsage, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
+        .redirectLog=redirectLog, .cachePath=cachePath, .logPath=cachePath, .swapchainUsage=swapchainUsage, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
         .enableDebugLayers=enableDebugLayers, .drawLogs=drawLogs, .saveLogs=saveLogs})
 {
 }
@@ -34,7 +34,7 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     if (!createInfo.requiredExtensions.empty())
         deviceExtension.insert(deviceExtension.end(), createInfo.requiredExtensions.begin(), createInfo.requiredExtensions.end());
     if (saveLogs) {
-        logs.open(cachePath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
+        logs.open(createInfo.logPath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
     }
     if (presenting) {
