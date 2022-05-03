@@ -9,6 +9,9 @@ public:
     SharedBuffer(BufferMgr &mgr) : mgr(mgr), buffer(mgr.acquireBuffer(sizeof(T))), ptr(*(T *) mgr.getPtr(buffer)), allocSize(buffer.size) {
         buffer.size = sizeof(T);
     }
+    SharedBuffer(BufferMgr &mgr, int size) : mgr(mgr), buffer(mgr.acquireBuffer(size)), ptr(*(T *) mgr.getPtr(buffer)), allocSize(buffer.size) {
+        buffer.size = size;
+    }
     ~SharedBuffer() {
         buffer.size = allocSize;
         mgr.releaseBuffer(buffer);
