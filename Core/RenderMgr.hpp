@@ -54,10 +54,10 @@ public:
 
     // ===== USE ===== //
     void bind(int bindID, VkFramebuffer frameBuffer, VkRect2D renderArea);
-    inline void begin(int bindID, VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
+    inline void begin(int bindID, VkCommandBuffer cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
         vkCmdBeginRenderPass(cmd, infos.data() + bindID, content);
     }
-    inline void next(VkCommandBuffer &cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
+    inline void next(VkCommandBuffer cmd, VkSubpassContents content = VK_SUBPASS_CONTENTS_INLINE) {
         vkCmdNextSubpass(cmd, content);
     }
     inline int getPassCount() const {

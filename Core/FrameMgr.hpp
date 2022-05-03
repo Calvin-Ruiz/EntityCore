@@ -54,11 +54,11 @@ public:
     // Compile subCommand
     void compile(int idx = -1);
     // Compile subCommand
-    void compile(VkCommandBuffer &cmd);
+    void compile(VkCommandBuffer cmd);
     // Set name to command
     void setName(int idx, const std::string &name);
     // Set name to command
-    void setName(VkCommandBuffer &cmd, const std::string &name);
+    void setName(VkCommandBuffer cmd, const std::string &name);
     // Reset every command previously recorded
     void discardRecord();
     // Get handle of subCommand

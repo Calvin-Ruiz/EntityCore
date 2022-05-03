@@ -48,11 +48,11 @@ public:
     // internally used, set the alignment requirement for uniform
     static void setUniformOffsetAlignment(int alignment) {uniformOffsetAlignment = alignment;}
     // Record a copy from one SubBuffer to another SubBuffer
-    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst);
+    static void copy(VkCommandBuffer cmd, SubBuffer &src, SubBuffer &dst);
     // Record a copy of size octects from one SubBuffer to another SubBuffer
-    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size);
+    static void copy(VkCommandBuffer cmd, SubBuffer &src, SubBuffer &dst, int size);
     // Record a copy of size octects from one SubBuffer to another SubBuffer with an offset
-    static void copy(VkCommandBuffer &cmd, SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);
+    static void copy(VkCommandBuffer cmd, SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);
     inline VkBuffer &getBuffer() {
         return buffer;
     }

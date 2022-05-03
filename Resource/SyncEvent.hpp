@@ -45,14 +45,14 @@ public:
 
     // ===== USE ===== //
     // Event dependency
-    void srcDependency(VkCommandBuffer &cmd);
-    void dstDependency(VkCommandBuffer &cmd);
+    void srcDependency(VkCommandBuffer cmd);
+    void dstDependency(VkCommandBuffer cmd);
     void combineDstDependencies(SyncEvent &with);
-    void multiDstDependency(VkCommandBuffer &cmd);
-    void resetDependency(VkCommandBuffer &cmd, VkPipelineStageFlags2KHR stage);
+    void multiDstDependency(VkCommandBuffer cmd);
+    void resetDependency(VkCommandBuffer cmd, VkPipelineStageFlags2KHR stage);
     bool isSet();
     // Pipeline barrier
-    void placeBarrier(VkCommandBuffer &cmd);
+    void placeBarrier(VkCommandBuffer cmd);
     bool hasMultiDstDependency() const {return !multiEvent.empty();}
     static void setupPFN(VkInstance instance);
     static void enable() {enabled = true;}

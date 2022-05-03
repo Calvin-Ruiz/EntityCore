@@ -131,7 +131,7 @@ void FrameMgr::compile(int idx)
     }
 }
 
-void FrameMgr::compile(VkCommandBuffer &cmd)
+void FrameMgr::compile(VkCommandBuffer cmd)
 {
     vkEndCommandBuffer(cmd);
 }
@@ -141,7 +141,7 @@ void FrameMgr::setName(int id, const std::string &name)
     master.setObjectName(cmds[id], VK_OBJECT_TYPE_COMMAND_BUFFER, name);
 }
 
-void FrameMgr::setName(VkCommandBuffer &cmd, const std::string &name)
+void FrameMgr::setName(VkCommandBuffer cmd, const std::string &name)
 {
     master.setObjectName(cmd, VK_OBJECT_TYPE_COMMAND_BUFFER, name);
 }

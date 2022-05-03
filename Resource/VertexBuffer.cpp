@@ -16,7 +16,7 @@ VertexBuffer::~VertexBuffer()
     mgr.releaseBuffer(vertexBuffer);
 }
 
-void VertexBuffer::bind(VkCommandBuffer &cmd)
+void VertexBuffer::bind(VkCommandBuffer cmd)
 {
     const VkDeviceSize offset = vertexBuffer.offset;
     vkCmdBindVertexBuffers(cmd, binding, 1, &vertexBuffer.buffer, &offset);

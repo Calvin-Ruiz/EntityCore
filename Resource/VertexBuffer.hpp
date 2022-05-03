@@ -25,7 +25,7 @@ public:
     //! Get the vertexCount for the draw command
     int getVertexCount() const {return size;}
     //! Bind this VertexBuffer, don't allow switching between VertexBuffer without binding
-    void bind(VkCommandBuffer &cmd);
+    void bind(VkCommandBuffer cmd);
     //! Fill an entry with another one, elemSize being is the size of an element
     void fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst);
 private:

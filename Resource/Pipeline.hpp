@@ -62,7 +62,7 @@ public:
     //! Build pipeline for use, built pipeline allow calling bind() and get(), but disallow every other methods unless allowRebuild is true and this pipeline have not been cloned. Previous pipeline is destroyed 3 calls to VulkanMgr::update() later.
     void build(const std::string &customName = "\0", bool allowRebuild = false);
     //! Bind pipeline in command buffer
-    inline void bind(VkCommandBuffer &cmd) {
+    inline void bind(VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
     }
     //! For internal use only

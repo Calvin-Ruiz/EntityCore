@@ -118,7 +118,7 @@ void SyncEvent::build()
     }
 }
 
-void SyncEvent::srcDependency(VkCommandBuffer &cmd)
+void SyncEvent::srcDependency(VkCommandBuffer cmd)
 {
     if (enabled)
         ptr_vkCmdSetEvent2KHR(cmd, event, &dep);
@@ -127,7 +127,7 @@ void SyncEvent::srcDependency(VkCommandBuffer &cmd)
     }
 }
 
-void SyncEvent::dstDependency(VkCommandBuffer &cmd)
+void SyncEvent::dstDependency(VkCommandBuffer cmd)
 {
     if (enabled)
         ptr_vkCmdWaitEvents2KHR(cmd, 1, &event, &dep);
@@ -136,7 +136,7 @@ void SyncEvent::dstDependency(VkCommandBuffer &cmd)
     }
 }
 
-void SyncEvent::multiDstDependency(VkCommandBuffer &cmd)
+void SyncEvent::multiDstDependency(VkCommandBuffer cmd)
 {
     if (enabled)
         ptr_vkCmdWaitEvents2KHR(cmd, multiEvent.size(), multiEvent.data(), multiDep.data());
@@ -161,7 +161,7 @@ void SyncEvent::combineDstDependencies(SyncEvent &with)
     }
 }
 
-void SyncEvent::resetDependency(VkCommandBuffer &cmd, VkPipelineStageFlags2KHR stage)
+void SyncEvent::resetDependency(VkCommandBuffer cmd, VkPipelineStageFlags2KHR stage)
 {
     if (enabled)
         ptr_vkCmdResetEvent2KHR(cmd, event, stage);
@@ -169,7 +169,7 @@ void SyncEvent::resetDependency(VkCommandBuffer &cmd, VkPipelineStageFlags2KHR s
         vkCmdResetEvent(cmd, event, compatConvStage(stage));
 }
 
-void SyncEvent::placeBarrier(VkCommandBuffer &cmd)
+void SyncEvent::placeBarrier(VkCommandBuffer cmd)
 {
     if (enabled)
         ptr_vkCmdPipelineBarrier2KHR(cmd, &dep);

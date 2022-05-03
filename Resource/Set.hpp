@@ -66,7 +66,7 @@ public:
     //! Assume the descriptor set is no longer in use, bypass security
     void unGet() {used = false;}
     //! Push set to command
-    void push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    void push(VkCommandBuffer cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
     //! Get descriptor set
     operator VkDescriptorSet() {return *get();}
     //! Internally used

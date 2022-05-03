@@ -187,7 +187,7 @@ VkDescriptorSet *Set::get()
     return &set;
 }
 
-void Set::push(VkCommandBuffer &cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint)
+void Set::push(VkCommandBuffer cmd, PipelineLayout &layout, int binding, VkPipelineBindPoint bindPoint)
 {
     pushSet(cmd, bindPoint, layout.getPipelineLayout(), binding, writeSet.size(), writeSet.data());
 }

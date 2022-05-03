@@ -73,7 +73,7 @@ std::unique_ptr<VertexBuffer> VertexArray::createBuffer(int binding, int vertexC
    return std::unique_ptr<VertexBuffer>(newBuffer(binding, vertexCount, vertexMgr, instanceMgr));
 }
 
-void VertexArray::bind(VkCommandBuffer &cmd, const std::vector<VertexBuffer *> &vertex, int firstBinding)
+void VertexArray::bind(VkCommandBuffer cmd, const std::vector<VertexBuffer *> &vertex, int firstBinding)
 {
     const uint32_t sz = vertex.size();
     VkBuffer *buffers = reinterpret_cast<VkBuffer *>(alloca((sizeof(VkDeviceSize) + sizeof(VkBuffer)) * sz));

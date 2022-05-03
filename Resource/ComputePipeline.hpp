@@ -22,7 +22,7 @@ public:
     //! Build pipeline for use
     void build();
     //! Bind pipeline in command buffer
-    inline void bind(VkCommandBuffer &cmd) {
+    inline void bind(VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
     }
     //! For internal use only

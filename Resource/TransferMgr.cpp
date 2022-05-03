@@ -94,7 +94,7 @@ void TransferMgr::planCopyBetween(SubBuffer &src, SubBuffer &dst, int size, int 
     }
 }
 
-void TransferMgr::copy(VkCommandBuffer &cmd)
+void TransferMgr::copy(VkCommandBuffer cmd)
 {
     barrier.placeBarrier(cmd);
     buffer.size = 0;
