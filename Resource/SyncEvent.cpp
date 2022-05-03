@@ -77,6 +77,11 @@ void SyncEvent::imageBarrier(Texture &texture, VkImageLayout srcLayout, VkImageL
     image.push_back({VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR, nullptr, srcStage, srcAccess, dstStage, dstAccess, srcLayout, dstLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, texture.getImage(), {texture.getAspect(), miplevel, miplevelcount, 0, 1}});
 }
 
+void SyncEvent::imageBarrier(VkImage _image, VkImageAspectFlags aspect, VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess, uint32_t miplevel, uint32_t miplevelcount)
+{
+    image.push_back({VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR, nullptr, srcStage, srcAccess, dstStage, dstAccess, srcLayout, dstLayout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, _image, {aspect, miplevel, miplevelcount, 0, 1}});
+}
+
 void SyncEvent::build()
 {
     if (enabled) {

@@ -38,6 +38,7 @@ public:
     void bufferBarrier(VkBuffer buffer, uint32_t offset, uint32_t size, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess);
     void bufferBarrier(BufferMgr &buffer, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess);
     void imageBarrier(Texture &texture, VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess, uint32_t miplevel = 0, uint32_t miplevelcount = VK_REMAINING_MIP_LEVELS);
+    void imageBarrier(VkImage image, VkImageAspectFlags aspect, VkImageLayout srcLayout, VkImageLayout dstLayout, VkPipelineStageFlags2KHR srcStage, VkPipelineStageFlags2KHR dstStage, VkAccessFlags2KHR srcAccess, VkAccessFlags2KHR dstAccess, uint32_t miplevel = 0, uint32_t miplevelcount = VK_REMAINING_MIP_LEVELS);
     // Assemble every previously defined barriers for any use
     // Re-build is neither allowed between srcDependency and dstDependency nor after any combineDstDependency involving this SyncEvent
     void build();

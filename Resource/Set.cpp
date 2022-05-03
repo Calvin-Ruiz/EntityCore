@@ -5,6 +5,7 @@
 #include "Set.hpp"
 
 PFN_vkCmdPushDescriptorSetKHR Set::pushSet;
+bool Set::guarded = true;
 
 Set::Set(VulkanMgr &master, SetMgr &mgr, PipelineLayout *_layout, int setBinding, bool initialize, bool temporary) : master(master), mgr(mgr), temporary(temporary)
 {
@@ -101,6 +102,17 @@ void Set::bindTexture(Texture &texture, uint32_t binding, VkSampler sampler, VkI
         &imageInfo.front(), nullptr, nullptr});
 }
 
+void Set::bindTextures(const std::vector<VkImageView> &textures, uint32_t binding, uint32_t arrayOffset = 0, VkSampler sampler = VK_NULL_HANDLE, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+{
+    imagesInfo.push_front({});
+    auto &info = imagesInfo.front();
+    for (auto &t : textures)
+        info.push_back({sampler, t, layout});
+    writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, arrayOffset, info.size(),
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        &imageInfo.front(), nullptr, nullptr});
+}
+
 void Set::bindStorageBuffer(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset)
 {
     VkDescriptorBufferInfo buffInfo{};
@@ -163,6 +175,7 @@ void Set::update()
         writeSet.clear();
         bufferInfo.clear();
         imageInfo.clear();
+        imagesInfo.clear();
     }
 }
 
@@ -170,7 +183,7 @@ VkDescriptorSet *Set::get()
 {
     if (!writeSet.empty())
         update();
-    used = true;
+    used = guarded;
     return &set;
 }
 

@@ -22,6 +22,7 @@ public:
     //! @param stages combination of flags describing the types of shader accessing it (vertex, fragment, etc.)
     void setUniformLocation(VkShaderStageFlags stage, uint32_t binding, uint32_t arraySize = 1, bool isDynamic = false);
     void setTextureLocation(uint32_t binding, const VkSamplerCreateInfo *samplerInfo = nullptr, VkShaderStageFlags stage = VK_SHADER_STAGE_FRAGMENT_BIT, VkSampler *sampler = nullptr);
+    void setTextureArrayLocation(uint32_t binding, uint32_t textureCount, const VkSamplerCreateInfo *samplerInfo = nullptr, VkShaderStageFlags stage = VK_SHADER_STAGE_FRAGMENT_BIT, VkSampler *samplers = nullptr);
     //! @brief Set storage image location to this PipelineLayout
     void setImageLocation(uint32_t binding, VkShaderStageFlags stage = VK_SHADER_STAGE_COMPUTE_BIT);
     //! Like setUniformLocation for storage buffer (which are writable from shader)
@@ -63,6 +64,7 @@ private:
     std::vector<VkDescriptorSetLayoutBinding> uniformsLayout;
     std::vector<VkDescriptorSetLayout> descriptor;
     std::vector<VkPushConstantRange> pushConstants;
+    std::vector<std::vector<VkSampler>> cachedSamplers;
     //! Inform which descriptor is owned by this PipelineLayout
     std::vector<int> descriptorPos;
 

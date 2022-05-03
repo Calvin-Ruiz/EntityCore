@@ -34,6 +34,8 @@ public:
     void bindUniform(SubBuffer &buffer, uint32_t binding, uint32_t range = -1, int offset = 0);
     //! Bind texture to this set
     void bindTexture(Texture &texture, uint32_t binding, VkSampler sampler = VK_NULL_HANDLE, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //! Bind an array of textures to this set
+    void bindTextures(const std::vector<VkImageView> &textures, uint32_t binding, uint32_t arrayOffset = 0, VkSampler sampler = VK_NULL_HANDLE, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //! Bind storage buffer to this set
     void bindStorageBuffer(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset = 0);
     void bindStorageImage(VkImageView view, uint32_t binding, VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL);
@@ -46,10 +48,12 @@ public:
     //! Attach uniform to uniform location, can be used regardless to previous binding to commandBuffer
     void setVirtualUniform(int offset, int virtualUniformID);
     //void bindTexture(TextureImage *texture, int binding);
+    //! Return the VkDescriptorSet hold, implicitly call update()
     VkDescriptorSet *get();
     //! Internal use only
     std::vector<uint32_t> &getDynamicOffsets() {return dynamicOffsets;}
-    //! Internal use only
+    //! Return the updates to apply to this set at the next call to update()
+    //! You must call .update() after manually adding updates with .getWrites().push_back()
     std::vector<VkWriteDescriptorSet> &getWrites() {return writeSet;}
     //! For ThreadedCommandBuilder only
     void swapWrites(std::vector<VkWriteDescriptorSet> &writeSetExt) {writeSet.swap(writeSetExt);}
@@ -69,6 +73,8 @@ public:
     static void setupPFN(VkInstance instance);
     //! Create several sets in an optimized way
     // static Set *createSets(VulkanMgr &master, SetMgr &mgr, int nbSets, PipelineLayout *_layout, int setBinding = -1, bool temporary = true);
+    //! Set this to false if you want to update Set on the fly (and you know what you do)
+    static bool guarded;
 private:
     //! Allocate descriptorSet from SetMgr
     void init();
@@ -79,6 +85,7 @@ private:
     VkDescriptorSetAllocateInfo allocInfo{};
     std::forward_list<VkDescriptorBufferInfo> bufferInfo;
     std::forward_list<VkDescriptorImageInfo> imageInfo;
+    std::forward_list<std::vector<VkDescriptorImageInfo>> imagesInfo;
     std::vector<VkWriteDescriptorSet> writeSet;
     std::vector<uint32_t> dynamicOffsets;
     VkDescriptorSet set = VK_NULL_HANDLE;

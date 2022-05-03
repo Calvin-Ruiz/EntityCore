@@ -30,6 +30,23 @@ void PipelineLayout::setTextureLocation(uint32_t binding, const VkSamplerCreateI
     uniformsLayout.push_back(samplerLayoutBinding);
 }
 
+void PipelineLayout::setTextureArrayLocation(uint32_t binding, uint32_t textureCount, const VkSamplerCreateInfo *samplerInfo, VkShaderStageFlags stage, VkSampler *pSamplers)
+{
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.binding = binding;
+    samplerLayoutBinding.descriptorCount = textureCount;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    if (samplerInfo) {
+        cachedSamplers.push_back({});
+        std::vector<VkSampler> &samplers = cachedSamplers.back();
+        samplers.resize(textureCount, master.getSampler(*samplerInfo));
+        samplerLayoutBinding.pImmutableSamplers = samplers.data();
+    } else
+        samplerLayoutBinding.pImmutableSamplers = pSamplers;
+    samplerLayoutBinding.stageFlags = stage;
+    uniformsLayout.push_back(samplerLayoutBinding);
+}
+
 void PipelineLayout::setImageLocation(uint32_t binding, VkShaderStageFlags stage)
 {
     VkDescriptorSetLayoutBinding imageLayoutBinding{};
