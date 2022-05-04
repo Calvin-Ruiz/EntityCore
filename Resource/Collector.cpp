@@ -12,6 +12,8 @@ Collector::~Collector()
         vkDestroyFence(device, f, nullptr);
     for (VkSemaphore s : semaphores)
         vkDestroySemaphore(device, s, nullptr);
+    for (VkCommandPool cp : commandPools)
+        vkDestroyCommandPool(device, cp, nullptr);
 }
 
 VkFence Collector::createFence(bool signaled, const std::string &name)
@@ -49,4 +51,15 @@ VkSemaphore Collector::createSemaphore(uint64_t initialValue, const std::string 
         vkmgr.setObjectName(semaphore, VK_OBJECT_TYPE_SEMAPHORE, name);
     semaphores.push_front(semaphore);
     return semaphore;
+}
+
+VkCommandPool Collector::create(const VkCommandPoolCreateInfo &info, const std::string &name)
+{
+    VkCommandPool commandPool;
+    if (vkCreateCommandPool(vkmgr.refDevice, &info, nullptr, &commandPool) != VK_SUCCESS)
+        return VK_NULL_HANDLE;
+    if (!name.empty())
+        vkmgr.setObjectName(commandPool, VK_OBJECT_TYPE_COMMAND_POOL, name);
+    commandPools.push_back(commandPool);
+    return commandPool;
 }
