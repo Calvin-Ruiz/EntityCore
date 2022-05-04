@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 #include <sstream>
+#include <cstdlib>
 
 VulkanMgr *VulkanMgr::instance = nullptr;
 
@@ -50,12 +51,12 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
         swapchainUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
 
-    initVulkan(createInfo.AppName, createInfo.appVersion, createInfo.window, createInfo.enableDebugLayers, createInfo.preferIntegrated);
+    initVulkan(createInfo.AppName, createInfo.appVersion, createInfo.vulkanVersion, createInfo.window, createInfo.enableDebugLayers, createInfo.preferIntegrated);
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     displayPhysicalDeviceInfo(physicalDeviceProperties);
     initQueues(createInfo.queueRequest);
-    initDevice(createInfo.requiredFeatures, createInfo.preferedFeatures);
+    initDevice(createInfo);
     if (presenting) {
         initSwapchain(createInfo.width, abs(createInfo.height), swapchainUsage, createInfo.preferedPresentMode, !createInfo.colorSpaceSRGB);
         createImageViews();
@@ -162,6 +163,8 @@ VulkanMgr::~VulkanMgr()
     if (hasLayer)
         destroyDebug();
     instance = nullptr;
+    for (auto ia : internalAllocations)
+        ::free(ia);
 }
 
 void VulkanMgr::waitIdle()
@@ -225,12 +228,12 @@ bool VulkanMgr::isDeviceSuitable(VkPhysicalDevice pDevice) {
     return extensionsSupported && swapChainAdequate;
 }
 
-void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer, bool preferIntegrated)
+void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, uint32_t vulkanVersion, SDL_Window *window, bool _hasLayer, bool preferIntegrated)
 {
     hasLayer = _hasLayer;
 
     // initialize the vk::ApplicationInfo structure
-    vk::ApplicationInfo applicationInfo(AppName, appVersion, "EntityCore", 1, VK_API_VERSION_1_1);
+    vk::ApplicationInfo applicationInfo(AppName, appVersion, "EntityCore", 1, vulkanVersion);
 
     // initialize the vk::InstanceCreateInfo
     vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, hasLayer ? validationLayers.size() : 0, validationLayers.data(), instanceExtension.size(), instanceExtension.data());
@@ -395,46 +398,39 @@ void VulkanMgr::initQueues(const QueueRequirement &queueRequest)
     }
 }
 
-void VulkanMgr::initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures)
+#include "VulkanFeatureInterprete.hpp"
+
+void VulkanMgr::initDevice(const VulkanMgrCreateInfo &createInfo)
 {
-    VkPhysicalDeviceFeatures2 supportedDeviceFeatures;
-    supportedDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    supportedDeviceFeatures.pNext = (canSynchronization2) ? &sync2 : nullptr;
-    vkGetPhysicalDeviceFeatures2(physicalDevice, &supportedDeviceFeatures);
+    VkPhysicalDeviceFeatures2 requestedFeatures = createInfo.preferedFeatures;
+    VkPhysicalDeviceFeatures2 requiredFeatures = createInfo.requiredFeatures;
 
-    const VkBool32 *src = reinterpret_cast<const VkBool32 *>(&requiredFeatures);
-    VkBool32 *dst = reinterpret_cast<VkBool32 *>(&preferedFeatures);
-    constexpr int size = sizeof(requiredFeatures) / sizeof(VkBool32);
-    for (int i = 0; i < size; ++i) {
-        *(dst++) |= *(src++);
-    }
-    src = reinterpret_cast<const VkBool32 *>(&preferedFeatures);
-    const VkBool32 *src2 = reinterpret_cast<const VkBool32 *>(&supportedDeviceFeatures.features);
-    dst = reinterpret_cast<VkBool32 *>(&deviceFeatures);
-    for (int i = 0; i < size; ++i) {
-        *(dst++) = *(src++) & *(src2++);
-    }
-    displayEnabledFeaturesInfo(preferedFeatures, requiredFeatures);
+    deviceFeatures.pNext = (canSynchronization2) ? &sync2 : nullptr;
+    interpreteFeatures(deviceFeatures, requestedFeatures, requiredFeatures, internalAllocations);
+    vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures);
+    finalizeFeatures(deviceFeatures, requestedFeatures, requiredFeatures);
 
-    VkDeviceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = &supportedDeviceFeatures;
+    displayEnabledFeaturesInfo(deviceFeatures, preferedFeatures, createInfo.requiredFeatures);
 
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    VkDeviceCreateInfo deviceCreateInfo{};
+    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pNext = &deviceFeatures;
 
-    createInfo.pEnabledFeatures = nullptr;
+    deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+
+    deviceCreateInfo.pEnabledFeatures = nullptr;
 
     if (canSynchronization2 && sync2.synchronization2 == VK_TRUE) {
         SyncEvent::enable();
         deviceExtension.push_back("VK_KHR_synchronization2");
     }
 
-    createInfo.enabledExtensionCount = deviceExtension.size();
-    createInfo.ppEnabledExtensionNames = deviceExtension.data();
-    createInfo.enabledLayerCount = 0;
+    deviceCreateInfo.enabledExtensionCount = deviceExtension.size();
+    deviceCreateInfo.ppEnabledExtensionNames = deviceExtension.data();
+    deviceCreateInfo.enabledLayerCount = 0;
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+    if (vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create logical device");
     }
 }
@@ -724,64 +720,13 @@ void VulkanMgr::displayPhysicalDeviceInfo(VkPhysicalDeviceProperties &prop)
     putLog(ss.str(), LogType::LAYER);
 }
 
-#define FEATURE_STATE(name) if (requestedFeatures.name) { \
-    ss << #name; \
-    if (deviceFeatures.name) { \
-        ss << " : enabled\n"; \
-    } else { \
-        requirementMet &= (!requiredFeatures.name); \
-        ss << " : unavailable\n"; \
-    } \
-} \
+#include "VulkanFeatureDisplay.hpp"
 
-void VulkanMgr::displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures &requestedFeatures, const VkPhysicalDeviceFeatures &requiredFeatures)
+void VulkanMgr::displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures2 &enabledFeatures, const VkPhysicalDeviceFeatures2 &requestedFeatures, const VkPhysicalDeviceFeatures2 &requiredFeatures)
 {
-    bool requirementMet = true;
     std::ostringstream ss;
     ss << "===== Used device features =====\n";
-    FEATURE_STATE(fullDrawIndexUint32)
-    FEATURE_STATE(imageCubeArray)
-    FEATURE_STATE(independentBlend)
-    FEATURE_STATE(geometryShader)
-    FEATURE_STATE(tessellationShader)
-    FEATURE_STATE(sampleRateShading)
-    FEATURE_STATE(logicOp)
-    FEATURE_STATE(multiDrawIndirect)
-    FEATURE_STATE(drawIndirectFirstInstance)
-    FEATURE_STATE(depthClamp)
-    FEATURE_STATE(depthBiasClamp)
-    FEATURE_STATE(fillModeNonSolid)
-    FEATURE_STATE(depthBounds)
-    FEATURE_STATE(wideLines)
-    FEATURE_STATE(largePoints)
-    FEATURE_STATE(alphaToOne)
-    FEATURE_STATE(multiViewport)
-    FEATURE_STATE(samplerAnisotropy)
-    FEATURE_STATE(textureCompressionETC2)
-    FEATURE_STATE(textureCompressionASTC_LDR)
-    FEATURE_STATE(textureCompressionBC)
-    FEATURE_STATE(pipelineStatisticsQuery)
-    FEATURE_STATE(vertexPipelineStoresAndAtomics)
-    FEATURE_STATE(fragmentStoresAndAtomics)
-    FEATURE_STATE(shaderTessellationAndGeometryPointSize)
-    FEATURE_STATE(shaderImageGatherExtended)
-    FEATURE_STATE(shaderStorageImageExtendedFormats)
-    FEATURE_STATE(shaderStorageImageMultisample)
-    FEATURE_STATE(shaderStorageImageReadWithoutFormat)
-    FEATURE_STATE(shaderUniformBufferArrayDynamicIndexing)
-    FEATURE_STATE(shaderSampledImageArrayDynamicIndexing)
-    FEATURE_STATE(shaderStorageBufferArrayDynamicIndexing)
-    FEATURE_STATE(shaderStorageImageArrayDynamicIndexing)
-    FEATURE_STATE(shaderClipDistance)
-    FEATURE_STATE(shaderCullDistance)
-    FEATURE_STATE(shaderFloat64)
-    FEATURE_STATE(shaderInt64)
-    FEATURE_STATE(shaderInt16)
-    FEATURE_STATE(shaderResourceResidency)
-    FEATURE_STATE(shaderResourceMinLod)
-    FEATURE_STATE(sparseBinding)
-    FEATURE_STATE(variableMultisampleRate)
-    FEATURE_STATE(inheritedQueries)
+    bool requirementMet = displayAllEnabledFeatures(ss, enabledFeatures, requestedFeatures, requiredFeatures);
     putLog(ss.str(), LogType::LAYER);
     if (!requirementMet) {
         putLog("One or more mandatory feature is not available", LogType::ERROR);

@@ -14,6 +14,11 @@ class MemoryManager;
 #define MAX_FRAMES_IN_FLIGHT 2
 #endif
 
+struct VulkanWalker {
+    VkStructureType sType;
+    VulkanWalker *pNext;
+};
+
 // Remove windows macro disturbing everything
 #undef ERROR
 
@@ -63,11 +68,19 @@ struct VulkanMgrCreateInfo {
     const char *AppName = nullptr;
     uint32_t appVersion = 1;
     SDL_Window *window = nullptr;
+    uint32_t vulkanVersion = VK_API_VERSION_1_1; // Mustn't be a lower version than this one
     int width = 600;
     int height = 600;
     QueueRequirement queueRequest = {1, 1, 0, 0, 0};
-    VkPhysicalDeviceFeatures requiredFeatures = {};
-    VkPhysicalDeviceFeatures preferedFeatures = {};
+    // Note : Version features extensions MUST be chained in increasing order and include every subversion
+    // e.g. VkPhysicalDeviceFeatures2 -> VkPhysicalDeviceVulkan11Features -> VkPhysicalDeviceVulkan12Features
+    // pNext chains other than version features and are ensured to :
+    // - When coming from requiredFeatures, be passed to vkCreateDevice
+    // - When coming from preferedFeatures, be passed to vkGetPhysicalDeviceFeatures2 then vkCreateDevice
+    // - Be chained to deviceFeatures after version features
+    // - Possibly have his pNext value modified
+    VkPhysicalDeviceFeatures2 requiredFeatures = {};
+    VkPhysicalDeviceFeatures2 preferedFeatures = {};
     std::vector<const char *> requiredExtensions = {};
     logger_t redirectLog = nullptr;
     std::string cachePath = "\0";
@@ -108,7 +121,8 @@ public:
     std::vector<VkImage> &getSwapchainImage() {return swapChainImages;}
     VkExtent2D &getSwapChainExtent() {return swapChainExtent;}
     VkRect2D &getScreenRect() {return scissor;}
-    const VkPhysicalDeviceFeatures &getDeviceFeatures() {return deviceFeatures;}
+    // Note : If vulkanVersion is at least VK_API_VERSION_1_2, pNext chain the feature of increasing versions
+    const VkPhysicalDeviceFeatures2 &getDeviceFeatures() {return deviceFeatures;}
     VkPipelineCache &getPipelineCache() {return pipelineCache;}
     //! Only MemoryManager should use this method
     VkPhysicalDevice getPhysicalDevice() {return physicalDevice;}
@@ -156,10 +170,10 @@ private:
     VkViewport viewport{};
     VkRect2D scissor{};
     VkSwapchainCreateInfoKHR swapchainCreateInfo{};
-    VkPhysicalDeviceFeatures deviceFeatures{};
+    VkPhysicalDeviceFeatures2 deviceFeatures{};
     VkPipelineCache pipelineCache;
 
-    void initVulkan(const char *AppName, uint32_t appVersion, SDL_Window *window, bool _hasLayer = false, bool preferIntegrated = false);
+    void initVulkan(const char *AppName, uint32_t appVersion, uint32_t vulkanVersion, SDL_Window *window, bool _hasLayer = false, bool preferIntegrated = false);
     vk::UniqueInstance vkinstance;
     vk::PhysicalDevice physicalDevice;
 
@@ -170,7 +184,7 @@ private:
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::vector<QueueFamily> queues;
 
-    void initDevice(const VkPhysicalDeviceFeatures &requiredFeatures, VkPhysicalDeviceFeatures preferedFeatures);
+    void initDevice(const VulkanMgrCreateInfo &createInfo);
     VkDevice device;
 
     void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode, bool expectLinear);
@@ -200,7 +214,7 @@ private:
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     VkDebugUtilsMessengerEXT callback;
     void displayPhysicalDeviceInfo(VkPhysicalDeviceProperties &prop);
-    void displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures &requestedFeatures, const VkPhysicalDeviceFeatures &requiredFeatures);
+    void displayEnabledFeaturesInfo(const VkPhysicalDeviceFeatures2 &enabledFeatures, const VkPhysicalDeviceFeatures2 &requestedFeatures, const VkPhysicalDeviceFeatures2 &requiredFeatures);
     PFN_vkSetDebugUtilsObjectNameEXT ptr_vkSetDebugUtilsObjectNameEXT = nullptr;
 
     bool checkDeviceExtensionSupport(VkPhysicalDevice pDevice);
@@ -209,6 +223,7 @@ private:
     std::vector<const char *> instanceExtension = {"VK_KHR_surface", VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME};
     std::vector<const char *> deviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+    std::vector<void *> internalAllocations;
     std::list<VkSampler> samplers;
     std::vector<VkSamplerCreateInfo> samplersInfo;
     void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
