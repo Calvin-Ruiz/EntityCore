@@ -48,7 +48,10 @@ class SaveData {
 public:
     SaveData();
     SaveData(const std::string &content);
-    template <typename T> requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    template <typename T>
+    #ifndef NO_SAVEDATA_CONCEPT
+    requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    #endif
     SaveData(const T &value) {
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
@@ -56,7 +59,10 @@ public:
     ~SaveData();
 
     const std::string &operator=(const std::string &content);
-    template <typename T> requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    template <typename T>
+    #ifndef NO_SAVEDATA_CONCEPT
+    requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    #endif
     const T &operator=(const T &value) {
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
@@ -82,7 +88,10 @@ public:
     bool nonEmpty() const;
     bool empty() const;
     std::vector<char> &get() {return raw;}
-    template<typename T> requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    template<typename T>
+    #ifndef NO_SAVEDATA_CONCEPT
+    requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    #endif
     T &get(const T &defaultValue = {}) {
         if (raw.empty()) {
             raw.resize(sizeof(T));
@@ -94,7 +103,10 @@ public:
         return std::string(raw.data(), raw.size());
     }
     operator std::vector<SaveData>&() {return arr;}
-    template <typename T> requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    template <typename T>
+    #ifndef NO_SAVEDATA_CONCEPT
+    requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    #endif
     operator T&() {
         if (raw.empty()) {
             raw.resize(sizeof(T));
