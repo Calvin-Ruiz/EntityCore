@@ -3,13 +3,13 @@
 
 struct VulkanFeatureWalker {
     VkStructureType sType;
-    VulkanWalker *pNext;
+    VulkanFeatureWalker *pNext;
     VkBool32 flags[];
 };
 
 #define NBFLAGSIN(object) (sizeof(object) - offsetof(VulkanFeatureWalker, flags)) / sizeof(VkBool32)
 
-#define COMBINE_LEVEL(object) for (int i = NBFLAGSIN(object); i--;r equestedFeatures->flags[i] |= requiredFeatures->flags[i])
+#define COMBINE_LEVEL(object) for (int i = NBFLAGSIN(object); i--; requestedFeatures->flags[i] |= requiredFeatures->flags[i])
 
 #define INTERPRETE_FEATURE_LEVEL(flag, object) \
 if (requiredFeatures->pNext && requiredFeatures->pNext->sType == flag) { \

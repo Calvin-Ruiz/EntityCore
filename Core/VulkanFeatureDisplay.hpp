@@ -11,7 +11,8 @@ if (requestedFeatures.name) { \
         out << "\e[91;1munsupported\e[0m\n"; \
         requirementMet = false; \
     } else \
-        out << "\e[93munavailable\e[0m\n";
+        out << "\e[93munavailable\e[0m\n"; \
+}
 #else
 #define FEATURE_STATE(name) \
 if (requestedFeatures.name) { \
@@ -22,7 +23,8 @@ if (requestedFeatures.name) { \
         out << "unsupported\n"; \
         requirementMet = false; \
     } else \
-        out << "unavailable\n";
+        out << "unavailable\n"; \
+}
 #endif
 
 static bool displayEnabledFeatures10(std::ostream &out, const VkPhysicalDeviceFeatures &enabledFeatures, const VkPhysicalDeviceFeatures &requestedFeatures, const VkPhysicalDeviceFeatures &requiredFeatures)
@@ -179,9 +181,9 @@ static bool displayAllEnabledFeatures(std::ostream &out, const VkPhysicalDeviceF
 {
     bool requirementMet = displayEnabledFeatures10(out, enabledFeatures.features, requestedFeatures.features, requiredFeatures.features);
     #ifdef VK_API_VERSION_1_2
-    VulkanWalker *enabledFeaturesWalker = (VulkanWalker *) enabledFeatures->pNext;
-    VulkanWalker *requestedFeaturesWalker = (VulkanWalker *) requestedFeatures->pNext;
-    VulkanWalker *requiredFeaturesWalker = (VulkanWalker *) requiredFeatures->pNext;
+    VulkanWalker *enabledFeaturesWalker = (VulkanWalker *) enabledFeatures.pNext;
+    VulkanWalker *requestedFeaturesWalker = (VulkanWalker *) requestedFeatures.pNext;
+    VulkanWalker *requiredFeaturesWalker = (VulkanWalker *) requiredFeatures.pNext;
     if (enabledFeaturesWalker && enabledFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES) {
         if (!(requiredFeaturesWalker && requiredFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES))
             requiredFeaturesWalker = enabledFeaturesWalker;

@@ -60,7 +60,7 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     depthStencil.stencilTestEnable = VK_FALSE;
 
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = master.getDeviceFeatures().sampleRateShading;
+    multisampling.sampleShadingEnable = master.getDeviceFeatures().features.sampleRateShading;
     multisampling.rasterizationSamples = render.getSampleCount(subpass);
     multisampling.minSampleShading = .2f;
     multisampling.pSampleMask = nullptr;
@@ -121,7 +121,7 @@ void Pipeline::bindShader(const std::string &filename, const std::string entry)
 
 void Pipeline::bindShader(const std::string &filename, VkShaderStageFlagBits stage, const std::string entry)
 {
-    if (stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) && master.getDeviceFeatures().tessellationShader == VK_FALSE)
+    if (stage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) && master.getDeviceFeatures().features.tessellationShader == VK_FALSE)
         return;
 
     std::ifstream file(shaderDir + filename, std::ios::ate | std::ios::binary);

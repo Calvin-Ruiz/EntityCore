@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 #include <forward_list>
+#include <string>
 
 class VulkanMgr;
 

@@ -102,7 +102,7 @@ void Set::bindTexture(Texture &texture, uint32_t binding, VkSampler sampler, VkI
         &imageInfo.front(), nullptr, nullptr});
 }
 
-void Set::bindTextures(const std::vector<VkImageView> &textures, uint32_t binding, uint32_t arrayOffset = 0, VkSampler sampler = VK_NULL_HANDLE, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+void Set::bindTextures(const std::vector<VkImageView> &textures, uint32_t binding, uint32_t arrayOffset, VkSampler sampler, VkImageLayout layout)
 {
     imagesInfo.push_front({});
     auto &info = imagesInfo.front();

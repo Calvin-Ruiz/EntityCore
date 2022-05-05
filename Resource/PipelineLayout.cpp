@@ -6,7 +6,7 @@ VkSamplerCreateInfo PipelineLayout::DEFAULT_SAMPLER = {VK_STRUCTURE_TYPE_SAMPLER
 
 PipelineLayout::PipelineLayout(VulkanMgr &master) : master(master)
 {
-    DEFAULT_SAMPLER.anisotropyEnable = master.getDeviceFeatures().samplerAnisotropy;
+    DEFAULT_SAMPLER.anisotropyEnable = master.getDeviceFeatures().features.samplerAnisotropy;
 }
 
 PipelineLayout::~PipelineLayout()

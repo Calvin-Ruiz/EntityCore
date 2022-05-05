@@ -16,7 +16,7 @@ VulkanMgr *VulkanMgr::instance = nullptr;
 
 VulkanMgr::VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
     VulkanMgr({.AppName=AppName, .appVersion=appVersion, .window=window, .width=width, .height=height,
-        .queueRequest=queueRequest, .requiredFeatures=requiredFeatures, .preferedFeatures=preferedFeatures,
+        .queueRequest=queueRequest, .requiredFeatures={VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, requiredFeatures}, .preferedFeatures={VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, preferedFeatures},
         .requiredExtensions=(usePushSet ? std::vector<const char *>{"VK_KHR_push_descriptor"} : std::vector<const char*>{}),
         .redirectLog=redirectLog, .cachePath=cachePath, .logPath=cachePath, .swapchainUsage=swapchainUsage, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
         .enableDebugLayers=enableDebugLayers, .drawLogs=drawLogs, .saveLogs=saveLogs})
@@ -410,7 +410,7 @@ void VulkanMgr::initDevice(const VulkanMgrCreateInfo &createInfo)
     vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures);
     finalizeFeatures(deviceFeatures, requestedFeatures, requiredFeatures);
 
-    displayEnabledFeaturesInfo(deviceFeatures, preferedFeatures, createInfo.requiredFeatures);
+    displayEnabledFeaturesInfo(deviceFeatures, requestedFeatures, requiredFeatures);
 
     VkDeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
