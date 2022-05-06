@@ -3,6 +3,7 @@
 #include "MemoryManager.hpp"
 #include "EntityCore/Resource/SyncEvent.hpp"
 #include "EntityCore/Resource/Set.hpp"
+#include "EntityCore/Resource/Texture.hpp"
 #include <SDL2/SDL_vulkan.h>
 #include <iostream>
 #include <set>
@@ -18,7 +19,7 @@ VulkanMgr::VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *windo
     VulkanMgr({.AppName=AppName, .appVersion=appVersion, .window=window, .width=width, .height=height,
         .queueRequest=queueRequest, .requiredFeatures={VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, requiredFeatures}, .preferedFeatures={VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, preferedFeatures},
         .requiredExtensions=(usePushSet ? std::vector<const char *>{"VK_KHR_push_descriptor"} : std::vector<const char*>{}),
-        .redirectLog=redirectLog, .cachePath=cachePath, .logPath=cachePath, .swapchainUsage=swapchainUsage, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
+        .redirectLog=redirectLog, .cachePath=cachePath, .logPath=cachePath, .swapchainUsage = swapchainUsage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, .chunkSize=chunkSize, .forceSwapchainCount=forceSwapchainCount,
         .enableDebugLayers=enableDebugLayers, .drawLogs=drawLogs, .saveLogs=saveLogs})
 {
 }
@@ -59,12 +60,13 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     initDevice(createInfo);
     if (presenting) {
         initSwapchain(createInfo.width, abs(createInfo.height), swapchainUsage, createInfo.preferedPresentMode, !createInfo.colorSpaceSRGB);
-        createImageViews();
+        if (swapchainUsage & ALL_IMAGE_VIEW_USAGE)
+            createImageViews();
     } else {
         swapChainExtent.width = createInfo.width;
         swapChainExtent.height = abs(createInfo.height);
     }
-    memoryManager = new MemoryManager(*this, createInfo.chunkSize*1024*1024);
+    memoryManager = new MemoryManager(*this, createInfo.chunkSize*1024*1024, createInfo.memoryBatchCount);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
     Set::setupPFN(vkinstance.get());
@@ -505,7 +507,7 @@ void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchain
     createInfo.imageExtent = swapChainExtent;
     createInfo.imageArrayLayers = 1; // Pas besoin de 3D stéréoscopique
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.imageUsage = swapchainUsage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage = swapchainUsage;
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Pas de transparence pour le contenu de la fenêtre
     createInfo.presentMode = presentMode;
@@ -553,7 +555,7 @@ void VulkanMgr::createImageViews()
     }
 }
 
-bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties)
+bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties, int batch)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -566,7 +568,7 @@ bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-    bufferMemory = memoryManager->malloc(memRequirements, properties, preferedProperties);
+    bufferMemory = memoryManager->malloc(memRequirements, properties, preferedProperties, batch);
 
     if (bufferMemory.memory == VK_NULL_HANDLE) {
         vkDestroyBuffer(device, buffer, nullptr);

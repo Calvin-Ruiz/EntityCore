@@ -110,7 +110,7 @@ void Set::bindTextures(const std::vector<VkImageView> &textures, uint32_t bindin
         info.push_back({sampler, t, layout});
     writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, arrayOffset, info.size(),
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        &imageInfo.front(), nullptr, nullptr});
+        info.data(), nullptr, nullptr});
 }
 
 void Set::bindStorageBuffer(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset)

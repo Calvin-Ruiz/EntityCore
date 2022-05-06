@@ -88,6 +88,7 @@ struct VulkanMgrCreateInfo {
     VkImageUsageFlags swapchainUsage = 0;
     VkPresentModeKHR preferedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     int chunkSize = 64;
+    int memoryBatchCount = 0; // Number of memory batch
     int forceSwapchainCount = 0;
     bool enableDebugLayers = true;
     bool drawLogs = true;
@@ -108,7 +109,7 @@ public:
     VulkanMgr(const char *AppName = nullptr, uint32_t appVersion = 1, SDL_Window *window = nullptr, int width = 600, int height = 600, const QueueRequirement &queueRequest = {1, 1, 0, 0, 0}, const VkPhysicalDeviceFeatures &requiredFeatures = {}, const VkPhysicalDeviceFeatures &preferedFeatures = {}, int chunkSize = 64, bool enableDebugLayers = true, bool drawLogs = true, bool saveLogs = false, std::string _cachePath = "\0", int forceSwapchainCount = 0, VkImageUsageFlags swapchainUsage = 0, bool usePushSet = false, logger_t redirectLog = nullptr);
     VulkanMgr(const VulkanMgrCreateInfo &createInfo);
     ~VulkanMgr();
-    bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0);
+    bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0, int batch = -1);
     //! for malloc
     MemoryManager *getMemoryManager() {return memoryManager;}
     void free(SubMemory& bufferMemory);

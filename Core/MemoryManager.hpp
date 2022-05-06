@@ -30,11 +30,11 @@ struct MemoryQuerry {
 class MemoryManager
 {
 public:
-    MemoryManager(VulkanMgr &master, uint32_t _chunkSize);
+    MemoryManager(VulkanMgr &master, uint32_t _chunkSize, uint32_t _batchCount = 0);
     ~MemoryManager();
-    //! Allocate memory
+    //! Allocate memory from a given batch
     //! @return SubMemory.memory can be VK_NULL_HANDLE if memory allocation has failed
-    SubMemory malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0);
+    SubMemory malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0, uint32_t allocationBatch = 0);
     //! Allocate dedicated memory for an image
     SubMemory dmalloc(const VkMemoryRequirements &memRequirements, VkImage image, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0);
     //! Release allocated memory
@@ -60,10 +60,9 @@ private:
     //! Merge with SubMemory of which the begin or the end is common
     void merge(SubMemory *subMemory);
     //! Return SubMemory which cover the whole newly allocated chunk of memory
-    SubMemory allocateChunk(uint32_t memoryIndex, uint32_t specificChunkSize = UINT32_MAX);
+    SubMemory allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize = UINT32_MAX);
     //! Write memory statistics in log
     void displayResources();
-    std::mutex mtx;
     VulkanMgr &master;
     bool hasReleasedUnusedMemory = false; // Tell if releaseUnusedMemory have been called this frame
     uint16_t availableDeviceMemory; // Available GPU memory in MiB
@@ -75,9 +74,15 @@ private:
         std::list<SubMemory> availableSpaces;
         std::vector<VkDeviceMemory> memoryChunks;
     } Memory;
-    std::array<Memory, VK_MAX_MEMORY_TYPES> memory;
-    std::map<VkDeviceMemory, MappedMemory> mappedMemory;
+    std::mutex mtx; // General mutex
+    struct MemoryBatch {
+        std::mutex mtx;
+        std::array<Memory, VK_MAX_MEMORY_TYPES> memory;
+        std::map<VkDeviceMemory, MappedMemory> mappedMemory;
+    };
+    std::vector<MemoryBatch> batch;
     const uint32_t chunkSize;
+    const bool usingBatches;
 };
 
 #endif /* end of include guard: MEMORY_MANAGER_HPP */

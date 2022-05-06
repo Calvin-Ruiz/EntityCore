@@ -3,7 +3,8 @@
 #include <mutex>
 #include <sstream>
 
-MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize) : master(master), refDevice(master.refDevice), chunkSize(chunkSize)
+MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize, uint32_t _batchCount) :
+    master(master), refDevice(master.refDevice), chunkSize(chunkSize), batch(_batchCount ? _batchCount : 1), usingBatches(_batchCount > 0)
 {
     memBudjet.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
     memBudjet.pNext = nullptr;
@@ -15,24 +16,27 @@ MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize) : master(mas
 MemoryManager::~MemoryManager()
 {
     vkDeviceWaitIdle(refDevice);
-    for (auto &memTypes : memory) {
-        for (auto &mem : memTypes.memoryChunks) {
-            vkFreeMemory(refDevice, mem, nullptr);
+    for (auto &b : batch) {
+        for (auto &memTypes : b.memory) {
+            for (auto &mem : memTypes.memoryChunks) {
+                vkFreeMemory(refDevice, mem, nullptr);
+            }
         }
     }
 }
 
-SubMemory MemoryManager::malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties)
+SubMemory MemoryManager::malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t batchID)
 {
     SubMemory subMemory;
     subMemory.memory = VK_NULL_HANDLE;
+    subMemory.memoryBatch = batchID;
     findMemoryIndex(memRequirements, properties, preferedProperties, &subMemory);
-    mtx.lock();
+    batch[batchID].mtx.lock();
     if (subMemory.memoryIndex != UINT32_MAX) // If false, there is no compatible memory type
         acquireSubMemory(memRequirements, &subMemory);
     if (subMemory.memory != VK_NULL_HANDLE) // If false, there is no memory acquired
         allocateInSubMemory(memRequirements, &subMemory);
-    mtx.unlock();
+    batch[batchID].mtx.unlock();
     return subMemory;
 }
 
@@ -40,12 +44,14 @@ SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, Vk
 {
     SubMemory subMemory;
     subMemory.memory = VK_NULL_HANDLE;
+    subMemory.memoryBatch = UINT32_MAX;
     findMemoryIndex(memRequirements, properties, preferedProperties, &subMemory);
-    mtx.lock();
     if (availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && !hasReleasedUnusedMemory && memProperties.memoryProperties.memoryTypes[subMemory.memoryIndex].heapIndex == deviceMemoryHeap) {
+        mtx.lock();
         master.releaseUnusedMemory();
         hasReleasedUnusedMemory = true;
         displayResources();
+        mtx.unlock();
     }
     VkMemoryDedicatedAllocateInfo dedicatedInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, image, VK_NULL_HANDLE};
     VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &dedicatedInfo, memRequirements.size, subMemory.memoryIndex};
@@ -61,43 +67,41 @@ SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, Vk
     }
     if (!hasReleasedUnusedMemory)
         displayResources();
-    mtx.unlock();
     return subMemory;
 }
 
 void MemoryManager::free(SubMemory &subMemory)
 {
     if (subMemory.memory == VK_NULL_HANDLE) return;
-    mtx.lock();
     if (subMemory.size == (VkDeviceSize) -1) {
         vkFreeMemory(refDevice, subMemory.memory, nullptr);
     } else {
+
         merge(&subMemory);
         insert(subMemory);
     }
-    mtx.unlock();
 }
 
 void MemoryManager::mapMemory(SubMemory &subMemory, void **data)
 {
-    mtx.lock();
-    MappedMemory &mapmem = mappedMemory[subMemory.memory];
-    if (mapmem.nbMapping++ == 0) {
+    batch[subMemory.memoryBatch].mtx.lock();
+    MappedMemory &mapmem = batch[subMemory.memoryBatch].mappedMemory[subMemory.memory];
+    if (++mapmem.nbMapping == 1) {
         if (vkMapMemory(refDevice, subMemory.memory, 0, VK_WHOLE_SIZE, 0, &mapmem.data) != VK_SUCCESS)
             throw std::runtime_error("Faild to map memory");
     }
-    mtx.unlock();
+    batch[subMemory.memoryBatch].mtx.unlock();
     *data = static_cast<char *>(mapmem.data) + subMemory.offset; // static_cast for GCC
 }
 
 void MemoryManager::unmapMemory(SubMemory &subMemory)
 {
-    mtx.lock();
-    MappedMemory &mapmem = mappedMemory[subMemory.memory];
-    if (mapmem.nbMapping-- == 1) {
+    batch[subMemory.memoryBatch].mtx.lock();
+    MappedMemory &mapmem = batch[subMemory.memoryBatch].mappedMemory[subMemory.memory];
+    if (--mapmem.nbMapping == 0) {
         vkUnmapMemory(refDevice, subMemory.memory);
     }
-    mtx.unlock();
+    batch[subMemory.memoryBatch].mtx.unlock();
 }
 
 void MemoryManager::findMemoryIndex(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, SubMemory *subMemory)
@@ -122,30 +126,33 @@ void MemoryManager::findMemoryIndex(const VkMemoryRequirements &memRequirements,
 
 void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements, SubMemory *subMemory)
 {
-    const auto itEnd = memory[subMemory->memoryIndex].availableSpaces.end();
-    for (auto it = memory[subMemory->memoryIndex].availableSpaces.begin(); it != itEnd; ++it) {
+    uint32_t memoryBatch = subMemory->memoryBatch;
+    const auto itEnd = batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.end();
+    for (auto it = batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.begin(); it != itEnd; ++it) {
         if (memRequirements.size <= it->size
             && (it->offset % memRequirements.alignment == 0
                 || memRequirements.size + memRequirements.alignment
                 - (it->offset % memRequirements.alignment) <= it->size)) {
             *subMemory = *it;
-            memory[subMemory->memoryIndex].availableSpaces.erase(it);
+            batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.erase(it);
             break;
         }
     }
     if (subMemory->memory == VK_NULL_HANDLE) {
-        if (memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        if (!usingBatches && memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
             // Host visible memory should be allocated separately in order to allow concurrent access to different buffer
-            *subMemory = allocateChunk(subMemory->memoryIndex, memRequirements.size);
+            *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size);
             return;
         }
         if (!hasReleasedUnusedMemory && availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].heapIndex == deviceMemoryHeap) {
+            mtx.lock();
             master.releaseUnusedMemory();
             hasReleasedUnusedMemory = true;
             displayResources();
+            mtx.unlock();
             acquireSubMemory(memRequirements, subMemory);
         } else {
-            *subMemory = allocateChunk(subMemory->memoryIndex);
+            *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch);
         }
     }
 }
@@ -171,6 +178,7 @@ void MemoryManager::allocateInSubMemory(const VkMemoryRequirements &memRequireme
 
 void MemoryManager::insert(SubMemory &subMemory)
 {
+    auto &memory = batch[subMemory.memoryBatch].memory;
     const auto itEnd = memory[subMemory.memoryIndex].availableSpaces.end();
     for (auto it = memory[subMemory.memoryIndex].availableSpaces.begin(); it != itEnd; ++it) {
         if (it->size >= subMemory.size) {
@@ -185,6 +193,7 @@ void MemoryManager::merge(SubMemory *subMemory)
 {
     VkDeviceSize memBegin = subMemory->offset;
     VkDeviceSize memEnd = memBegin + subMemory->size;
+    auto &memory = batch[subMemory->memoryBatch].memory;
 
     const auto itEnd = memory[subMemory->memoryIndex].availableSpaces.end();
     for (auto it = memory[subMemory->memoryIndex].availableSpaces.begin(); it != itEnd; ++it) {
@@ -209,10 +218,11 @@ void MemoryManager::merge(SubMemory *subMemory)
     }
 }
 
-SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t specificChunkSize)
+SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize)
 {
     SubMemory subMemory;
     subMemory.offset = 0;
+    subMemory.memoryBatch = memoryBatch;
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = subMemory.size = (specificChunkSize == UINT32_MAX) ? chunkSize : specificChunkSize;
@@ -224,14 +234,15 @@ SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t specificCh
     if (vkAllocateMemory(refDevice, &allocInfo, nullptr, &subMemory.memory) == VK_SUCCESS) {
         oss << "Allocate chunk of " << subMemory.size / 1024 / 1024 << " MiB in " << heapType << " memory.";
         master.putLog(oss.str(), LogType::DEBUG);
-        memory[memoryIndex].memoryChunks.push_back(subMemory.memory);
+        batch[memoryBatch].memory[memoryIndex].memoryChunks.push_back(subMemory.memory);
     } else {
         oss << "Failed to allocate chunk of " << subMemory.size / 1024 / 1024 << " MiB in " << heapType << " memory.";
         master.putLog(oss.str(),  LogType::ERROR);
         subMemory.memory = VK_NULL_HANDLE;
     }
-
+    mtx.lock();
     displayResources();
+    mtx.unlock();
     return subMemory;
 }
 

@@ -189,16 +189,16 @@ static bool displayAllEnabledFeatures(std::ostream &out, const VkPhysicalDeviceF
             requiredFeaturesWalker = enabledFeaturesWalker;
         requirementMet &= displayEnabledFeatures11(out, *(VkPhysicalDeviceVulkan11Features *) enabledFeaturesWalker, *(VkPhysicalDeviceVulkan11Features *) requestedFeaturesWalker, *(VkPhysicalDeviceVulkan11Features *) requiredFeaturesWalker);
         enabledFeaturesWalker = enabledFeaturesWalker->pNext;
-        requestedFeaturesWalker = enabledFeaturesWalker->pNext;
-        requiredFeaturesWalker = enabledFeaturesWalker->pNext;
+        requestedFeaturesWalker = requestedFeaturesWalker->pNext;
+        requiredFeaturesWalker = requiredFeaturesWalker->pNext;
         if (enabledFeaturesWalker && enabledFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
             if (!(requiredFeaturesWalker && requiredFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES))
                 requiredFeaturesWalker = enabledFeaturesWalker;
             requirementMet &= displayEnabledFeatures12(out, *(VkPhysicalDeviceVulkan12Features *) enabledFeaturesWalker, *(VkPhysicalDeviceVulkan12Features *) requestedFeaturesWalker, *(VkPhysicalDeviceVulkan12Features *) requiredFeaturesWalker);
             #ifdef VK_API_VERSION_1_3
             enabledFeaturesWalker = enabledFeaturesWalker->pNext;
-            requestedFeaturesWalker = enabledFeaturesWalker->pNext;
-            requiredFeaturesWalker = enabledFeaturesWalker->pNext;
+            requestedFeaturesWalker = requestedFeaturesWalker->pNext;
+            requiredFeaturesWalker = requiredFeaturesWalker->pNext;
             if (enabledFeaturesWalker && enabledFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES) {
                 if (!(requiredFeaturesWalker && requiredFeaturesWalker->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES))
                     requiredFeaturesWalker = enabledFeaturesWalker;
