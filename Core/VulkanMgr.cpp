@@ -741,28 +741,49 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
 {
     if (redirectLog)
         return redirectLog(str, type);
-    std::string header;
+    #ifdef WIN32
+        const char *saveHeader;
+        #define drawHeader saveHeader
+    #else
+        const char *saveHeader, *drawHeader;
+    #endif
 
     switch (type) {
         case LogType::INFO:
-            header = "(INFO)\t";
+            drawHeader = "(\e[92mINFO\e[0m)\t\e[3m";
+            saveHeader = "(INFO)\t";
             break;
         case LogType::DEBUG:
-            header = "(DEBUG)\t";
+            drawHeader = "(\e[96mDEBUG\e[0m)\t";
+            saveHeader = "(DEBUG)\t";
             break;
         case LogType::LAYER:
+            drawHeader = "\0";
+            saveHeader = "\0";
             break;
         case LogType::WARNING:
-            header = "(WARN)\t";
+            drawHeader = "(\e[1;93mWARN\e[0m)\t\e[93m";
+            saveHeader = "(WARN)\t";
             break;
         case LogType::ERROR:
-            header = "(ERROR)\t";
+            drawHeader = "(\e[1;91mERROR\e[0m)\t\e[1;4;91m";
+            saveHeader = "(ERROR)\t";
             break;
     }
-    if (drawLogs && type >= minLogPrintLevel)
-        std::cerr << header << str << std::endl;
-    if (saveLogs && type >= minLogWriteLevel)
-        logs << header << str << std::endl;
+    if (drawLogs && type >= minLogPrintLevel) {
+        logMutex.lock();
+        #ifdef WIN32
+        std::cerr << drawHeader << str << std::endl;
+        #else
+        std::cerr << drawHeader << str << "\e[0m\n";
+        #endif
+        logMutex.unlock();
+    }
+    if (saveLogs && type >= minLogWriteLevel) {
+        logMutex.lock();
+        logs << saveHeader << str << std::endl;
+        logMutex.unlock();
+    }
 }
 
 const QueueFamily *VulkanMgr::previewQueueFamily(VulkanMgr::QueueType type)

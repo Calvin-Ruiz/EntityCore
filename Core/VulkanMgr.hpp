@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <list>
+#include <mutex>
 
 struct SDL_Window;
 class MemoryManager;
@@ -136,6 +137,9 @@ public:
     }
     //! Call this method once per frame for garbage collector as various optimisations to work
     void update();
+    VkInstance getInstance() {
+        return vkinstance.get();
+    }
 
     // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
     // Return the queue family from which the queue was created, or nullptr in case of failure
@@ -229,6 +233,7 @@ private:
     std::vector<VkSamplerCreateInfo> samplersInfo;
     void (*debugFunc[63])(void *self, std::ostringstream &ss) {};
     void (*customReleaseMemory)();
+    std::mutex logMutex;
     int forceSwapchainCount;
     bool hasLayer;
     bool isReady = false;

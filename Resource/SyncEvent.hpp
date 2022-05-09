@@ -56,6 +56,8 @@ public:
     bool hasMultiDstDependency() const {return !multiEvent.empty();}
     static void setupPFN(VkInstance instance);
     static void enable() {enabled = true;}
+    //! Return true if VK_KHR_synchronization2 is supported and enabled
+    static bool useSynchronization2() {return enabled;}
 private:
     VkPipelineStageFlags compatConvStage(VkPipelineStageFlags2KHR stage);
     VkAccessFlags compatConvAccess(VkAccessFlags2KHR access);
