@@ -3,9 +3,9 @@
 
 int BufferMgr::uniformOffsetAlignment;
 
-BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize, const std::string &name, bool uniformBuffer) : master(master), name(name), bufferBlocSize(bufferBlocSize), uniformBuffer(uniformBuffer)
+BufferMgr::BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize, const std::string &name, bool uniformBuffer, uint32_t memoryBatch) : master(master), name(name), bufferBlocSize(bufferBlocSize), uniformBuffer(uniformBuffer)
 {
-    if (!master.createBuffer(bufferBlocSize, usage, properties, buffer, memory, preferedProperties)) {
+    if (!master.createBuffer(bufferBlocSize, usage, properties, buffer, memory, preferedProperties, memoryBatch)) {
         master.putLog("Failed to create buffer bloc", LogType::ERROR);
         return;
     }

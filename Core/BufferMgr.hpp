@@ -18,7 +18,7 @@ class VulkanMgr;
 */
 class BufferMgr {
 public:
-    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false);
+    BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false, uint32_t memoryBatch = 0);
     ~BufferMgr();
     SubBuffer acquireBuffer(unsigned int size);
     void releaseBuffer(SubBuffer &subBuffer);

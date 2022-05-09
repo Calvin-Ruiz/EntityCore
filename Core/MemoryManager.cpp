@@ -25,18 +25,18 @@ MemoryManager::~MemoryManager()
     }
 }
 
-SubMemory MemoryManager::malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t batchID)
+SubMemory MemoryManager::malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t memoryBatch)
 {
     SubMemory subMemory;
     subMemory.memory = VK_NULL_HANDLE;
-    subMemory.memoryBatch = batchID;
+    subMemory.memoryBatch = memoryBatch;
     findMemoryIndex(memRequirements, properties, preferedProperties, &subMemory);
-    batch[batchID].mtx.lock();
+    batch[memoryBatch].mtx.lock();
     if (subMemory.memoryIndex != UINT32_MAX) // If false, there is no compatible memory type
         acquireSubMemory(memRequirements, &subMemory);
     if (subMemory.memory != VK_NULL_HANDLE) // If false, there is no memory acquired
         allocateInSubMemory(memRequirements, &subMemory);
-    batch[batchID].mtx.unlock();
+    batch[memoryBatch].mtx.unlock();
     return subMemory;
 }
 
