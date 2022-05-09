@@ -10,6 +10,67 @@
 
 std::string Texture::textureDir = "./";
 
+Texture::Texture(VulkanMgr &master, const TextureInfo &texInfo) : master(master), mgr(texInfo.mgr), name(texInfo.name)
+{
+    int texChannels = -1;
+    int height = texInfo.height;
+    bool flipHorizontal;
+    void *content = texInfo.content;
+    if (height < 0) {
+        height = -height;
+        flipHorizontal = true;
+    } else
+        flipHorizontal = false;
+    nbChannels = texInfo.nbChannels;
+    elemSize = texInfo.channelSize;
+    aspect = texInfo.aspect;
+    widthSplit = 1 << (static_cast<int>(std::log2(info.extent.depth)) / 2);
+    memoryBatch = texInfo.memoryBatch;
+    info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.pNext = nullptr;
+    info.flags = 0;
+    info.imageType = texInfo.type;
+    info.format = texInfo.format;
+    info.extent = {texInfo.width, height, texInfo.depth};
+    if (!texInfo.width)
+        content = stbi_load((textureDir + name).c_str(), (int *) &info.extent.width, (int *) &info.extent.height, &texChannels, nbChannels);
+    info.mipLevels = (texInfo.mipmap) ? static_cast<uint32_t>(std::log2(std::max(info.extent.width, info.extent.height))) + 1 : 1;
+    info.arrayLayers = texInfo.arrayLayers;
+    info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    info.usage = texInfo.usage;
+    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount = 0;
+    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    info.samples = texInfo.sampleCount;
+    if (content) {
+        VkDeviceSize size = info.extent.width * info.extent.height * info.extent.depth * nbChannels * elemSize;
+        // Note : if size if rounded up to the nearest multiple of 8
+        if (size % sizeof(uint64_t))
+            size += sizeof(uint64_t) - (size % sizeof(uint64_t));
+        staging = mgr->acquireBuffer(size);
+        onCPU = true;
+        if (flipHorizontal) {
+            // Note : we can't round up with horizontal flipping
+            assert(info.extent.width * nbChannels * elemSize % sizeof(uint64_t) == 0);
+            const int lineSize = info.extent.width * nbChannels * elemSize / sizeof(uint64_t);
+            uint64_t *src = ((uint64_t *) content) + lineSize * (info.extent.height + 1);
+            uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
+            for (int i = info.extent.height; i--;) {
+                src -= lineSize * 2;
+                for (int j = lineSize; j--;)
+                    *(dst++) = *(src++);
+            }
+        } else {
+            uint64_t *src = (uint64_t *) content;
+            uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
+            for (int i = size / sizeof(uint64_t); i > 0; --i)
+                *(dst++) = *(src++);
+        }
+    }
+    if (texChannels != -1)
+        stbi_image_free(content);
+}
+
 Texture::Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount, const std::string &name, VkImageUsageFlags usage, VkFormat format, VkImageAspectFlags aspect, bool mipmap) : master(master), mgr(nullptr), aspect(aspect), name(name)
 {
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -124,7 +185,7 @@ bool Texture::createImage()
     vkGetImageMemoryRequirements2(master.refDevice, &memImageInfo, &memRequirements);
     memory = (memDedicated.prefersDedicatedAllocation) ?
         master.getMemoryManager()->dmalloc(memRequirements.memoryRequirements, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT):
-        master.getMemoryManager()->malloc(memRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        master.getMemoryManager()->malloc(memRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, memoryBatch);
     if (memory.memory == VK_NULL_HANDLE)
         return false;
     // Bind image memory

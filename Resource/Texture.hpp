@@ -19,20 +19,41 @@ struct SDL_Surface;
 #define ALL_IMAGE_VIEW_USAGE (ALL_IMAGE_VIEW_USAGE_EXCEPT_VIDEO)
 #endif
 
+struct TextureInfo {
+    int width = 0; // width of the texture, or 0 to use name as the filename of the texture to load
+    int height = 1; // Negate height to inverse the up and the down of this image at initial upload
+    int depth = 1;
+    int nbChannels = 4; // Number of channels
+    int channelSize = 1; // Size of a channel
+    int arrayLayers = 1; // Number of layers in the texture
+    uint32_t memoryBatch = 0; // Memory batch the texture is allocated from
+    void *content = nullptr; // Raw content to upload
+    BufferMgr *mgr = nullptr; // BufferMgr from which staging buffer is created
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageType type = VK_IMAGE_TYPE_2D;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    const std::string &name = "unnamed";
+    bool mipmap = false;
+};
+
 /**
 *   \brief Manage texture, including mipmapping, writing, reading and sample
 */
 class Texture {
 public:
-    // Create a framebuffer attachment
-    Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT, bool mipmap = false);
     // Create a texture
-    Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
+    Texture(VulkanMgr &master, const TextureInfo &info);
+    // Create a framebuffer attachment
+    [[deprecated]] Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT, bool mipmap = false);
+    // Create a texture
+    [[deprecated]] Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
     virtual ~Texture();
     // load texture using name as filename, return true on success
-    bool init(int nbChannels = 4, bool mipmap = false);
+    [[deprecated]] bool init(int nbChannels = 4, bool mipmap = false);
     // load texture with custom datas
-    bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, int depth = 1);
+    [[deprecated]] bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, int depth = 1);
     //! Export texture to GPU, return true on success
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
     //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
@@ -58,18 +79,21 @@ public:
     VkImage getImage();
     //! Return internal VkImageView
     VkImageView getView();
+    operator VkImage() {return getImage();}
+    operator VkImageView() {return getView();}
     //! Write texture size in width and height arguments
     void getDimensions(int &width, int &height) const {width=info.extent.width;height=info.extent.height;}
     //! Write texture size in width, height and depth arguments
     void getDimensions(int &width, int &height, int &depth) const {width=info.extent.width;height=info.extent.height;depth=info.extent.depth;}
     int getMipmapCount() const {return info.mipLevels;}
     VkImageAspectFlags getAspect() const {return aspect;}
+    //! Create a specific view, usefull when you need a specialized VkImageView
     VkImageView createView(uint32_t baseMipLevel, uint32_t mipLevels = 1, uint32_t baseArrayLevel = 0, uint32_t arrayLevels = VK_REMAINING_ARRAY_LAYERS);
     //! Allow renaming a texture on the fly. Usefull when dynamically reusing a texture to save allocation and binding cost.
     void rename(const std::string &name);
     //! Return the size of this texture in the GPU memory.
     VkDeviceSize getTextureSize() const {return sizeInMemory;}
-
+    //! Set the implicit access and pipeline stage assigned to an image layout
     static void implicitBarrier(VkImageLayout layout, VkAccessFlags &access, VkPipelineStageFlags &stage);
 protected:
     //! Pre-create image on GPU
@@ -89,6 +113,7 @@ protected:
     int elemSize = 1;
     std::string name;
     VkDeviceSize sizeInMemory;
+    uint32_t memoryBatch = 0;
     unsigned short widthSplit = 1;
     bool onCPU = false;
     bool onGPU = false;
