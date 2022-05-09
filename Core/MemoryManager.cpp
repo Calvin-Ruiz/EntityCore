@@ -4,7 +4,7 @@
 #include <sstream>
 
 MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize, uint32_t _batchCount) :
-    master(master), refDevice(master.refDevice), chunkSize(chunkSize), batch(_batchCount ? _batchCount : 1), usingBatches(_batchCount > 0)
+    master(master), refDevice(master.refDevice), batch(_batchCount ? _batchCount : 1), chunkSize(chunkSize), usingBatches(_batchCount > 0)
 {
     memBudjet.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
     memBudjet.pNext = nullptr;
@@ -40,7 +40,7 @@ SubMemory MemoryManager::malloc(const VkMemoryRequirements &memRequirements, VkM
     return subMemory;
 }
 
-SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, VkImage image, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties)
+SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, const VkMemoryDedicatedAllocateInfo &dedicatedInfo, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties)
 {
     SubMemory subMemory;
     subMemory.memory = VK_NULL_HANDLE;
@@ -53,7 +53,6 @@ SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, Vk
         displayResources();
         mtx.unlock();
     }
-    VkMemoryDedicatedAllocateInfo dedicatedInfo{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, image, VK_NULL_HANDLE};
     VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &dedicatedInfo, memRequirements.size, subMemory.memoryIndex};
     std::ostringstream oss;
     if (vkAllocateMemory(refDevice, &allocInfo, nullptr, &subMemory.memory) == VK_SUCCESS) {
@@ -127,6 +126,11 @@ void MemoryManager::findMemoryIndex(const VkMemoryRequirements &memRequirements,
 void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements, SubMemory *subMemory)
 {
     uint32_t memoryBatch = subMemory->memoryBatch;
+    if (memRequirements.size > chunkSize) {
+        // Required memory is bigger than a chunk, allocate a chunk specifically sized for this allocation
+        *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size);
+        return;
+    }
     const auto itEnd = batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.end();
     for (auto it = batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.begin(); it != itEnd; ++it) {
         if (memRequirements.size <= it->size

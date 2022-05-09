@@ -184,7 +184,7 @@ bool Texture::createImage()
     VkImageMemoryRequirementsInfo2 memImageInfo{VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, nullptr, image};
     vkGetImageMemoryRequirements2(master.refDevice, &memImageInfo, &memRequirements);
     memory = (memDedicated.prefersDedicatedAllocation) ?
-        master.getMemoryManager()->dmalloc(memRequirements.memoryRequirements, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT):
+        master.getMemoryManager()->dmalloc(memRequirements.memoryRequirements, {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, image, VK_NULL_HANDLE}, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT):
         master.getMemoryManager()->malloc(memRequirements.memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, memoryBatch);
     if (memory.memory == VK_NULL_HANDLE)
         return false;

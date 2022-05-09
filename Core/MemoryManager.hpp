@@ -35,8 +35,8 @@ public:
     //! Allocate memory from a given batch
     //! @return SubMemory.memory can be VK_NULL_HANDLE if memory allocation has failed
     SubMemory malloc(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0, uint32_t allocationBatch = 0);
-    //! Allocate dedicated memory for an image
-    SubMemory dmalloc(const VkMemoryRequirements &memRequirements, VkImage image, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0);
+    //! Allocate dedicated memory
+    SubMemory dmalloc(const VkMemoryRequirements &memRequirements, const VkMemoryDedicatedAllocateInfo &dedicatedInfo, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties = 0);
     //! Release allocated memory
     void free(SubMemory &subMemory);
     //! Map memory

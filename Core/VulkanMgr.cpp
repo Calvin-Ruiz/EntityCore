@@ -566,9 +566,15 @@ bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
         return false;
 
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-    bufferMemory = memoryManager->malloc(memRequirements, properties, preferedProperties, batch);
+    VkMemoryDedicatedRequirements memDedicated{VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS, nullptr, 0, 0};
+    VkMemoryRequirements2 memRequirements;
+    memRequirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    memRequirements.pNext = &memDedicated;
+    VkBufferMemoryRequirementsInfo2 memBufferInfo{VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr, buffer};
+    vkGetBufferMemoryRequirements2(device, &memBufferInfo, &memRequirements);
+    bufferMemory = (memDedicated.prefersDedicatedAllocation) ?
+        memoryManager->dmalloc(memRequirements.memoryRequirements, {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, VK_NULL_HANDLE, buffer}, properties, preferedProperties):
+        memoryManager->malloc(memRequirements.memoryRequirements, properties, preferedProperties, batch);
 
     if (bufferMemory.memory == VK_NULL_HANDLE) {
         vkDestroyBuffer(device, buffer, nullptr);
