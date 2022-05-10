@@ -31,7 +31,7 @@ Texture::Texture(VulkanMgr &master, const TextureInfo &texInfo) : master(master)
     info.flags = 0;
     info.imageType = texInfo.type;
     info.format = texInfo.format;
-    info.extent = {texInfo.width, height, texInfo.depth};
+    info.extent = {(uint32_t) texInfo.width, (uint32_t) height, (uint32_t) texInfo.depth};
     if (!texInfo.width)
         content = stbi_load((textureDir + name).c_str(), (int *) &info.extent.width, (int *) &info.extent.height, &texChannels, nbChannels);
     info.mipLevels = (texInfo.mipmap) ? static_cast<uint32_t>(std::log2(std::max(info.extent.width, info.extent.height))) + 1 : 1;
