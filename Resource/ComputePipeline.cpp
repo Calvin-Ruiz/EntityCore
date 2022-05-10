@@ -23,7 +23,7 @@ ComputePipeline::~ComputePipeline()
 void ComputePipeline::bindShader(const std::string &filename, const std::string entry)
 {
     entryName = entry;
-    pipelineInfo.stage.pName = entry.c_str();
+    pipelineInfo.stage.pName = entryName.c_str();
     std::ifstream file(shaderDir + filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
