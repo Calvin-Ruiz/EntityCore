@@ -266,8 +266,9 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, uint32_t vu
     for (const auto &pDevice : vkinstance->enumeratePhysicalDevices()) {
         if (isDeviceSuitable(pDevice)) {
             if (!suboptimalSelected && pDevice.getProperties().deviceType == suboptimalGPUType) {
+                physicalDevice = pDevice;
                 suboptimalSelected = true;
-                oneHasBeenSelected = false;
+                oneHasBeenSelected = true;
             } else if (!oneHasBeenSelected) {
                 oneHasBeenSelected = true;
                 physicalDevice = pDevice;
