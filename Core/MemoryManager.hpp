@@ -48,6 +48,10 @@ public:
     void endOfFrame() {hasReleasedUnusedMemory = false;}
     //! Querry available ressources to decide what to do
     std::vector<MemoryQuerry> querryMemory();
+    //! Display memory fragmentation of one batch
+    void displayFragmentation(int memoryBatch);
+    //! Release unused chunks of memory
+    void releaseUnusedChunks();
 private:
     //! Assign the memory index according to requirements
     void findMemoryIndex(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, SubMemory *subMemory);
@@ -60,7 +64,7 @@ private:
     //! Merge with SubMemory of which the begin or the end is common
     void merge(SubMemory *subMemory);
     //! Return SubMemory which cover the whole newly allocated chunk of memory
-    SubMemory allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize = UINT32_MAX);
+    SubMemory allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize = UINT32_MAX, bool registerChunk = true);
     //! Write memory statistics in log
     void displayResources();
     VulkanMgr &master;
@@ -72,9 +76,9 @@ private:
     VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudjet{};
     typedef struct Memory {
         std::list<SubMemory> availableSpaces;
-        std::vector<VkDeviceMemory> memoryChunks;
+        std::list<VkDeviceMemory> memoryChunks;
     } Memory;
-    std::mutex mtx; // General mutex
+    std::mutex mtx; // General mutex, for global operations
     struct MemoryBatch {
         std::mutex mtx;
         std::array<Memory, VK_MAX_MEMORY_TYPES> memory;

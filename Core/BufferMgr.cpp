@@ -29,6 +29,8 @@ BufferMgr::~BufferMgr()
         releaseThread->join();
     }
     vkDestroyBuffer(master.refDevice, buffer, nullptr);
+    if (data)
+        master.unmapMemory(memory);
     master.free(memory);
 }
 

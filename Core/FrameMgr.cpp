@@ -77,7 +77,7 @@ bool FrameMgr::build(uint32_t queueFamily, bool alwaysRecord, bool useSecondary,
     views.shrink_to_fit();
     master.setObjectName(framebuffer, VK_OBJECT_TYPE_FRAMEBUFFER, name);
     renderer.bind(id, framebuffer, {{0, 0}, {info.width, info.height}});
-    master.putLog("Build FrameBuffer '" + name + "' with size (" + std::to_string(info.width) + ", " + std::to_string(info.height) + ")", LogType::INFO);
+    master.putLog("Build FrameBuffer '" + name + "' with size (" + std::to_string(info.width) + ", " + std::to_string(info.height) + ")", LogType::DEBUG);
     return true;
 }
 

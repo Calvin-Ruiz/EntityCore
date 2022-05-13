@@ -293,7 +293,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
     bool includeFirstTransition = includeTransition;
     if (!onGPU) {
         if (createImage()) {
-            master.putLog("Created image support for '" + name + "'", LogType::INFO);
+            master.putLog("Created image support for '" + name + "'", LogType::DEBUG);
             includeFirstTransition = true;
         } else {
             return false;
@@ -301,7 +301,7 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
     }
     if (cmd == VK_NULL_HANDLE) {
         if (onCPU)
-            master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::INFO);
+            master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::DEBUG);
         return true;
     }
     if (!onCPU) {
@@ -432,7 +432,7 @@ bool Texture::use(VkCommandBuffer cmd, Implicit implicit, VkImageLayout layout, 
     implicitBarrier(srcLayout, srcAccess, srcStage);
     if (!onGPU) {
         if (createImage()) {
-            master.putLog("Created image support for '" + name + "'", LogType::INFO);
+            master.putLog("Created image support for '" + name + "'", LogType::DEBUG);
             srcLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         } else {
             return false;
@@ -510,7 +510,7 @@ VkImage Texture::getImage()
 {
     if (image)
         return image;
-    master.putLog("Binding of '" + name + "' image implicitly create bindless image (safety fallback)", LogType::DEBUG);
+    master.putLog("Binding of '" + name + "' image implicitly create bindless image (safety fallback)", LogType::INFO);
     preCreateImage();
     return image;
 }
@@ -519,7 +519,7 @@ VkImageView Texture::getView()
 {
     if (onGPU)
         return view;
-    master.putLog("Binding of '" + name + "' view implicitly call use() (safety fallback)", LogType::DEBUG);
+    master.putLog("Binding of '" + name + "' view implicitly call use() (safety fallback)", LogType::INFO);
     use();
     return view;
 }

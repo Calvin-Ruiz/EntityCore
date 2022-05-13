@@ -257,7 +257,7 @@ void Pipeline::removeVertexEntry(uint32_t location)
             return;
         }
     }
-    master.putLog("Failed to remove entry", LogType::DEBUG);
+    master.putLog("Failed to remove entry", LogType::WARNING);
 }
 
 void Pipeline::setViewportState(VkPipelineViewportStateCreateInfo *viewport)

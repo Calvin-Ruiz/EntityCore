@@ -75,7 +75,6 @@ void MemoryManager::free(SubMemory &subMemory)
     if (subMemory.size == (VkDeviceSize) -1) {
         vkFreeMemory(refDevice, subMemory.memory, nullptr);
     } else {
-
         merge(&subMemory);
         insert(subMemory);
     }
@@ -128,7 +127,7 @@ void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements
     uint32_t memoryBatch = subMemory->memoryBatch;
     if (memRequirements.size > chunkSize) {
         // Required memory is bigger than a chunk, allocate a chunk specifically sized for this allocation
-        *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size);
+        *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size, false);
         return;
     }
     const auto itEnd = batch[memoryBatch].memory[subMemory->memoryIndex].availableSpaces.end();
@@ -145,12 +144,14 @@ void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements
     if (subMemory->memory == VK_NULL_HANDLE) {
         if (!usingBatches && memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
             // Host visible memory should be allocated separately in order to allow concurrent access to different buffer
-            *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size);
+            *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch, memRequirements.size, false);
             return;
         }
         if (!hasReleasedUnusedMemory && availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].heapIndex == deviceMemoryHeap) {
             mtx.lock();
+            batch[memoryBatch].mtx.unlock();
             master.releaseUnusedMemory();
+            batch[memoryBatch].mtx.lock();
             hasReleasedUnusedMemory = true;
             displayResources();
             mtx.unlock();
@@ -163,6 +164,8 @@ void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements
 
 void MemoryManager::allocateInSubMemory(const VkMemoryRequirements &memRequirements, SubMemory *subMemory)
 {
+    if (subMemory->size == (VkDeviceSize) -1)
+        return;
     SubMemory tmp = *subMemory;
     tmp.size = tmp.offset % memRequirements.alignment;
     if (tmp.size > 0) {
@@ -222,7 +225,7 @@ void MemoryManager::merge(SubMemory *subMemory)
     }
 }
 
-SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize)
+SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatch, uint32_t specificChunkSize, bool registerChunk)
 {
     SubMemory subMemory;
     subMemory.offset = 0;
@@ -238,7 +241,10 @@ SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatc
     if (vkAllocateMemory(refDevice, &allocInfo, nullptr, &subMemory.memory) == VK_SUCCESS) {
         oss << "Allocate chunk of " << subMemory.size / 1024 / 1024 << " MiB in " << heapType << " memory.";
         master.putLog(oss.str(), LogType::DEBUG);
-        batch[memoryBatch].memory[memoryIndex].memoryChunks.push_back(subMemory.memory);
+        if (registerChunk)
+            batch[memoryBatch].memory[memoryIndex].memoryChunks.push_back(subMemory.memory);
+        else
+            subMemory.size = (VkDeviceSize) -1;
     } else {
         oss << "Failed to allocate chunk of " << subMemory.size / 1024 / 1024 << " MiB in " << heapType << " memory.";
         master.putLog(oss.str(),  LogType::ERROR);
@@ -278,4 +284,40 @@ std::vector<MemoryQuerry> MemoryManager::querryMemory()
         querry[i].flags = memProperties.memoryProperties.memoryHeaps[i].flags;
     }
     return querry;
+}
+
+void MemoryManager::displayFragmentation(int memoryBatch)
+{
+    auto &b = batch[memoryBatch];
+    b.mtx.lock();
+    master.putLog("----- Fragmentation of memory batch " + std::to_string(memoryBatch) + " -----", LogType::DEBUG);
+    for (int i = 0; i < VK_MAX_MEMORY_TYPES; ++i) {
+        if (b.memory[i].availableSpaces.empty())
+            continue;
+        std::ostringstream oss;
+        oss << "Heap " << i << " (" << ((memProperties.memoryProperties.memoryHeaps[memProperties.memoryProperties.memoryTypes[i].heapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "GPU" : "local") << ") :\n";
+        for (auto &as : b.memory[i].availableSpaces)
+            oss << "\t" << "memory=" << as.memory << ", offset=" << as.offset << " (" << as.offset/1024/1024 << " Mo)" << ", size=" << as.size << " (" << as.size/1024/1024 << "/" << chunkSize/1024/1024 << "Mo)\n";
+        master.putLog(oss.str(), LogType::DEBUG);
+    }
+    b.mtx.unlock();
+}
+
+void MemoryManager::releaseUnusedChunks()
+{
+    for (auto &b : batch) {
+        b.mtx.lock();
+        for (auto &m : b.memory) {
+            for (auto it = m.availableSpaces.begin(); it != m.availableSpaces.end();) {
+                if (it->size != chunkSize) {
+                    ++it;
+                    continue;
+                }
+                m.memoryChunks.remove(it->memory);
+                vkFreeMemory(refDevice, it->memory, nullptr);
+                m.availableSpaces.erase(it++);
+            }
+        }
+        b.mtx.unlock();
+    }
 }

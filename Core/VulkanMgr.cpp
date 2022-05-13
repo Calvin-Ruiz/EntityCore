@@ -257,7 +257,7 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, uint32_t vu
     if (window)
         initWindow(window);
 
-    putLog("Reading GPU(s) properties", LogType::DEBUG);
+    putLog("Reading GPU(s) properties", LogType::INFO);
     // get a physicalDevice
     bool oneHasBeenSelected = false;
     bool suboptimalSelected = false;
@@ -280,7 +280,7 @@ void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, uint32_t vu
         }
     }
     if (oneHasBeenSelected) {
-        putLog("GPU selected", LogType::DEBUG);
+        putLog("GPU selected", LogType::INFO);
     } else {
         putLog("No valid GPU detected", LogType::ERROR);
         std::cerr << "FATAL : No GPU match requirements\n";
@@ -593,6 +593,7 @@ void VulkanMgr::unmapMemory(SubMemory& bufferMemory) {memoryManager->unmapMemory
 void VulkanMgr::releaseUnusedMemory()
 {
     putLog("Low GPU memory detected - release unused memory", LogType::WARNING);
+    memoryManager->releaseUnusedChunks();
     if (customReleaseMemory)
         customReleaseMemory();
 }
