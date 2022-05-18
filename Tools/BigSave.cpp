@@ -42,7 +42,9 @@ bool BigSave::open(const std::string &name, bool _saveAtDestroy, bool _reduceWri
     char *pData = data.data();
     load(pData);
     if (pData != data.data() + data.size()) {
+        #ifndef NO_SAVEDATA_THROW
         throw std::range_error("Theoric size and bloc size missmatch");
+        #endif
     }
     if (reducedCheck)
         oldData = get();

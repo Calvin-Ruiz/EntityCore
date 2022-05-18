@@ -26,7 +26,9 @@ SaveData &SaveData::operator[](const std::string &key)
         case SaveSection::STRING_MAP:
             break;
         default:
+            #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call();
+            #endif
     }
     return str[key];
 }
@@ -42,7 +44,9 @@ SaveData &SaveData::operator[](uint64_t address)
         case SaveSection::LIST:
             return arr[address];
         default:
+            #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call();
+            #endif
     }
     return addr[address];
 }
@@ -57,7 +61,9 @@ int SaveData::push(const SaveData &data)
             arr.push_back(data);
             break;
         default:
+            #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call();
+            #endif
     }
     return arr.size() - 1;
 }
@@ -295,8 +301,11 @@ BigSave &SaveData::file(const std::string &filename)
 
 BigSave &SaveData::file()
 {
-    if (raw.empty())
+    if (raw.empty()) {
+        #ifndef NO_SAVEDATA_THROW
         throw std::bad_function_call();
+        #endif
+    }
     if (!subsave)
         subsave = BigSave::loadShared(std::string(raw.data(), raw.size()));
     return *subsave;

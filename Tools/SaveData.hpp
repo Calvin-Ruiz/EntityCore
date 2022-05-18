@@ -8,6 +8,10 @@
 #ifndef SAVE_DATA_HPP_
 #define SAVE_DATA_HPP_
 
+// #define NO_SAVEDATA_CONCEPT
+// #define NO_SAVEDATA_THROW
+// #define NO_SAVEDATA_IMPLICIT
+
 #include <string>
 #include <map>
 #include <vector>
@@ -48,6 +52,7 @@ class SaveData {
 public:
     SaveData();
     SaveData(const std::string &content);
+    #ifndef NO_SAVEDATA_IMPLICIT
     template <typename T>
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
@@ -56,9 +61,11 @@ public:
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
     }
+    #endif
     ~SaveData();
 
     const std::string &operator=(const std::string &content);
+    #ifndef NO_SAVEDATA_IMPLICIT
     template <typename T>
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
@@ -66,7 +73,9 @@ public:
     const T &operator=(const T &value) {
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
+        return value;
     }
+    #endif
     SaveData &operator[](const std::string &key);
     SaveData &operator[](uint64_t address);
     int push(const SaveData &data = {}); // return new index
@@ -103,6 +112,7 @@ public:
         return std::string(raw.data(), raw.size());
     }
     operator std::vector<SaveData>&() {return arr;}
+    #ifndef NO_SAVEDATA_IMPLICIT
     template <typename T>
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
@@ -115,6 +125,7 @@ public:
         assert(raw.size() == sizeof(T));
         return *reinterpret_cast<T *>(raw.data());
     }
+    #endif
     void load(char *&data);
     void save(std::vector<char> &data);
     size_t computeSize();
@@ -122,9 +133,11 @@ public:
     // Spacing : number of spaces per level
     // dumpContent : specialized dumpContent for non-string entries, return true if writing to out, false to use default interpretation
     void debugDump(std::ostream &out, int spacing = 2, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out) = nullptr, int level = 0);
+    // Serialize this SaveData at this location
+    // Will cause UNDEFINED BEHAVIOUR if computeSize() have not been called after the last modification
+    void save(char *data);
 private:
     static void genericDumpContent(const std::vector<char> &data, std::ostream &out, bool (*specializedDumpContent)(const std::vector<char> &data, std::ostream &out));
-    void save(char *data);
     inline size_t getSize() const {return dataSize;}
     unsigned char type = SaveSection::UNDEFINED;
     unsigned char sizeType = SaveSection::UNDEFINED;
