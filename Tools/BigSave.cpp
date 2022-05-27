@@ -1,8 +1,8 @@
 /*
-** EPITECH PROJECT, 2021
-** Global Tools
+** EntityCore
+** C++ Tools - BigSave
 ** File description:
-** BigSave.cpp
+** File-linked SaveData
 */
 #include "BigSave.hpp"
 #include <fstream>

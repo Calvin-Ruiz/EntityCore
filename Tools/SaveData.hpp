@@ -1,8 +1,8 @@
 /*
-** EPITECH PROJECT, 2021
-** Global Tools
+** EntityCore
+** C++ Tools - SaveData
 ** File description:
-** SaveData.hpp
+** Serializable arborescent binary container
 */
 
 #ifndef SAVE_DATA_HPP_

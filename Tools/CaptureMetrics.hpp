@@ -1,3 +1,10 @@
+/*
+** EntityCore
+** C++ Tools - CaptureMetrics
+** File description:
+** Light performance capture tool, allow complete performance analysis
+** Designed to help tracking performance issues with as many informations as possible at a very low performance cost
+*/
 #ifndef CAPTURE_METRICS_HPP_
 #define CAPTURE_METRICS_HPP_
 

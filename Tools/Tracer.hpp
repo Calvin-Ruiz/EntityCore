@@ -1,8 +1,8 @@
 /*
-** EPITECH PROJECT, 2020
-** B-YEP-400-MAR-4-1-indiestudio-iliam.amara
+** EntityCore
+** C++ Tools - Tracer
 ** File description:
-** Tracer.hpp
+** Dynamic variable tracer
 */
 
 #ifndef TRACER_HPP_

@@ -1,10 +1,10 @@
 /*
-** EPITECH PROJECT, 2020
-** B-MAT-500-MAR-5-1-305construction-calvin.ruiz
+** EntityCore
+** C++ Tools - VString
 ** File description:
-** VString.hpp
+** Virtual String / Constant String
+** Allow direct use of a chain of characters without allocation or copy
 */
-
 #ifndef VSTRING_HPP_
 #define VSTRING_HPP_
 

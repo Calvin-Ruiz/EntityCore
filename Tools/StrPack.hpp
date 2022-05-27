@@ -1,8 +1,8 @@
 /*
-** EPITECH PROJECT, 2020
-** G-JAM-001-MAR-0-2-jam-killian.moudery
+** EntityCore
+** C++ Tools - StrPack
 ** File description:
-** StrPack.hpp
+** FILO raw data serializer, based on a std::vector<char>
 */
 
 #ifndef STRPACK_HPP_

@@ -1,8 +1,9 @@
 /*
-** EPITECH PROJECT, 2020
-** G-JAM-001-MAR-0-2-jam-killian.moudery
+** EntityCore
+** C++ Tools - SafeQueue
 ** File description:
-** SafeQueue.hpp
+** Lock-free thread-safe queues
+** Include blocking-when-empty queues
 */
 
 #ifndef SAFEQUEUE_HPP_

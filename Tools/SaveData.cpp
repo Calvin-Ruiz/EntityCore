@@ -1,3 +1,10 @@
+/*
+** EntityCore
+** C++ Tools - SaveData
+** File description:
+** Serializable arborescent binary container
+*/
+
 #include "BigSave.hpp"
 #include <fstream>
 #include <iostream>

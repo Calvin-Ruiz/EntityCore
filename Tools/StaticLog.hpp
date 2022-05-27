@@ -1,8 +1,9 @@
 /*
-** EPITECH PROJECT, 2021
-** B-CPP-501-MAR-5-1-rtype-calvin.ruiz [WSL: Ubuntu-20.04]
+** EntityCore
+** C++ Tools - StaticLog
 ** File description:
-** StaticLog
+** Logs enabled/disabled at compilation time
+** Lightest log system for very high verbosity debugging without any impact on release performances
 */
 
 #ifndef STATICLOG_HPP_

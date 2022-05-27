@@ -1,8 +1,8 @@
 /*
-** EPITECH PROJECT, 2020
-** B-YEP-500-MAR-5-1-zia-calvin.ruiz
+** EntityCore
+** C++ Tools - LinuxExecutor
 ** File description:
-** LinuxExecutor.cpp
+** Linux-specific executor, simplify execution of a program and interactions with it
 */
 #include "LinuxExecutor.hpp"
 #include <cassert>

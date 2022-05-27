@@ -1,3 +1,9 @@
+/*
+** EntityCore
+** C++ Tools - ConcurrencyTracker
+** File description:
+** Tool designed to detect concurrent access to one or several section(s) of code which shouldn't be accessed concurently
+*/
 #define ENABLE_CONCURRENCY_TRACKING
 #include "ConcurrencyTracker.hpp"
 #include <iostream>
