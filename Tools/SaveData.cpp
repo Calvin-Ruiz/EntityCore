@@ -27,8 +27,9 @@ SaveData &SaveData::operator[](const std::string &key)
             break;
         default:
             #ifndef NO_SAVEDATA_THROW
-            throw std::bad_function_call();
+            throw std::bad_function_call()
             #endif
+            ;
     }
     return str[key];
 }
@@ -45,8 +46,9 @@ SaveData &SaveData::operator[](uint64_t address)
             return arr[address];
         default:
             #ifndef NO_SAVEDATA_THROW
-            throw std::bad_function_call();
+            throw std::bad_function_call()
             #endif
+            ;
     }
     return addr[address];
 }
@@ -62,8 +64,9 @@ int SaveData::push(const SaveData &data)
             break;
         default:
             #ifndef NO_SAVEDATA_THROW
-            throw std::bad_function_call();
+            throw std::bad_function_call()
             #endif
+            ;
     }
     return arr.size() - 1;
 }
@@ -301,11 +304,10 @@ BigSave &SaveData::file(const std::string &filename)
 
 BigSave &SaveData::file()
 {
-    if (raw.empty()) {
-        #ifndef NO_SAVEDATA_THROW
+    #ifndef NO_SAVEDATA_THROW
+    if (raw.empty())
         throw std::bad_function_call();
-        #endif
-    }
+    #endif
     if (!subsave)
         subsave = BigSave::loadShared(std::string(raw.data(), raw.size()));
     return *subsave;
