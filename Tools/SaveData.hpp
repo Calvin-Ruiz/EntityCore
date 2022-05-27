@@ -132,7 +132,12 @@ public:
     // Recursively dump the content of a SaveData for debug purpose, may attach a debug dumper
     // Spacing : number of spaces per level
     // dumpContent : specialized dumpContent for non-string entries, return true if writing to out, false to use default interpretation
-    void debugDump(std::ostream &out, int spacing = 2, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out) = nullptr, int level = 0);
+    // dumpOverride : specialized dumpContent, return true if writing to out, overriding the implicit dump content deduction
+    void debugDump(std::ostream &out, int spacing = 2, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out) = nullptr, int level = 0, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level) = nullptr);
+    // Recursively dump the content of a SaveData for debug purpose, must attach a debug dumper
+    // dumpOverride : specialized dumpContent for every entries, return true if writing to out, false to use default interpretation
+    // Spacing : number of spaces per level
+    void debugDump(std::ostream &out, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level), int spacing = 2);
     // Serialize this SaveData at this location
     // Will cause UNDEFINED BEHAVIOUR if computeSize() have not been called after the last modification
     void save(char *data);

@@ -315,7 +315,8 @@ void SaveData::close()
 {
     subsave = nullptr;
 }
-void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out), int level)
+
+void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out), int level, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level))
 {
     const char *spaces = "                                                                                ";
     switch (specialType) {
@@ -326,8 +327,10 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
             out << "<object> ";
             break;
     }
-    if (!raw.empty())
-        genericDumpContent(raw, out, dumpContent);
+    if (!raw.empty()) {
+        if (!dumpOverride || !dumpOverride(raw, out, spacing, level))
+            genericDumpContent(raw, out, dumpContent);
+    }
     if (type) {
         level += spacing;
         switch (type) {
@@ -338,7 +341,7 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                     out << '"';
                     out << v.first;
                     out << "\" = ";
-                    v.second.debugDump(out, spacing, dumpContent, level);
+                    v.second.debugDump(out, spacing, dumpContent, level, dumpOverride);
                 }
                 level -= spacing;
                 out.write(spaces, level);
@@ -350,7 +353,7 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                     out.write(spaces, level);
                     out << (void *) v.first;
                     out << " = ";
-                    v.second.debugDump(out, spacing, dumpContent, level);
+                    v.second.debugDump(out, spacing, dumpContent, level, dumpOverride);
                 }
                 level -= spacing;
                 out.write(spaces, level);
@@ -360,7 +363,7 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                 out << "[\n";
                 for (auto &v : arr) {
                     out.write(spaces, level);
-                    v.debugDump(out, spacing, dumpContent, level);
+                    v.debugDump(out, spacing, dumpContent, level, dumpOverride);
                 }
                 level -= spacing;
                 out.write(spaces, level);
@@ -369,6 +372,11 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
         }
     }
     out << '\n';
+}
+
+void SaveData::debugDump(std::ostream &out, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level), int spacing)
+{
+    debugDump(out, spacing, nullptr, 0, dumpOverride);
 }
 
 void SaveData::genericDumpContent(const std::vector<char> &data, std::ostream &out, bool (*specializedDumpContent)(const std::vector<char> &data, std::ostream &out))
