@@ -9,8 +9,18 @@
 #define SAVE_DATA_HPP_
 
 // #define NO_SAVEDATA_CONCEPT
-// #define NO_SAVEDATA_THROW
+// Disable the use of C++20 concepts
 // #define NO_SAVEDATA_IMPLICIT
+// Disable implicits assignments, heavily recommended when using NO_SAVEDATA_CONCEPT
+
+// #define NO_SAVEDATA_THROW
+// Remove all throw, mostly usefull to compile on Android
+
+// #define NO_SAVEDATA_ADVANCED_TYPES
+// Disable advanced type, so :
+// The only types used on save will be STRING_MAP, ADDRESS_MAP and LIST
+// The only data size used on save will be INT_SIZE
+// This flag is usefull when backward compatibility or compatibility with partial ports of SaveData is required
 
 #include <string>
 #include <map>
@@ -25,6 +35,10 @@ enum SaveSection {
     STRING_MAP = 0x01,
     ADDRESS_MAP = 0x02,
     LIST = 0x03,
+    CHAR_MAP = 0x40,
+    SHORT_MAP = 0x41,
+    INT_MAP = 0x42,
+    WIDE_LIST = 0x43,
     // Attached data size length, UNDEFINED for no attached data
     CHAR_SIZE = 0x04,
     SHORT_SIZE = 0x08,
@@ -32,9 +46,11 @@ enum SaveSection {
     // Attached data type, for special data only
     SUBFILE = 0x10,
     SAVABLE_OBJECT = 0x20,
+    // Use an extended type
+    EXTENDED_TYPE = 0x80,
 };
 
-#define TYPE_MASK 0x03
+#define TYPE_MASK 0x43
 #define SIZE_MASK 0x0c
 #define SPECIAL_MASK 0x30
 
@@ -128,6 +144,9 @@ public:
     #endif
     void load(char *&data);
     void save(std::vector<char> &data);
+    // Return the number of elements directly attached to this SaveData
+    size_t size();
+    // Compute and return the serialized size of this SaveData (include every SaveData attached to this one)
     size_t computeSize();
     // Recursively dump the content of a SaveData for debug purpose, may attach a debug dumper
     // Spacing : number of spaces per level

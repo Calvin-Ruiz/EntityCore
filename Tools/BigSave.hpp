@@ -14,7 +14,12 @@ class BigSave : public SaveData {
 public:
     BigSave();
     ~BigSave();
+    BigSave(const BigSave &cpy) = delete;
+    BigSave &operator=(const BigSave &src) = delete;
 
+    void set(SaveData &src) {
+        *(SaveData *) this = src;
+    }
     // Return a shared_ptr to a BigSave for a saveName.
     // Two shared pointer acquired this way for the same saveName point to the same BigSave object
     // Otherwise, it is the same as .open(saveName)

@@ -325,6 +325,19 @@ void SaveData::close()
     subsave = nullptr;
 }
 
+size_t SaveData::size()
+{
+    switch (type) {
+        case STRING_MAP:
+            return str.size();
+        case LIST:
+        case WIDE_LIST:
+            return arr.size();
+        default:
+            return addr.size();
+    }
+}
+
 void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out), int level, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level))
 {
     const char *spaces = "                                                                                ";
