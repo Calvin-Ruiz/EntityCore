@@ -33,8 +33,8 @@ struct SwapChainSupportDetails {
 };
 
 enum class LogType : unsigned char {
-    INFO,
     DEBUG,
+    INFO,
     LAYER,
     WARNING,
     ERROR
