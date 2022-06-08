@@ -13,6 +13,11 @@
 #include <sstream>
 #include <cstdlib>
 
+#ifdef WIN32
+// Note : comment the line below if you use a unix-like command prompt like sh
+#define NO_DISPLAY_COLOR
+#endif
+
 VulkanMgr *VulkanMgr::instance = nullptr;
 
 VulkanMgr::VulkanMgr(const char *AppName, uint32_t appVersion, SDL_Window *window, int width, int height, const QueueRequirement &queueRequest, const VkPhysicalDeviceFeatures &requiredFeatures, const VkPhysicalDeviceFeatures &preferedFeatures, int chunkSize, bool enableDebugLayers, bool drawLogs, bool saveLogs, std::string cachePath, int forceSwapchainCount, VkImageUsageFlags swapchainUsage, bool usePushSet, logger_t redirectLog) :
@@ -749,7 +754,7 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
 {
     if (redirectLog)
         return redirectLog(str, type);
-    #ifdef WIN32
+    #ifdef NO_DISPLAY_COLOR
         const char *saveHeader;
         #define drawHeader saveHeader
     #else
@@ -758,11 +763,11 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
 
     switch (type) {
         case LogType::INFO:
-            drawHeader = "(\e[92mINFO\e[0m)\t\e[3m";
+            drawHeader = "(\x1b[92mINFO\x1b[0m)\t\x1b[3m";
             saveHeader = "(INFO)\t";
             break;
         case LogType::DEBUG:
-            drawHeader = "(\e[96mDEBUG\e[0m)\t";
+            drawHeader = "(\x1b[96mDEBUG\x1b[0m)\t";
             saveHeader = "(DEBUG)\t";
             break;
         case LogType::LAYER:
@@ -770,20 +775,20 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
             saveHeader = "\0";
             break;
         case LogType::WARNING:
-            drawHeader = "(\e[1;93mWARN\e[0m)\t\e[93m";
+            drawHeader = "(\x1b[1;93mWARN\x1b[0m)\t\x1b[93m";
             saveHeader = "(WARN)\t";
             break;
         case LogType::ERROR:
-            drawHeader = "(\e[1;91mERROR\e[0m)\t\e[1;4;91m";
+            drawHeader = "(\x1b[1;91mERROR\x1b[0m)\t\x1b[1;4;91m";
             saveHeader = "(ERROR)\t";
             break;
     }
     if (drawLogs && type >= minLogPrintLevel) {
         logMutex.lock();
-        #ifdef WIN32
+        #ifdef NO_DISPLAY_COLOR
         std::cerr << drawHeader << str << std::endl;
         #else
-        std::cerr << drawHeader << str << "\e[0m\n";
+        std::cerr << drawHeader << str << "\x1b[0m\n";
         #endif
         logMutex.unlock();
     }

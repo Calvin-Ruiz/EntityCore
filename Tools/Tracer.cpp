@@ -33,11 +33,11 @@ void Tracer::erase(const std::string &name)
     for (unsigned int i = 0; i < tracing.size(); ++i) {
         if (name == tracing[i].name) {
             if (i < lastSize) {
-                *(pbuffer++) = '\e';
+                *(pbuffer++) = '\x1b';
                 *(pbuffer++) = '[';
                 putNbr(i + 1);
                 *(pbuffer++) = 'd';
-                *(pbuffer++) = '\e';
+                *(pbuffer++) = '\x1b';
                 *(pbuffer++) = '[';
                 *(pbuffer++) = 'M';
                 --lastSize;
@@ -52,7 +52,7 @@ void Tracer::drawBorders()
 {
     const char clr[2] = {27, 'c'};
     char str[3] = {(char) 226, (char) 148, (char) 140};
-    char end[3] = {'\e', '[', 'H'};
+    char end[3] = {'\x1b', '[', 'H'};
 
     std::cout.write(clr, 2);
     std::cout.write(str, 3);
@@ -128,7 +128,7 @@ void Tracer::draw()
 void Tracer::insert(TraceData &data)
 {
     *(pbuffer++) = '\n';
-    *(pbuffer++) = '\e';
+    *(pbuffer++) = '\x1b';
     *(pbuffer++) = '[';
     *(pbuffer++) = 'L';
     *(pbuffer++) = 226;
@@ -241,7 +241,7 @@ void Tracer::subdraw(TraceData &data, int y)
             pbuffer = data.handler(data.pdata, pbuffer);
             break;
     }
-    *(pbuffer++) = '\e';
+    *(pbuffer++) = '\x1b';
     *(pbuffer++) = '[';
     *(pbuffer++) = 'K';
     jmp(width, y);
@@ -258,7 +258,7 @@ void Tracer::putStr(const char *str)
 
 void Tracer::jmp(int x, int y)
 {
-    *(pbuffer++) = '\e';
+    *(pbuffer++) = '\x1b';
     *(pbuffer++) = '[';
     putNbr(y);
     *(pbuffer++) = ';';

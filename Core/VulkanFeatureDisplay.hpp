@@ -6,12 +6,12 @@
 if (requestedFeatures.name) { \
     out << #name << " : "; \
     if (enabledFeatures.name) \
-        out << "\e[92;1menabled\e[0m\n"; \
+        out << "\x1b[92;1menabled\x1b[0m\n"; \
     else if (requiredFeatures.name) { \
-        out << "\e[91;1munsupported\e[0m\n"; \
+        out << "\x1b[91;1munsupported\x1b[0m\n"; \
         requirementMet = false; \
     } else \
-        out << "\e[93munavailable\e[0m\n"; \
+        out << "\x1b[93munavailable\x1b[0m\n"; \
 }
 #else
 #define FEATURE_STATE(name) \
