@@ -305,6 +305,7 @@ void MemoryManager::displayFragmentation(int memoryBatch)
 
 void MemoryManager::releaseUnusedChunks()
 {
+    mtx.lock();
     for (auto &b : batch) {
         b.mtx.lock();
         for (auto &m : b.memory) {
@@ -320,4 +321,5 @@ void MemoryManager::releaseUnusedChunks()
         }
         b.mtx.unlock();
     }
+    mtx.unlock();
 }
