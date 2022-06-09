@@ -47,11 +47,9 @@ SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, co
     subMemory.memoryBatch = UINT32_MAX;
     findMemoryIndex(memRequirements, properties, preferedProperties, &subMemory);
     if (availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && !hasReleasedUnusedMemory && memProperties.memoryProperties.memoryTypes[subMemory.memoryIndex].heapIndex == deviceMemoryHeap) {
-        mtx.lock();
         master.releaseUnusedMemory();
         hasReleasedUnusedMemory = true;
         displayResources();
-        mtx.unlock();
     }
     VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, &dedicatedInfo, memRequirements.size, subMemory.memoryIndex};
     std::ostringstream oss;
@@ -148,13 +146,11 @@ void MemoryManager::acquireSubMemory(const VkMemoryRequirements &memRequirements
             return;
         }
         if (!hasReleasedUnusedMemory && availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && memProperties.memoryProperties.memoryTypes[subMemory->memoryIndex].heapIndex == deviceMemoryHeap) {
-            mtx.lock();
             batch[memoryBatch].mtx.unlock();
             master.releaseUnusedMemory();
             batch[memoryBatch].mtx.lock();
             hasReleasedUnusedMemory = true;
             displayResources();
-            mtx.unlock();
             acquireSubMemory(memRequirements, subMemory);
         } else {
             *subMemory = allocateChunk(subMemory->memoryIndex, memoryBatch);
@@ -250,14 +246,14 @@ SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatc
         master.putLog(oss.str(),  LogType::ERROR);
         subMemory.memory = VK_NULL_HANDLE;
     }
-    mtx.lock();
     displayResources();
-    mtx.unlock();
     return subMemory;
 }
 
 void MemoryManager::displayResources()
 {
+    if (onDisplayResources.test_and_set())
+        return;
     vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
     std::ostringstream oss;
     for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
@@ -270,6 +266,7 @@ void MemoryManager::displayResources()
         master.putLog(oss.str(), LogType::DEBUG);
         oss.str(std::string());
     }
+    onDisplayResources.clear();
 }
 
 std::vector<MemoryQuerry> MemoryManager::querryMemory()
@@ -305,7 +302,8 @@ void MemoryManager::displayFragmentation(int memoryBatch)
 
 void MemoryManager::releaseUnusedChunks()
 {
-    mtx.lock();
+    if (onReleaseMemory.test_and_set())
+        return;
     for (auto &b : batch) {
         b.mtx.lock();
         for (auto &m : b.memory) {
@@ -321,5 +319,5 @@ void MemoryManager::releaseUnusedChunks()
         }
         b.mtx.unlock();
     }
-    mtx.unlock();
+    onReleaseMemory.clear();
 }

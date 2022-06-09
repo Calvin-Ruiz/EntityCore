@@ -78,7 +78,9 @@ private:
         std::list<SubMemory> availableSpaces;
         std::list<VkDeviceMemory> memoryChunks;
     } Memory;
-    std::mutex mtx; // General mutex, for global operations
+    std::atomic_flag onDisplayResources = ATOMIC_FLAG_INIT;
+    std::atomic_flag onReleaseMemory = ATOMIC_FLAG_INIT;
+    std::mutex mtx; // General mutex,
     struct MemoryBatch {
         std::mutex mtx;
         std::array<Memory, VK_MAX_MEMORY_TYPES> memory;
