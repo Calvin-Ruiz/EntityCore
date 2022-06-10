@@ -47,7 +47,7 @@ void Tracer::erase(const std::string &name)
     }
     interrupt = false;
 }
-
+// \xe2\x94 ,- 8c - 80 -, 90 '- 94 -' 98 | 82
 void Tracer::drawBorders()
 {
     const char clr[2] = {27, 'c'};
@@ -177,10 +177,14 @@ void Tracer::insert(TraceData &data)
                 break;
         }
     } else {
+        *(pbuffer++) = '\x1b';
+        *(pbuffer++) = '[';
+        *(pbuffer++) = '3';
+        *(pbuffer++) = '4';
+        *(pbuffer++) = 'm';
         if (data.name.size() <= 6) {
             putStr(data.name.c_str());
             *(pbuffer++) = '\t';
-            *(pbuffer++) = '=';
         } else {
             *(pbuffer++) = data.name[0];
             *(pbuffer++) = data.name[1];
@@ -189,8 +193,17 @@ void Tracer::insert(TraceData &data)
             *(pbuffer++) = data.name[4];
             *(pbuffer++) = data.name[5];
             *(pbuffer++) = data.name[6];
-            *(pbuffer++) = '=';
         }
+        *(pbuffer++) = '\x1b';
+        *(pbuffer++) = '[';
+        *(pbuffer++) = '9';
+        *(pbuffer++) = '5';
+        *(pbuffer++) = 'm';
+        *(pbuffer++) = '=';
+        *(pbuffer++) = '\x1b';
+        *(pbuffer++) = '[';
+        *(pbuffer++) = '0';
+        *(pbuffer++) = 'm';
     }
     subdraw(data, lastSize + 1);
 }
