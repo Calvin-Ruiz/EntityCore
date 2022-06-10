@@ -73,7 +73,7 @@ public:
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
-    SaveData(const T &value) {
+    explicit SaveData(const T &value) {
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
     }
@@ -95,6 +95,15 @@ public:
     SaveData &operator[](const std::string &key);
     SaveData &operator[](uint64_t address);
     int push(const SaveData &data = {}); // return new index
+    #ifndef NO_SAVEDATA_IMPLICIT
+    template <typename T>
+    #ifndef NO_SAVEDATA_CONCEPT
+    requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
+    #endif
+    int push(const T &value) {
+        return push(SaveData(value));
+    }
+    #endif
     BigSave &file(const std::string &filename);
     BigSave &file();
     void close();
