@@ -19,7 +19,6 @@
 // #define NO_SAVEDATA_ADVANCED_TYPES
 // Disable advanced type, so :
 // The only types used on save will be STRING_MAP, ADDRESS_MAP and LIST
-// The only data size used on save will be INT_SIZE
 // This flag is usefull when backward compatibility or compatibility with partial ports of SaveData is required
 
 #include <string>
