@@ -67,7 +67,6 @@ class SaveData {
 public:
     SaveData();
     SaveData(const std::string &content);
-    #ifndef NO_SAVEDATA_IMPLICIT
     template <typename T>
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
@@ -76,7 +75,6 @@ public:
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
     }
-    #endif
     ~SaveData();
 
     const std::string &operator=(const std::string &content);
