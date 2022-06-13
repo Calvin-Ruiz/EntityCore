@@ -89,7 +89,7 @@ public:
         --count;
         return true;
     }
-    unsigned char size() const {
+    unsigned short size() const {
         return count;
     }
     bool empty() const {
@@ -230,7 +230,7 @@ public:
         }
         return false;
     }
-    unsigned char size() const {
+    unsigned short size() const {
         return count;
     }
     bool empty() const {
@@ -300,7 +300,7 @@ public:
         ++vcount;
         return false;
     }
-    unsigned char size() const {
+    unsigned short size() const {
         return count;
     }
     bool empty() const {
@@ -373,7 +373,7 @@ public:
         cv.notify_one();
         return true;
     }
-    unsigned char size() const {
+    unsigned short size() const {
         return count;
     }
     bool empty() const {
