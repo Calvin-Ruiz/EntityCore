@@ -80,6 +80,11 @@ void MemoryManager::free(SubMemory &subMemory)
 
 void MemoryManager::mapMemory(SubMemory &subMemory, void **data)
 {
+    if (subMemory.memoryBatch == UINT32_MAX) {
+        if (vkMapMemory(refDevice, subMemory.memory, 0, VK_WHOLE_SIZE, 0, data) != VK_SUCCESS)
+            throw std::runtime_error("Faild to map memory");
+        return;
+    }
     batch[subMemory.memoryBatch].mtx.lock();
     MappedMemory &mapmem = batch[subMemory.memoryBatch].mappedMemory[subMemory.memory];
     if (++mapmem.nbMapping == 1) {
@@ -92,6 +97,10 @@ void MemoryManager::mapMemory(SubMemory &subMemory, void **data)
 
 void MemoryManager::unmapMemory(SubMemory &subMemory)
 {
+    if (subMemory.memoryBatch == UINT32_MAX) {
+        vkUnmapMemory(refDevice, subMemory.memory);
+        return;
+    }
     batch[subMemory.memoryBatch].mtx.lock();
     MappedMemory &mapmem = batch[subMemory.memoryBatch].mappedMemory[subMemory.memory];
     if (--mapmem.nbMapping == 0) {
