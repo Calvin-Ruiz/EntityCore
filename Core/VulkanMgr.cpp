@@ -578,7 +578,7 @@ bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     memRequirements.pNext = &memDedicated;
     VkBufferMemoryRequirementsInfo2 memBufferInfo{VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr, buffer};
     vkGetBufferMemoryRequirements2(device, &memBufferInfo, &memRequirements);
-    bufferMemory = (memDedicated.prefersDedicatedAllocation) ?
+    bufferMemory = (memDedicated.prefersDedicatedAllocation || batch == -1) ?
         memoryManager->dmalloc(memRequirements.memoryRequirements, {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, VK_NULL_HANDLE, buffer}, properties, preferedProperties):
         memoryManager->malloc(memRequirements.memoryRequirements, properties, preferedProperties, batch);
 

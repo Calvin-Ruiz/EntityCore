@@ -18,6 +18,8 @@ class VulkanMgr;
 */
 class BufferMgr {
 public:
+    // Create a BufferMgr
+    // memoryBatch : The memory batch to allocate the buffer in, or -1 to enforce a dedicated allocation
     BufferMgr(VulkanMgr &master, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, uint32_t bufferBlocSize = 512*1024, const std::string &name = "\0", bool uniformBuffer = false, uint32_t memoryBatch = 0);
     ~BufferMgr();
     SubBuffer acquireBuffer(unsigned int size);
