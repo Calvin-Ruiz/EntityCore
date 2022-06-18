@@ -3,6 +3,8 @@
 ** C++ Tools - StrPack
 ** File description:
 ** FILO raw data serializer, based on a std::vector<char>
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 
 #ifndef STRPACK_HPP_

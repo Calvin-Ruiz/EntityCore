@@ -3,6 +3,8 @@
 ** C++ Tools - Tracer
 ** File description:
 ** Dynamic variable tracer
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 #include "Tracer.hpp"
 #include <chrono>

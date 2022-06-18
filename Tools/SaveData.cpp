@@ -3,6 +3,8 @@
 ** C++ Tools - SaveData
 ** File description:
 ** Serializable arborescent binary container
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 
 #include "BigSave.hpp"

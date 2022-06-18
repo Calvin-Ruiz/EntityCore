@@ -4,6 +4,8 @@
 ** File description:
 ** Virtual String / Constant String
 ** Allow direct use of a chain of characters without allocation or copy
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 #ifndef VSTRING_HPP_
 #define VSTRING_HPP_

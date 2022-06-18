@@ -4,6 +4,8 @@
 ** File description:
 ** Lock-free thread-safe queues
 ** Include blocking-when-empty queues
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 
 #ifndef SAFEQUEUE_HPP_

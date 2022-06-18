@@ -3,6 +3,8 @@
 ** C++ Tools - LinuxExecutor
 ** File description:
 ** Linux-specific executor, simplify execution of a program and interactions with it
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 
 #ifndef LINUXEXECUTOR_HPP_

@@ -4,6 +4,8 @@
 ** File description:
 ** Logs enabled/disabled at compilation time
 ** Lightest log system for very high verbosity debugging without any impact on release performances
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 
 #ifndef STATICLOG_HPP_

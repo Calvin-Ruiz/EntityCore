@@ -3,6 +3,8 @@
 ** C++ Tools - BigSave
 ** File description:
 ** File-linked SaveData
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 #include "BigSave.hpp"
 #include <fstream>

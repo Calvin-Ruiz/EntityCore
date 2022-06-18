@@ -3,6 +3,8 @@
 ** C++ Tools - ConcurrencyTracker
 ** File description:
 ** Tool designed to detect concurrent access to one or several section(s) of code which shouldn't be accessed concurently
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
 */
 #define ENABLE_CONCURRENCY_TRACKING
 #include "ConcurrencyTracker.hpp"
