@@ -32,6 +32,10 @@ public:
     bool open(const std::string &saveName, bool _saveAtDestroy = true, bool _reduceWrite = true, bool _reducedCheck = false);
     bool store();
     const std::string &getSaveName() const;
+    // Global configuration used for loadShared
+    static bool lsSaveAtDestroy;
+    static bool lsReducedWrite;
+    static bool lsReducedCheck;
 private:
     std::string saveName;
     std::vector<char> oldData; // reducedCheck == true, store the attached content at the last open() or store() call

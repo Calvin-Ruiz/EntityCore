@@ -23,6 +23,11 @@
 // The only types used on save will be STRING_MAP, ADDRESS_MAP and LIST
 // This flag is usefull when backward compatibility or compatibility with partial ports of SaveData is required
 
+// #define NO_SAVEDATA_SMART_SIZE
+// Disable automatic size detection, so INT_SIZE is always used regardless to the attached datas
+// This flag is usefull when compatibility with partial ports of SaveData is required
+
+
 #include <string>
 #include <map>
 #include <vector>
@@ -33,37 +38,35 @@
 enum SaveSection {
     UNDEFINED,
     // Container type, UNDEFINED if none of them
-    STRING_MAP = 0x01,
-    ADDRESS_MAP = 0x02,
-    LIST = 0x03,
-    CHAR_MAP = 0x40,
-    SHORT_MAP = 0x41,
-    INT_MAP = 0x42,
-    WIDE_LIST = 0x43,
+    STRING_MAP = 0x01, // string map (hard limit : 65535 entries)
+    ADDRESS_MAP = 0x02, // uint64_t map (hard limit : 65535 entries)
+    LIST = 0x03, // list (hard limit : 65535 entries)
+    POINTER = 0x40, // pointer to another SaveData (not implemented yet)
+    SHORT_MAP = 0x42, // Map of uint16_t (hard limit : 65535 entries)
+    WIDE_LIST = 0x43, // List (hard limit : 4294967295 entries)
     // Attached data size length, UNDEFINED for no attached data
     CHAR_SIZE = 0x04,
     SHORT_SIZE = 0x08,
     INT_SIZE = 0x0c,
     // Attached data type, for special data only
     SUBFILE = 0x10,
-    SAVABLE_OBJECT = 0x20,
+    // This object hold a reference in the BigSave reference table
+    REFERENCED = 0x20,
     // Use an extended type
     EXTENDED_TYPE = 0x80,
 };
 
+// About POINTER SaveData, you need to know that :
+// The SaveData for which .save(std::vector<char> &data) is the root SaveData
+// If a POINTER SaveData point to a SaveData under the root, the POINTER is preserved
+// Otherwise, the POINTER SaveData is replaced by the SaveData it point to
+
 #define TYPE_MASK 0x43
 #define SIZE_MASK 0x0c
-#define SPECIAL_MASK 0x30
+#define SPECIAL_MASK 0x10
 
 class BigSave;
 class SaveData;
-
-class SavedObject {
-public:
-    virtual ~SavedObject();
-    // Ask the SavedObject to save datas he need to reconstruct him in the SaveData he come from, which is given as argument
-    virtual void save(SaveData *from) = 0;
-};
 
 class SaveData {
 public:
@@ -86,6 +89,8 @@ public:
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     const T &operator=(const T &value) {
+        if (type == SaveSection::POINTER)
+            return *ptr = value;
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
         return value;
@@ -106,14 +111,6 @@ public:
     BigSave &file(const std::string &filename);
     BigSave &file();
     void close();
-    // Get a savable object, load it if it doesn't exist yet
-    template<typename T>
-    std::shared_ptr<T> &obj() {
-        if (!object) {
-            object = std::make_shared<T>(this);
-        }
-        return object;
-    }
     std::vector<SaveData> &getList() {return arr;}
     void truncate(); // Discard content attached to it (except raw)
     void reset(); // Discard content, type and attached datas
@@ -126,6 +123,8 @@ public:
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     T &get(const T &defaultValue = {}) {
+        if (type == SaveSection::POINTER)
+            return ptr->get<T>(defaultValue);
         if (raw.empty()) {
             raw.resize(sizeof(T));
             *reinterpret_cast<T *>(raw.data()) = defaultValue;
@@ -142,6 +141,8 @@ public:
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     operator T&() {
+        if (type == SaveSection::POINTER)
+            return *ptr;
         if (raw.empty()) {
             raw.resize(sizeof(T));
             *reinterpret_cast<T *>(raw.data()) = T{};
@@ -179,9 +180,9 @@ private:
     std::map<std::string, SaveData> str;
     std::map<uint64_t, SaveData> addr;
     std::vector<SaveData> arr;
+    SaveData *ptr;
 
     std::vector<char> raw; // Can hold raw data or big save data
-    std::shared_ptr<SavedObject> object;
     std::shared_ptr<BigSave> subsave;
 };
 

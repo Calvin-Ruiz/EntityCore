@@ -34,6 +34,8 @@ SaveData &SaveData::operator[](const std::string &key)
             [[fallthrough]];
         case SaveSection::STRING_MAP:
             break;
+        case SaveSection::POINTER:
+            return (*ptr)[key];
         default:
             #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call()
@@ -47,12 +49,19 @@ SaveData &SaveData::operator[](uint64_t address)
 {
     switch (type) {
         case SaveSection::UNDEFINED:
-            type = SaveSection::ADDRESS_MAP;
+            type = SaveSection::SHORT_MAP;
+            [[fallthrough]];
+        case SaveSection::SHORT_MAP:
+            if (address > UINT16_MAX)
+                type = SaveSection::ADDRESS_MAP;
             [[fallthrough]];
         case SaveSection::ADDRESS_MAP:
             break;
         case SaveSection::LIST:
+        case SaveSection::WIDE_LIST:
             return arr[address];
+        case SaveSection::POINTER:
+            return (*ptr)[address];
         default:
             #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call()
@@ -69,8 +78,11 @@ int SaveData::push(const SaveData &data)
             type = SaveSection::LIST;
             [[fallthrough]];
         case SaveSection::LIST:
+        case SaveSection::WIDE_LIST:
             arr.push_back(data);
             break;
+        case SaveSection::POINTER:
+            return ptr->push(data);
         default:
             #ifndef NO_SAVEDATA_THROW
             throw std::bad_function_call()
@@ -103,11 +115,13 @@ bool SaveData::nonEmpty() const
             case SaveSection::STRING_MAP:
                 return !str.empty();
             case SaveSection::ADDRESS_MAP:
+            case SaveSection::SHORT_MAP:
                 return !addr.empty();
             case SaveSection::LIST:
+            case SaveSection::WIDE_LIST:
                 return !arr.empty();
-            case SaveSection::SUBFILE:
-                return true;
+            case SaveSection::POINTER:
+                return ptr->nonEmpty();
         }
     }
     return true;
@@ -122,11 +136,13 @@ bool SaveData::empty() const
             case SaveSection::STRING_MAP:
                 return str.empty();
             case SaveSection::ADDRESS_MAP:
+            case SaveSection::SHORT_MAP:
                 return addr.empty();
             case SaveSection::LIST:
+            case SaveSection::WIDE_LIST:
                 return arr.empty();
-            case SaveSection::SUBFILE:
-                return false;
+            case SaveSection::POINTER:
+                return ptr->empty();
         }
     }
     return false;
@@ -176,11 +192,26 @@ void SaveData::load(char *&data)
                 addr[*((uint64_t *&) data)++].load(data);
             break;
         }
+        case SaveSection::SHORT_MAP:
+        {
+            uint16_t nbEntry = *(((uint16_t *&) data)++);
+            while (nbEntry--)
+                addr[*((uint16_t *&) data)++].load(data);
+            break;
+        }
         case SaveSection::LIST:
         {
             uint16_t nbEntry = *(((uint16_t *&) data)++);
             arr.resize(nbEntry);
             for (uint16_t i = 0; i < nbEntry; ++i)
+                arr[i].load(data);
+            break;
+        }
+        case SaveSection::WIDE_LIST:
+        {
+            uint32_t nbEntry = *(((uint32_t *&) data)++);
+            arr.resize(nbEntry);
+            for (uint32_t i = 0; i < nbEntry; ++i)
                 arr[i].load(data);
             break;
         }
@@ -222,6 +253,20 @@ void SaveData::save(char *data)
             }
             break;
         }
+        case SaveSection::SHORT_MAP:
+        {
+            uint16_t &nbEntry = *((uint16_t *&) data)++;
+            nbEntry = 0;
+            for (auto &v : addr) {
+                if (v.second.nonEmpty()) {
+                    ++nbEntry;
+                    *(((uint16_t *&) data)++) = v.first;
+                    v.second.save(data);
+                    data += v.second.getSize();
+                }
+            }
+            break;
+        }
         case SaveSection::ADDRESS_MAP:
         {
             uint16_t &nbEntry = *((uint16_t *&) data)++;
@@ -245,14 +290,25 @@ void SaveData::save(char *data)
             }
             break;
         }
+        case SaveSection::WIDE_LIST:
+        {
+            *(((uint32_t *&) data)++) = arr.size();
+            for (auto &v : arr) {
+                v.save(data);
+                data += v.getSize();
+            }
+            break;
+        }
     }
 }
 
 size_t SaveData::computeSize()
 {
-    if (object)
-        object->save(this);
     dataSize = raw.size();
+    #ifdef NO_SAVEDATA_SMART_SIZE
+    sizeType = SaveSection::INT_SIZE;
+    dataSize += 4;
+    #else
     if (dataSize > 0) {
         if (dataSize > UINT8_MAX) {
             if (dataSize > UINT16_MAX) {
@@ -266,7 +322,9 @@ size_t SaveData::computeSize()
             sizeType = SaveSection::CHAR_SIZE;
             dataSize += 1;
         }
-    }
+    } else
+        sizeType = 0;
+    #endif
     switch (type) {
         case SaveSection::UNDEFINED:
             break;
@@ -277,6 +335,18 @@ size_t SaveData::computeSize()
             }
             dataSize += 2;
             break;
+        case SaveSection::SHORT_MAP:
+            #ifndef NO_SAVEDATA_ADVANCED_TYPES
+            for (auto &v : addr) {
+                if (v.second.nonEmpty())
+                    dataSize += 2 + v.second.computeSize();
+            }
+            dataSize += 2;
+            break;
+            #else
+            type = SaveSection::ADDRESS_MAP;
+            [[fallthrough]];
+            #endif
         case SaveSection::ADDRESS_MAP:
             for (auto &v : addr) {
                 if (v.second.nonEmpty())
@@ -285,10 +355,17 @@ size_t SaveData::computeSize()
             dataSize += 2;
             break;
         case SaveSection::LIST:
+        case SaveSection::WIDE_LIST:
             for (auto &v : arr) {
                 dataSize += v.computeSize();
             }
-            dataSize += 2;
+            if (arr.size() > UINT16_MAX) {
+                type = SaveSection::WIDE_LIST;
+                dataSize += 4;
+            } else {
+                type = SaveSection::LIST;
+                dataSize += 2;
+            }
             break;
     }
     return ++dataSize;
@@ -330,11 +407,13 @@ void SaveData::close()
 size_t SaveData::size()
 {
     switch (type) {
-        case STRING_MAP:
+        case SaveSection::STRING_MAP:
             return str.size();
-        case LIST:
-        case WIDE_LIST:
+        case SaveSection::LIST:
+        case SaveSection::WIDE_LIST:
             return arr.size();
+        case SaveSection::POINTER:
+            return ptr->size();
         default:
             return addr.size();
     }
@@ -346,9 +425,6 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
     switch (specialType) {
         case SaveSection::SUBFILE:
             out << "BigSave file ";
-            break;
-        case SaveSection::SAVABLE_OBJECT:
-            out << "<object> ";
             break;
     }
     if (!raw.empty()) {
@@ -372,6 +448,7 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                 out << '}';
                 break;
             case SaveSection::ADDRESS_MAP:
+            case SaveSection::SHORT_MAP:
                 out << "{\n";
                 for (auto &v : addr) {
                     out.write(spaces, level);
@@ -384,6 +461,7 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                 out << '}';
                 break;
             case SaveSection::LIST:
+            case SaveSection::WIDE_LIST:
                 out << "[\n";
                 for (auto &v : arr) {
                     out.write(spaces, level);
@@ -392,6 +470,10 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
                 level -= spacing;
                 out.write(spaces, level);
                 out << ']';
+                break;
+            case SaveSection::POINTER:
+                out << "-> ";
+                ptr->debugDump(out, spacing, dumpContent, level, dumpOverride);
                 break;
         }
     }
@@ -451,6 +533,8 @@ void SaveData::genericDumpContent(const std::vector<char> &data, std::ostream &o
 
 const std::string &SaveData::operator=(const std::string &content)
 {
+    if (type == SaveSection::POINTER)
+        return *ptr = content;
     raw.resize(content.size());
     content.copy(raw.data(), raw.size());
     return content;

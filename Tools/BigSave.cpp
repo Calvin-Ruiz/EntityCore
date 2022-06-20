@@ -13,6 +13,9 @@
 #include <functional>
 
 std::map<std::string, std::weak_ptr<BigSave>> BigSave::subsaves;
+bool BigSave::lsSaveAtDestroy = true;
+bool BigSave::lsReducedWrite = true;
+bool BigSave::lsReducedCheck = false;
 
 BigSave::BigSave()
 {}
@@ -101,7 +104,7 @@ std::shared_ptr<BigSave> BigSave::loadShared(const std::string &saveName)
     auto ret = ptr.lock();
     if (!ret) {
         ptr = ret = std::make_shared<BigSave>();
-        ret->open(saveName);
+        ret->open(saveName, lsSaveAtDestroy, lsReducedWrite, lsReducedCheck);
     }
     return ret;
 }
