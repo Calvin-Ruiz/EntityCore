@@ -374,8 +374,8 @@ size_t SaveData::computeSize()
 void SaveData::save(std::vector<char> &data)
 {
     data.resize(computeSize());
-    char *ptr = data.data();
-    save(ptr);
+    char *tmp = data.data();
+    save(tmp);
 }
 
 BigSave &SaveData::file(const std::string &filename)
