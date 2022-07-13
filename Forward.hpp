@@ -15,4 +15,5 @@ class Texture;
 class VertexArray;
 class VertexBuffer;
 class TransferMgr;
+class Collector;
 template <typename T> class SharedBuffer;

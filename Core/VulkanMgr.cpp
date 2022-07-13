@@ -47,12 +47,12 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     if (presenting) {
         uint32_t sdl2ExtensionCount = 0;
         if (!SDL_Vulkan_GetInstanceExtensions(createInfo.window, &sdl2ExtensionCount, nullptr))
-            std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+            std::runtime_error("Fatal : Failed to find Vulkan extension for SDL2.");
 
         size_t initialSize = instanceExtension.size();
         instanceExtension.resize(initialSize + sdl2ExtensionCount);
         if (!SDL_Vulkan_GetInstanceExtensions(createInfo.window, &sdl2ExtensionCount, instanceExtension.data() + initialSize))
-            std::runtime_error("Fatal : Failed to found Vulkan extension for SDL2.");
+            std::runtime_error("Fatal : Failed to find Vulkan extension for SDL2.");
     } else {
         swapchainUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
@@ -71,7 +71,7 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
         swapChainExtent.width = createInfo.width;
         swapChainExtent.height = abs(createInfo.height);
     }
-    memoryManager = new MemoryManager(*this, createInfo.chunkSize*1024*1024, createInfo.memoryBatchCount);
+    memoryManager = new MemoryManager(*this, (createInfo.chunkSize < 256*1024) ? createInfo.chunkSize*1024*1024 : createInfo.chunkSize, createInfo.memoryBatchCount);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
     Set::setupPFN(vkinstance.get());
@@ -579,7 +579,7 @@ bool VulkanMgr::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     VkBufferMemoryRequirementsInfo2 memBufferInfo{VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, nullptr, buffer};
     vkGetBufferMemoryRequirements2(device, &memBufferInfo, &memRequirements);
     bufferMemory = (memDedicated.prefersDedicatedAllocation || batch == -1) ?
-        memoryManager->dmalloc(memRequirements.memoryRequirements, {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, VK_NULL_HANDLE, buffer}, properties, preferedProperties):
+        memoryManager->dmalloc(memRequirements.memoryRequirements, {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO, nullptr, VK_NULL_HANDLE, buffer}, properties, preferedProperties) :
         memoryManager->malloc(memRequirements.memoryRequirements, properties, preferedProperties, batch);
 
     if (bufferMemory.memory == VK_NULL_HANDLE) {

@@ -15,3 +15,4 @@
 #include "EntityCore/Resource/VertexBuffer.hpp"
 #include "EntityCore/Resource/TransferMgr.hpp"
 #include "EntityCore/Resource/SharedBuffer.hpp"
+#include "EntityCore/Resource/Collector.hpp"
