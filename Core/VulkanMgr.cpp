@@ -68,8 +68,8 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
         if (swapchainUsage & ALL_IMAGE_VIEW_USAGE)
             createImageViews();
     } else {
-        swapChainExtent.width = createInfo.width;
-        swapChainExtent.height = abs(createInfo.height);
+        swapchainExtent.width = createInfo.width;
+        swapchainExtent.height = abs(createInfo.height);
     }
     memoryManager = new MemoryManager(*this, (createInfo.chunkSize < 256*1024) ? createInfo.chunkSize*1024*1024 : createInfo.chunkSize, createInfo.memoryBatchCount);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
@@ -79,8 +79,8 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     // Déformation de l'image
     viewport.width = createInfo.width;
     viewport.height = createInfo.height;
-    viewport.x = (swapChainExtent.width - createInfo.width) / 2.f;
-    viewport.y = (swapChainExtent.height - createInfo.height) / 2.f;
+    viewport.x = (swapchainExtent.width - createInfo.width) / 2.f;
+    viewport.y = (swapchainExtent.height - createInfo.height) / 2.f;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -128,13 +128,14 @@ VulkanMgr::~VulkanMgr()
 {
     vkDeviceWaitIdle(device);
     putLog("Release resources", LogType::INFO);
+    cleanupOldSwapchain();
     for (auto &tmp : samplers)
         vkDestroySampler(device, tmp, nullptr);
     if (presenting) {
-        for (auto imageView : swapChainImageViews) {
+        for (auto imageView : swapchainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
         }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
         vkDestroySurfaceKHR(vkinstance.get(), surface, nullptr);
     }
     if (!cachePath.empty()) {
@@ -226,13 +227,13 @@ bool VulkanMgr::isDeviceSuitable(VkPhysicalDevice pDevice) {
 
     bool extensionsSupported = checkDeviceExtensionSupport(pDevice);
 
-    bool swapChainAdequate = !presenting;
-    if (extensionsSupported && !swapChainAdequate) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(pDevice);
-        swapChainAdequate = (!swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty()) || !presenting;
+    bool swapchainAdequate = !presenting;
+    if (extensionsSupported && !swapchainAdequate) {
+        SwapChainSupportDetails swapchainSupport = querySwapChainSupport(pDevice);
+        swapchainAdequate = (!swapchainSupport.formats.empty() && !swapchainSupport.presentModes.empty()) || !presenting;
     }
 
-    return extensionsSupported && swapChainAdequate;
+    return extensionsSupported && swapchainAdequate;
 }
 
 void VulkanMgr::initVulkan(const char *AppName, uint32_t appVersion, uint32_t vulkanVersion, SDL_Window *window, bool _hasLayer, bool preferIntegrated)
@@ -492,42 +493,84 @@ static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
 
 void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode, bool expectLinear)
 {
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+    SwapChainSupportDetails swapchainSupport = querySwapChainSupport(physicalDevice);
 
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats, expectLinear);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, preferedPresentMode);
-    swapChainExtent = chooseSwapExtent(swapChainSupport.capabilities, width, height);
-    swapChainImageFormat = surfaceFormat.format;
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapchainSupport.formats, expectLinear);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapchainSupport.presentModes, preferedPresentMode);
+    swapchainExtent = chooseSwapExtent(swapchainSupport.capabilities, width, height);
+    swapchainImageFormat = surfaceFormat.format;
 
-    uint32_t imageCount = (forceSwapchainCount) ? forceSwapchainCount : swapChainSupport.capabilities.minImageCount + 1;
-    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
+    uint32_t imageCount = (forceSwapchainCount) ? forceSwapchainCount : swapchainSupport.capabilities.minImageCount + 1;
+    if (swapchainSupport.capabilities.maxImageCount > 0 && imageCount > swapchainSupport.capabilities.maxImageCount) {
+        imageCount = swapchainSupport.capabilities.maxImageCount;
     }
 
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = surfaceFormat.format;
-    createInfo.imageColorSpace = surfaceFormat.colorSpace;
-    createInfo.imageExtent = swapChainExtent;
-    createInfo.imageArrayLayers = 1; // Pas besoin de 3D stéréoscopique
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.imageUsage = swapchainUsage;
-    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Pas de transparence pour le contenu de la fenêtre
-    createInfo.presentMode = presentMode;
-    createInfo.clipped = VK_FALSE; // ne pas calculer les pixels masqués par une autre fenêtre
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+    swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swapchainCreateInfo.surface = surface;
+    swapchainCreateInfo.minImageCount = imageCount;
+    swapchainCreateInfo.imageFormat = surfaceFormat.format;
+    swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+    swapchainCreateInfo.imageExtent = swapchainExtent;
+    swapchainCreateInfo.imageArrayLayers = 1; // Pas besoin de 3D stéréoscopique
+    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchainCreateInfo.imageUsage = swapchainUsage;
+    swapchainCreateInfo.preTransform = swapchainSupport.capabilities.currentTransform;
+    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Pas de transparence pour le contenu de la fenêtre
+    swapchainCreateInfo.presentMode = presentMode;
+    swapchainCreateInfo.clipped = VK_FALSE; // ne pas calculer les pixels masqués par une autre fenêtre
+    swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+    if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS) {
         throw std::runtime_error("échec de la création de la swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, nullptr);
-    swapChainImages.resize(finalImageCount);
-    vkGetSwapchainImagesKHR(device, swapChain, &finalImageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device, swapchain, &finalImageCount, nullptr);
+    swapchainImages.resize(finalImageCount);
+    vkGetSwapchainImagesKHR(device, swapchain, &finalImageCount, swapchainImages.data());
     for (unsigned int i = 0; i < finalImageCount; ++i) {
-        setObjectName(swapChainImages[i], VK_OBJECT_TYPE_IMAGE, "Swapchain Image " + std::to_string(i));
+        setObjectName(swapchainImages[i], VK_OBJECT_TYPE_IMAGE, "Swapchain Image " + std::to_string(i));
+    }
+}
+
+void VulkanMgr::regenerateSwapchain(int width, int height)
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    cleanupOldSwapchain();
+
+    swapchainCreateInfo.oldSwapchain = swapchain;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
+    swapchainExtent = chooseSwapExtent(capabilities, width, abs(height));
+    swapchainImages.clear();
+    swapchainImageViews.swap(pendingDestroySwapchainImageViews);
+
+    if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to regenerate a Swapchain");
+    }
+
+    viewport.width = width;
+    viewport.height = height;
+    viewport.x = (swapchainExtent.width - width) / 2.f;
+    viewport.y = (swapchainExtent.height - height) / 2.f;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    // Découpage de l'image
+    if (height > 0) {
+        scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + 0.001f)};
+        scissor.extent = {(uint32_t) width, (uint32_t) height};
+    } else {
+        scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + viewport.height + 0.001f)};
+        scissor.extent = {(uint32_t) width, (uint32_t) -height};
+    }
+}
+
+void VulkanMgr::cleanupOldSwapchain()
+{
+    if (swapchainCreateInfo.oldSwapchain) {
+        for (auto imageView : pendingDestroySwapchainImageViews)
+            vkDestroyImageView(device, imageView, nullptr);
+        pendingDestroySwapchainImageViews.clear();
+        vkDestroySwapchainKHR(device, swapchainCreateInfo.oldSwapchain, nullptr);
+        swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
     }
 }
 
@@ -554,10 +597,10 @@ VkImageView VulkanMgr::createImageView(VkImage image, VkFormat format, VkImageAs
 
 void VulkanMgr::createImageViews()
 {
-    swapChainImageViews.resize(swapChainImages.size());
+    swapchainImageViews.resize(swapchainImages.size());
 
-    for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-        swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat);
+    for (uint32_t i = 0; i < swapchainImages.size(); i++) {
+        swapchainImageViews[i] = createImageView(swapchainImages[i], swapchainImageFormat);
     }
 }
 

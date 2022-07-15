@@ -118,10 +118,10 @@ public:
     void unmapMemory(SubMemory& bufferMemory);
     void waitIdle();
     VkPipelineViewportStateCreateInfo &getViewportState() {return viewportState;}
-    VkSwapchainKHR &getSwapchain() {return swapChain;}
-    std::vector<VkImageView> &getSwapchainView() {return swapChainImageViews;}
-    std::vector<VkImage> &getSwapchainImage() {return swapChainImages;}
-    VkExtent2D &getSwapChainExtent() {return swapChainExtent;}
+    VkSwapchainKHR &getSwapchain() {return swapchain;}
+    std::vector<VkImageView> &getSwapchainView() {return swapchainImageViews;}
+    std::vector<VkImage> &getSwapchainImage() {return swapchainImages;}
+    VkExtent2D &getSwapChainExtent() {return swapchainExtent;}
     VkRect2D &getScreenRect() {return scissor;}
     // Note : If vulkanVersion is at least VK_API_VERSION_1_2, pNext chain the feature of increasing versions
     const VkPhysicalDeviceFeatures2 &getDeviceFeatures() {return deviceFeatures;}
@@ -140,6 +140,11 @@ public:
     VkInstance getInstance() {
         return vkinstance.get();
     }
+
+    //! Create a new swapchain from the old one, may modify the swapchain Extent and Screen Rect
+    void regenerateSwapchain(int width, int height);
+    //! Destroy the old swapchain
+    void cleanupOldSwapchain();
 
     // Load a dedicated graphic, compute, graphic_compute or transfer queue in the queue argument
     // Return the queue family from which the queue was created, or nullptr in case of failure
@@ -174,7 +179,6 @@ private:
     VkPipelineViewportStateCreateInfo viewportState{};
     VkViewport viewport{};
     VkRect2D scissor{};
-    VkSwapchainCreateInfoKHR swapchainCreateInfo{};
     VkPhysicalDeviceFeatures2 deviceFeatures{};
     VkPipelineCache pipelineCache;
 
@@ -193,15 +197,17 @@ private:
     VkDevice device;
 
     void initSwapchain(int width, int height, VkImageUsageFlags swapchainUsage, VkPresentModeKHR preferedPresentMode, bool expectLinear);
-    VkSwapchainKHR swapChain;
+    VkSwapchainCreateInfoKHR swapchainCreateInfo{};
+    VkSwapchainKHR swapchain;
     uint32_t finalImageCount;
-    std::vector<VkImage> swapChainImages;
-    VkExtent2D swapChainExtent;
-    VkFormat swapChainImageFormat;
+    std::vector<VkImage> swapchainImages;
+    VkExtent2D swapchainExtent;
+    VkFormat swapchainImageFormat;
 
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
     void createImageViews();
-    std::vector<VkImageView> swapChainImageViews;
+    std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkImageView> pendingDestroySwapchainImageViews;
 
     // Debug
     void initDebug(vk::InstanceCreateInfo *instanceCreateInfo);
