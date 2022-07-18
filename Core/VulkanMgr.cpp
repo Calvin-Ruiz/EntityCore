@@ -531,14 +531,18 @@ void VulkanMgr::initSwapchain(int width, int height, VkImageUsageFlags swapchain
     }
 }
 
-void VulkanMgr::regenerateSwapchain(int width, int height)
+bool VulkanMgr::regenerateSwapchain(int width, int height)
 {
     VkSurfaceCapabilitiesKHR capabilities;
     cleanupOldSwapchain();
 
-    swapchainCreateInfo.oldSwapchain = swapchain;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
     swapchainExtent = chooseSwapExtent(capabilities, width, abs(height));
+    if (swapchainExtent.width == 0 || swapchainExtent.height == 0) {
+        return false;
+    }
+    swapchainCreateInfo.oldSwapchain = swapchain;
+    swapchainCreateInfo.imageExtent = swapchainExtent;
     swapchainImages.clear();
     swapchainImageViews.swap(pendingDestroySwapchainImageViews);
 
@@ -561,6 +565,7 @@ void VulkanMgr::regenerateSwapchain(int width, int height)
         scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + viewport.height + 0.001f)};
         scissor.extent = {(uint32_t) width, (uint32_t) -height};
     }
+    return true;
 }
 
 void VulkanMgr::cleanupOldSwapchain()

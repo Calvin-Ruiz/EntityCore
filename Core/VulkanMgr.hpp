@@ -142,7 +142,8 @@ public:
     }
 
     //! Create a new swapchain from the old one, may modify the swapchain Extent and Screen Rect
-    void regenerateSwapchain(int width, int height);
+    //! Return false if the Swapchain can't be regenerated
+    bool regenerateSwapchain(int width, int height);
     //! Destroy the old swapchain
     void cleanupOldSwapchain();
 

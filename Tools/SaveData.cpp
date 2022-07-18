@@ -524,7 +524,7 @@ void SaveData::genericDumpContent(const std::vector<char> &data, std::ostream &o
             out << "(int) " << *(int *) data.data() << " ";
             return;
         case 8:
-            out << "(long) " << *(long *) data.data() << " ";
+            out << "(long) " << *(int64_t *) data.data() << " ";
             return;
         default:
             out << "Bloc of " << data.size() << " bytes ";
