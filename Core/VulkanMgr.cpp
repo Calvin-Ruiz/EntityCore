@@ -12,6 +12,7 @@
 #include <thread>
 #include <sstream>
 #include <cstdlib>
+#include <filesystem>
 
 #ifdef WIN32
 // Note : comment the line below if you use a unix-like command prompt like sh
@@ -37,6 +38,11 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     assert(!instance); // There must be only one VulkanMgr instance
     instance = this;
     cachePath = createInfo.cachePath;
+    std::error_code ec;
+    if (!std::filesystem::exists(cachePath, ec) && ec)
+        std::filesystem::create_directories(cachePath);
+    if (!std::filesystem::exists(createInfo.logPath, ec) && ec)
+        std::filesystem::create_directories(createInfo.logPath);
     auto swapchainUsage = createInfo.swapchainUsage;
     if (!createInfo.requiredExtensions.empty())
         deviceExtension.insert(deviceExtension.end(), createInfo.requiredExtensions.begin(), createInfo.requiredExtensions.end());
