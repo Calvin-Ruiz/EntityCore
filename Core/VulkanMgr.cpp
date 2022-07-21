@@ -543,18 +543,36 @@ bool VulkanMgr::regenerateSwapchain(int width, int height)
     cleanupOldSwapchain();
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
-    swapchainExtent = chooseSwapExtent(capabilities, width, abs(height));
-    if (swapchainExtent.width == 0 || swapchainExtent.height == 0) {
+    swapchainCreateInfo.imageExtent = chooseSwapExtent(capabilities, width, abs(height));
+    if (swapchainCreateInfo.imageExtent.width == 0 || swapchainCreateInfo.imageExtent.height == 0) {
         return false;
     }
     swapchainCreateInfo.oldSwapchain = swapchain;
-    swapchainCreateInfo.imageExtent = swapchainExtent;
-    swapchainImages.clear();
-    swapchainImageViews.swap(pendingDestroySwapchainImageViews);
+    swapchainExtent = swapchainCreateInfo.imageExtent;
 
     if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to regenerate a Swapchain");
+        throw std::runtime_error("Failed to regenerate the swapchain");
     }
+
+    uint32_t finalImageCount;
+    vkGetSwapchainImagesKHR(device, swapchain, &finalImageCount, nullptr);
+    if (finalImageCount != swapchainImages.size()) {
+        putLog("The swapchain image count has changed to " + std::to_string(finalImageCount), LogType::WARNING);
+        swapchainImages.resize(finalImageCount);
+        if (finalImageCount == 0) {
+            // This swapchain can't be used, destroy it
+            vkDestroySwapchainKHR(device, swapchain, nullptr);
+            swapchain = swapchainCreateInfo.oldSwapchain;
+            swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+            return false; // Failure
+        }
+    }
+    vkGetSwapchainImagesKHR(device, swapchain, &finalImageCount, swapchainImages.data());
+    for (unsigned int i = 0; i < finalImageCount; ++i)
+        setObjectName(swapchainImages[i], VK_OBJECT_TYPE_IMAGE, "Swapchain Image " + std::to_string(i));
+    swapchainImageViews.swap(pendingDestroySwapchainImageViews);
+    if (swapchainCreateInfo.imageUsage & ALL_IMAGE_VIEW_USAGE)
+        createImageViews();
 
     viewport.width = width;
     viewport.height = height;
@@ -572,6 +590,18 @@ bool VulkanMgr::regenerateSwapchain(int width, int height)
         scissor.extent = {(uint32_t) width, (uint32_t) -height};
     }
     return true;
+}
+
+void VulkanMgr::cleanupCurrentSwapchain()
+{
+    cleanupOldSwapchain();
+    if (swapchain) {
+        for (auto imageView : swapchainImageViews)
+            vkDestroyImageView(device, imageView, nullptr);
+        swapchainImageViews.clear();
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+        swapchain = VK_NULL_HANDLE;
+    }
 }
 
 void VulkanMgr::cleanupOldSwapchain()

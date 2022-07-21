@@ -49,17 +49,13 @@ LinuxExecutor::~LinuxExecutor()
 void LinuxExecutor::start(bool fortifyCurrent)
 {
     assert(instance == nullptr);
-    if (fortifyCurrent) {
-        // Not implemented yet
-        fortifyCurrent = false;
-    }
     alive = true;
     int pipes[4];
     pipe(pipes);
     pipe(pipes + 2);
-    processCount = fortifyCurrent;
+    processCount = 0;
     pid = fork();
-    if ((pid == 0) ^ fortifyCurrent) {
+    if (pid == 0) {
         // Internal side
         pipeResponse = pipes[0];
         ::close(pipes[1]);
@@ -74,6 +70,14 @@ void LinuxExecutor::start(bool fortifyCurrent)
     pipeResponse = pipes[2];
     ::close(pipes[3]);
     instance = this;
+    if (fortifyCurrent) {
+        for (int fortifyPid = fork(); fortifyPid; fortifyPid = fork()) {
+            int status;
+            waitpid(fortifyPid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+                exit(0);
+        }
+    }
     thread = std::thread(&LinuxExecutor::mainloopExt, this);
 }
 
@@ -360,8 +364,10 @@ void LinuxExecutor::instanceMainloop()
     do {
         int pidHit = waitpid(-1, &status, 0);
         forkMutex.lock();
-        if (alive == false)
+        if (alive == false) {
+            forkMutex.unlock();
             return;
+        }
         if (pidHit == pid) {
             // The fortified process has exited
         } else {
