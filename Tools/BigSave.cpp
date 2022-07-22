@@ -28,7 +28,7 @@ BigSave::~BigSave()
 
 bool BigSave::open(const std::string &name, bool _saveAtDestroy, bool _reduceWrite, bool _reducedCheck)
 {
-    std::ifstream file("\"" + name + ".sav\"", std::ifstream::binary);
+    std::ifstream file(name + ".sav", std::ifstream::binary);
     size_t size;
     std::vector<char> data;
 
