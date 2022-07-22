@@ -51,7 +51,7 @@ public:
         return datas.data() + tmp + sizeof(T);
     }
     // Insert data
-    void push(char *str, int length) {
+    void push(const char *str, int length) {
         const int tmp = datas.size();
         datas.resize(tmp + sizeof(T) + length);
         *reinterpret_cast<T *>(datas.data() + tmp) = length;

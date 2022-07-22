@@ -112,6 +112,7 @@ public:
     BigSave &file();
     void close();
     std::vector<SaveData> &getList() {return arr;}
+    std::map<std::string, SaveData> &getStrMap() {return str;}
     void truncate(); // Discard content attached to it (except raw)
     void reset(); // Discard content, type and attached datas
     SaveSection getType() const {return (SaveSection) type;}

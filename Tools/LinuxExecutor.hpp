@@ -29,8 +29,8 @@ enum class LEFlag : unsigned char {
 };
 
 struct ExecutorInfo {
-    char **args = nullptr;
-    char **env = nullptr;
+    const char **args = nullptr;
+    const char **env = nullptr;
     VString pushedInput;
     bool pipeInput = false;
     bool pipeOutput = false;
