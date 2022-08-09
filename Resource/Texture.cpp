@@ -3,6 +3,7 @@
 #include "EntityCore/Core/MemoryManager.hpp"
 #include "Texture.hpp"
 #include "PipelineLayout.hpp"
+#include "EntityCore/Tools/AllocTracer.hpp"
 #include <SDL2/SDL.h>
 
 #define STB_IMAGE_IMPLEMENTATION

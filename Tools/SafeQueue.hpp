@@ -17,6 +17,115 @@
 #include <thread>
 #include <cstring>
 
+#ifndef NO_STD20_FEATURES
+#include <semaphore>
+
+// Thread-safe blocking IO queue
+// capacity MUST be a (power-of-two - 1)
+template<class T, uint16_t capacity = 255>
+requires std::is_scalar_v<T> && !(capacity & (capacity + 1))
+class SafeQueue {
+public:
+    // Size is the number of elements which could be acquired before blocking (with size <= capacity)
+    SafeQueue(int size) : writeIdx(0), readIdx(0), readSem(0), writeSem(size)
+    {
+    }
+    ~SafeQueue() = default;
+
+    inline void push(const T &val) {
+        writeSem.acquire();
+        datas[writeIdx.fetch_add(1, std::memory_order_relaxed) & capacity] = val;
+        readSem.release();
+    }
+    // Remark : This call may return false if writeSem.try_acquire() return false while acquire() would succeed
+    inline bool tryPush(const T &val) {
+        if (writeSem.try_acquire()) {
+            datas[writeIdx.fetch_add(1, std::memory_order_relaxed) & capacity] = val;
+            readSem.release();
+            return true;
+        }
+        return false;
+    }
+    inline void pop(T &ret) {
+        readSem.acquire();
+        ret = datas[readIdx.fetch_add(1, std::memory_order_relaxed) & capacity];
+        writeSem.release();
+    }
+    inline bool tryPop(T &ret) {
+        RETRY:
+        if (readSem.try_acquire()) {
+            ret = datas[readIdx.fetch_add(1, std::memory_order_relaxed) & capacity];
+            writeSem.release();
+            return true;
+        } else if (writeIdx != readIdx)
+            goto RETRY;
+        return false;
+    }
+
+    inline bool empty() const {
+        return writeIdx == readIdx;
+    }
+    inline bool nonEmpty() const {
+        return writeIdx != readIdx;
+    }
+    inline uint16_t size() const {
+        return writeIdx - readIdx;
+    }
+private:
+    std::atomic<uint16_t> readIdx;
+    std::atomic<uint16_t> writeIdx;
+    std::counting_semaphore<capacity> readSem;
+    std::counting_semaphore<capacity> writeSem;
+    volatile T datas[capacity + 1];
+};
+
+// Thread-safe blocking-pop queue, with undefined behaviour when push-ing while size() >= capacity
+// capacity MUST be a (power-of-two - 1)
+template<class T, uint16_t capacity = 255>
+requires std::is_scalar_v<T> && !(capacity & (capacity + 1))
+class PopSafeQueue {
+public:
+    PopSafeQueue() : writeIdx(0), readIdx(0), readSem(0)
+    {
+    }
+    ~PopSafeQueue() = default;
+
+    inline void push(const T &val) {
+        datas[writeIdx.fetch_add(1, std::memory_order_relaxed) & capacity] = val;
+        readSem.release();
+    }
+    inline void pop(T &ret) {
+        readSem.acquire();
+        ret = datas[readIdx.fetch_add(1, std::memory_order_relaxed) & capacity];
+    }
+    inline bool tryPop(T &ret) {
+        RETRY:
+        if (readSem.try_acquire()) {
+            ret = datas[readIdx.fetch_add(1, std::memory_order_relaxed) & capacity];
+            return true;
+        } else if (writeIdx != readIdx)
+            goto RETRY;
+        return false;
+    }
+
+    inline bool empty() const {
+        return writeIdx == readIdx;
+    }
+    inline bool nonEmpty() const {
+        return writeIdx != readIdx;
+    }
+    inline uint16_t size() const {
+        return writeIdx - readIdx;
+    }
+private:
+    std::atomic<uint16_t> readIdx;
+    std::atomic<uint16_t> writeIdx;
+    std::counting_semaphore<capacity> readSem;
+    volatile T datas[capacity + 1];
+};
+
+#endif
+
 // For thread-safe queue for insertion, the following data race might occur :
 // If an insertion operation start
 // A second insertion operation start and complete
