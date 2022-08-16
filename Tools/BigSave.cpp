@@ -39,20 +39,26 @@ bool BigSave::open(const std::string &name, bool _saveAtDestroy, bool _reduceWri
     if (!file || !file.read((char *) &size, sizeof(size_t)))
         return false;
 
-    data.resize(size);
-    if (!file.read(data.data(), size)) {
+    if (!size) {
         std::cerr << "Warning : Save file is truncated or corrupted\n";
         return false;
     }
+
+    data.resize(size);
+    if (!file.read(data.data(), size)) {
+        std::cerr << "Warning : Safe file zeroed, nothing to load\n";
+        return false;
+    }
+
     char *pData = data.data();
     load(pData);
+    if (reducedCheck)
+        oldData = get();
     if (pData != data.data() + data.size()) {
         #ifndef NO_SAVEDATA_THROW
         throw std::range_error("Theoric size and bloc size missmatch");
         #endif
     }
-    if (reducedCheck)
-        oldData = get();
     return true;
 }
 
