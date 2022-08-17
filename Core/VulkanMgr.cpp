@@ -39,9 +39,9 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     instance = this;
     cachePath = createInfo.cachePath;
     std::error_code ec;
-    if (!std::filesystem::exists(cachePath, ec) && ec)
+    if (!std::filesystem::exists(cachePath, ec) || ec)
         std::filesystem::create_directories(cachePath);
-    if (!std::filesystem::exists(createInfo.logPath, ec) && ec)
+    if (!std::filesystem::exists(createInfo.logPath, ec) || ec)
         std::filesystem::create_directories(createInfo.logPath);
     auto swapchainUsage = createInfo.swapchainUsage;
     if (!createInfo.requiredExtensions.empty())
