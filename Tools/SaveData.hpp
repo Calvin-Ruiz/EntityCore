@@ -132,7 +132,7 @@ public:
         }
         return *reinterpret_cast<T *>(raw.data());
     }
-    operator std::string() {
+    operator std::string() const {
         return std::string(raw.data(), raw.size());
     }
     operator std::vector<SaveData>&() {return arr;}
