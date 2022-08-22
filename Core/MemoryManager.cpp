@@ -221,6 +221,8 @@ void MemoryManager::merge(SubMemory *subMemory)
         }
         if (it == memory[subMemory->memoryIndex].availableSpaces.begin()) {
             memory[subMemory->memoryIndex].availableSpaces.erase(it);
+            if (memory[subMemory->memoryIndex].availableSpaces.empty())
+                break; // Avoid iterating over the end
             it = memory[subMemory->memoryIndex].availableSpaces.begin();
         } else {
             auto tmpIt = it;
