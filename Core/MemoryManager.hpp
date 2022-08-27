@@ -8,6 +8,7 @@
 #include <map>
 #include "EntityCore/SubMemory.hpp"
 #include <mutex>
+#include <atomic>
 
 class VulkanMgr;
 
