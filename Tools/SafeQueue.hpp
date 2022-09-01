@@ -17,6 +17,7 @@
 #include <thread>
 #include <cstring>
 
+#define NO_STD20_FEATURES
 #ifndef NO_STD20_FEATURES
 #include <semaphore>
 
