@@ -2,6 +2,7 @@
 #define SET_MGR_HPP
 
 #include <vulkan/vulkan.h>
+#include <vector>
 
 class VulkanMgr;
 

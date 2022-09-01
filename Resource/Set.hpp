@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <forward_list>
+#include <memory>
 #include "EntityCore/SubBuffer.hpp"
 
 class VulkanMgr;

@@ -4,6 +4,7 @@
 #include "Texture.hpp"
 #include "EntityCore/SubTexture.hpp"
 #include "EntityCore/Globals.hpp"
+#include <vector>
 
 /**
 *   \brief Dynamic creation and usage of tile map
