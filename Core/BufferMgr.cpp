@@ -120,6 +120,8 @@ void BufferMgr::releaseBuffer()
             }
             if (it == availableSubBuffer->begin()) {
                 availableSubBuffer->erase(it);
+                if (availableSubBuffer->empty())
+                    break;
                 it = availableSubBuffer->begin();
             } else {
                 auto tmpIt = it;
@@ -127,9 +129,11 @@ void BufferMgr::releaseBuffer()
                 availableSubBuffer->erase(tmpIt);
             }
         }
-        if (availableSubBuffer->size() == 0) {
+        if (availableSubBuffer->empty()) {
             if (availableSubBuffer == availableSubBufferZones.begin()) {
                 availableSubBufferZones.erase(availableSubBuffer);
+                if (availableSubBufferZones.empty())
+                    break;
                 availableSubBuffer = availableSubBufferZones.begin();
             } else {
                 auto tmpIt = availableSubBuffer;
