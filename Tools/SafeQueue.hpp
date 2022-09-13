@@ -231,12 +231,13 @@ public:
     void waitIdle() {
         WAIT_JOIN:
         mtx.lock();
-        mtx.unlock();
         if (count && blocking) {
+            mtx.unlock();
             cv.notify_one();
             std::this_thread::sleep_for(std::chrono::microseconds(100));
             goto WAIT_JOIN;
         }
+        mtx.unlock();
     }
     // Interrupt operations on this worker thread
     // Return once the worker thread has completed all his tasks
@@ -563,12 +564,13 @@ public:
     void waitIdle() {
         WAIT_JOIN:
         mtx.lock();
-        mtx.unlock();
         if (master.count && master.blocking) {
+            mtx.unlock();
             master.cv.notify_all();
             std::this_thread::sleep_for(std::chrono::microseconds(100));
             goto WAIT_JOIN;
         }
+        mtx.unlock();
     }
     // Acquire ownership of this queue by this thread for pop operations
     void acquire() {
