@@ -58,8 +58,8 @@ public:
     static void enable() {enabled = true;}
     //! Return true if VK_KHR_synchronization2 is supported and enabled
     static bool useSynchronization2() {return enabled;}
-    static VkPipelineStageFlags compatConvStage(VkPipelineStageFlags2KHR stage);
-    static VkAccessFlags compatConvAccess(VkAccessFlags2KHR access);
+    VkPipelineStageFlags compatConvStage(VkPipelineStageFlags2KHR stage);
+    VkAccessFlags compatConvAccess(VkAccessFlags2KHR access);
 private:
     static PFN_vkCmdSetEvent2KHR ptr_vkCmdSetEvent2KHR;
     static PFN_vkCmdWaitEvents2KHR ptr_vkCmdWaitEvents2KHR;
