@@ -15,6 +15,7 @@ PFN_vkCmdSetEvent2KHR SyncEvent::ptr_vkCmdSetEvent2KHR = nullptr;
 PFN_vkCmdWaitEvents2KHR SyncEvent::ptr_vkCmdWaitEvents2KHR = nullptr;
 PFN_vkCmdResetEvent2KHR SyncEvent::ptr_vkCmdResetEvent2KHR = nullptr;
 PFN_vkCmdPipelineBarrier2KHR SyncEvent::ptr_vkCmdPipelineBarrier2KHR = nullptr;
+PFN_vkQueueSubmit2KHR SyncEvent::ptr_vkQueueSubmit2KHR = nullptr;
 bool SyncEvent::enabled = false;
 
 void SyncEvent::setupPFN(VkInstance instance)
@@ -24,6 +25,7 @@ void SyncEvent::setupPFN(VkInstance instance)
         SETUP_PFN(PFN_vkCmdWaitEvents2KHR, ptr_vkCmdWaitEvents2KHR, "vkCmdWaitEvents2KHR");
         SETUP_PFN(PFN_vkCmdResetEvent2KHR, ptr_vkCmdResetEvent2KHR, "vkCmdResetEvent2KHR");
         SETUP_PFN(PFN_vkCmdPipelineBarrier2KHR, ptr_vkCmdPipelineBarrier2KHR, "vkCmdPipelineBarrier2KHR");
+        SETUP_PFN(PFN_vkQueueSubmit2KHR, ptr_vkQueueSubmit2KHR, "vkQueueSubmit2KHR");
         VulkanMgr::instance->putLog("Advanced event enabled", LogType::INFO);
     } else {
         VulkanMgr::instance->putLog("Advanced event not supported, using compatibility mode", LogType::WARNING);

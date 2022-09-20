@@ -60,6 +60,7 @@ public:
     static bool useSynchronization2() {return enabled;}
     VkPipelineStageFlags compatConvStage(VkPipelineStageFlags2KHR stage);
     VkAccessFlags compatConvAccess(VkAccessFlags2KHR access);
+    static PFN_vkQueueSubmit2KHR ptr_vkQueueSubmit2KHR;
 private:
     static PFN_vkCmdSetEvent2KHR ptr_vkCmdSetEvent2KHR;
     static PFN_vkCmdWaitEvents2KHR ptr_vkCmdWaitEvents2KHR;
