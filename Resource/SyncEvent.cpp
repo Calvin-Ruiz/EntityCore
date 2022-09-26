@@ -88,11 +88,11 @@ void SyncEvent::build()
 {
     if (enabled) {
         dep.memoryBarrierCount = global.size();
-        dep.pMemoryBarriers = global.data();
+        dep.pMemoryBarriers = global.empty() ? nullptr : global.data();
         dep.bufferMemoryBarrierCount = buffers.size();
-        dep.pBufferMemoryBarriers = buffers.data();
+        dep.pBufferMemoryBarriers = buffers.empty() ? nullptr : buffers.data();
         dep.imageMemoryBarrierCount = image.size();
-        dep.pImageMemoryBarriers = image.data();
+        dep.pImageMemoryBarriers = image.empty() ? nullptr : image.data();
     } else {
         // compatibility mode
         compatGlobal.clear();
