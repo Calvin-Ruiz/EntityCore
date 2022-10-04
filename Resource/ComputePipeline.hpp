@@ -18,7 +18,7 @@ public:
     //! Define which shader must be used
     void bindShader(const std::string &filename, const std::string entry = "main");
     //! Set specialized constant to shader
-    void setSpecializedConstant(uint32_t constantID, void *data, size_t size);
+    void setSpecializedConstant(uint32_t constantID, const void *data, size_t size);
     //! Build pipeline for use
     void build();
     //! Bind pipeline in command buffer

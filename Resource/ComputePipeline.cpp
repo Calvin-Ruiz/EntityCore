@@ -55,7 +55,7 @@ void ComputePipeline::bindShader(const std::string &filename, const std::string 
     name = "Use " + filename;
 }
 
-void ComputePipeline::setSpecializedConstant(uint32_t constantID, void *data, size_t size)
+void ComputePipeline::setSpecializedConstant(uint32_t constantID, const void *data, size_t size)
 {
     specializationInfo.entry.push_back({constantID, static_cast<uint32_t>(specializationInfo.data.size()), size});
     specializationInfo.data.resize(specializationInfo.data.size() + size);

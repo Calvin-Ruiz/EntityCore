@@ -171,7 +171,7 @@ void Pipeline::bindShader(const std::string &filename, VkShaderStageFlagBits sta
     name += " " + filename;
 }
 
-void Pipeline::setSpecializedConstant(uint32_t constantID, void *data, size_t size)
+void Pipeline::setSpecializedConstant(uint32_t constantID, const void *data, size_t size)
 {
     SpecializationInfo &specInfo = specializationInfo.front();
     specInfo.entry.push_back({constantID, static_cast<uint32_t>(specInfo.data.size()), size});
@@ -183,7 +183,7 @@ void Pipeline::setSpecializedConstant(uint32_t constantID, void *data, size_t si
     specInfo.info.pData = reinterpret_cast<void *>(specInfo.data.data());
 }
 
-void Pipeline::setSpecializedConstantOf(const std::string &name, uint32_t constantID, void *data, size_t size)
+void Pipeline::setSpecializedConstantOf(const std::string &name, uint32_t constantID, const void *data, size_t size)
 {
     auto it = specializationInfo.begin();
     for (const auto &n : sNames) {

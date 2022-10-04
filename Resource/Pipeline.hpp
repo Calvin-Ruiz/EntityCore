@@ -29,9 +29,9 @@ public:
     void bindShader(const std::string &filename, const std::string entry = "main");
     void bindShader(const std::string &filename, VkShaderStageFlagBits stage, const std::string entry = "main");
     //! Set specialized constant value to previously binded shader
-    void setSpecializedConstant(uint32_t constantID, void *data, size_t size);
+    void setSpecializedConstant(uint32_t constantID, const void *data, size_t size);
     //! Set or modify specialized constant value of specific binded shader
-    void setSpecializedConstantOf(const std::string &name, uint32_t constantID, void *data, size_t size = 0);
+    void setSpecializedConstantOf(const std::string &name, uint32_t constantID, const void *data, size_t size = 0);
     //! Define VertexArray layout (registered vertex and instance entry)
     void bindVertex(VertexArray &vertex);
     //! Remove vertex/instance location, so that it won't be send to the vertex shader
