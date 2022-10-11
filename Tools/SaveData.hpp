@@ -65,6 +65,9 @@ enum SaveSection {
 #define SIZE_MASK 0x0c
 #define SPECIAL_MASK 0x10
 
+typedef bool (*dump_function_t)(const std::vector<char> &data, std::ostream &out);
+typedef bool (*dump_override_t)(const std::vector<char> &data, std::ostream &out, int spacing, int level);
+
 class BigSave;
 class SaveData;
 
@@ -162,16 +165,16 @@ public:
     // Spacing : number of spaces per level
     // dumpContent : specialized dumpContent for non-string entries, return true if writing to out, false to use default interpretation
     // dumpOverride : specialized dumpContent, return true if writing to out, overriding the implicit dump content deduction
-    void debugDump(std::ostream &out, int spacing = 2, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out) = nullptr, int level = 0, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level) = nullptr);
+    void debugDump(std::ostream &out, int spacing = 2, dump_function_t dumpContent = nullptr, int level = 0, dump_override_t dumpOverride = nullptr);
     // Recursively dump the content of a SaveData for debug purpose, must attach a debug dumper
     // dumpOverride : specialized dumpContent for every entries, return true if writing to out, false to use default interpretation
     // Spacing : number of spaces per level
-    void debugDump(std::ostream &out, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level), int spacing = 2);
+    void debugDump(std::ostream &out, dump_override_t dumpOverride, int spacing = 2);
     // Serialize this SaveData at this location
     // Will cause UNDEFINED BEHAVIOUR if computeSize() have not been called after the last modification
     void save(char *data);
 private:
-    static void genericDumpContent(const std::vector<char> &data, std::ostream &out, bool (*specializedDumpContent)(const std::vector<char> &data, std::ostream &out));
+    static void genericDumpContent(const std::vector<char> &data, std::ostream &out, dump_function_t specializedDumpContent);
     inline size_t getSize() const {return dataSize;}
     unsigned char type = SaveSection::UNDEFINED;
     unsigned char sizeType = SaveSection::UNDEFINED;

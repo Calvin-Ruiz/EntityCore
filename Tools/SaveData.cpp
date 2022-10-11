@@ -419,7 +419,7 @@ size_t SaveData::size()
     }
 }
 
-void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(const std::vector<char> &data, std::ostream &out), int level, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level))
+void SaveData::debugDump(std::ostream &out, int spacing, dump_function_t dumpContent, int level, dump_override_t dumpOverride)
 {
     const char *spaces = "                                                                                ";
     switch (specialType) {
@@ -480,12 +480,12 @@ void SaveData::debugDump(std::ostream &out, int spacing, bool (*dumpContent)(con
     out << '\n';
 }
 
-void SaveData::debugDump(std::ostream &out, bool (*dumpOverride)(const std::vector<char> &data, std::ostream &out, int spacing, int level), int spacing)
+void SaveData::debugDump(std::ostream &out, dump_override_t dumpOverride, int spacing)
 {
     debugDump(out, spacing, nullptr, 0, dumpOverride);
 }
 
-void SaveData::genericDumpContent(const std::vector<char> &data, std::ostream &out, bool (*specializedDumpContent)(const std::vector<char> &data, std::ostream &out))
+void SaveData::genericDumpContent(const std::vector<char> &data, std::ostream &out, dump_function_t specializedDumpContent)
 {
     if (data.size() > 2) {// Assume no string is smaller than 2 characters
         bool isString = true;
