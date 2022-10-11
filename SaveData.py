@@ -35,7 +35,7 @@ class SaveData:
     The operator[](uint64_t address) is the [] operator
     """
     _lib = None
-    _ownref = False
+    _parent = None
 
     def init(lib):
         "Initialize the SaveData system"
@@ -68,16 +68,16 @@ class SaveData:
         "Detach the SaveData library"
         SaveData._lib = None
 
-    def __init__(self, ptr = None, ownRef = True):
+    def __init__(self, ptr = None, parent = None):
         self._ = SaveData._lib
         if ptr is None:
             self._ref = self._.sd_new()
         else:
             self._ref = ptr
-        self._ownref = ownRef
+        self._parent = parent
 
     def __del__(self):
-        if self._ownref:
+        if self._parent is None:
             self._.sd_delete(c_void_p(self._ref))
 
     def __repr__(self):
@@ -86,9 +86,9 @@ class SaveData:
     # for [] operator, usefull for integral entries
     def __getitem__(self, key):
         if type(key) is str:
-            return SaveData(self._.sd_strmap(c_void_p(self._ref), c_char_p(bytes(name, encoding="utf-8"))), False)
+            return SaveData(self._.sd_strmap(c_void_p(self._ref), c_char_p(bytes(name, encoding="utf-8"))), self)
         else:
-            return SaveData(self._.sd_nbrmap(c_void_p(self._ref), c_uint64(key)), False)
+            return SaveData(self._.sd_nbrmap(c_void_p(self._ref), c_uint64(key)), self)
 
     def __setitem__(self, key, value):
         if type(key) is str:
@@ -146,6 +146,6 @@ class SaveData:
 
     def file(self, path=None):
         if (path is None):
-            return BigSave(self._.sd_file(ret._ref, c_void_p(0)), False);
+            return BigSave(self._.sd_file(ret._ref, c_void_p(0)), self);
         else:
-            return BigSave(self._.sd_file(ret._ref, c_char_p(bytes(path, encoding="utf-8"))), False);
+            return BigSave(self._.sd_file(ret._ref, c_char_p(bytes(path, encoding="utf-8"))), self);

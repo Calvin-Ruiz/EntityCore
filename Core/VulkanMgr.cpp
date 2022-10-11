@@ -740,35 +740,39 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMgr::debugCallback(
     std::ostringstream ss;
     ss << vk::to_string( static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>( messageSeverity ) ) << ": "
         << vk::to_string( static_cast<vk::DebugUtilsMessageTypeFlagsEXT>( messageTypes ) ) << ":\n";
-    ss << "\t" << "messageIDName   = <" << pCallbackData->pMessageIdName << ">\n";
-    ss << "\t" << "messageIdNumber = " << pCallbackData->messageIdNumber << "\n";
-    ss << "\t" << "message         = <" << pCallbackData->pMessage << ">\n";
+    ss << "\tmessageIDName   = <" << pCallbackData->pMessageIdName << ">\n";
+    ss << "\tmessageIdNumber = " << pCallbackData->messageIdNumber << "\n";
+    ss << "\tmessage         = <" << pCallbackData->pMessage << ">\n";
     if (0 < pCallbackData->queueLabelCount) {
-        ss << "\t" << "Queue Labels:\n";
+        ss << "\tQueue Labels:\n";
         for (uint8_t i = 0; i < pCallbackData->queueLabelCount; i++) {
-            ss << "\t\t" << "labelName = <" << pCallbackData->pQueueLabels[i].pLabelName << ">\n";
+            ss << "\t\tlabelName = <" << pCallbackData->pQueueLabels[i].pLabelName << ">\n";
         }
     }
     if (0 < pCallbackData->cmdBufLabelCount) {
-        ss << "\t" << "CommandBuffer Labels:\n";
+        ss << "\tCommandBuffer Labels:\n";
         for (uint8_t i = 0; i < pCallbackData->cmdBufLabelCount; i++) {
-            ss << "\t\t" << "labelName = <" << pCallbackData->pCmdBufLabels[i].pLabelName << ">\n";
+            ss << "\t\tlabelName = <" << pCallbackData->pCmdBufLabels[i].pLabelName << ">\n";
         }
     }
     if (0 < pCallbackData->objectCount) {
-        ss << "\t" << "Objects:\n";
+        ss << "\tObjects:\n";
         for ( uint8_t i = 0; i < pCallbackData->objectCount; i++ )
         {
-            ss << "\t\t" << "Object " << (int) i << "\n";
-            ss << "\t\t\t" << "objectType   = "
+            ss << "\t\tObject " << (int) i << "\n";
+            ss << "\t\t\tobjectType   = "
             << vk::to_string( static_cast<vk::ObjectType>( pCallbackData->pObjects[i].objectType ) ) << "\n";
-            ss << "\t\t\t" << "objectHandle = " << reinterpret_cast<void *>(pCallbackData->pObjects[i].objectHandle) << "\n"; // reinterpret_cast to have form 0x
+            ss << "\t\t\tobjectHandle = " << reinterpret_cast<void *>(pCallbackData->pObjects[i].objectHandle) << "\n"; // reinterpret_cast to have form 0x
             if (pCallbackData->pObjects[i].pObjectName) {
                 std::string name = pCallbackData->pObjects[i].pObjectName;
                 size_t posAddress = name.find(" at ");
-                ss << "\t\t\t" << "objectName   = " << name.substr(0, posAddress) << "\n";
+                ss << "\t\t\tobjectName   = " << name.substr(0, posAddress) << "\n";
                 if (posAddress != std::string::npos)
+                    #ifdef WIN32 // Because windows long are too small
+                    instance->debugFunc[name[posAddress + 4] & 0x3f](reinterpret_cast<void *>(std::stoll(name.substr(posAddress + 5))), ss);
+                    #else
                     instance->debugFunc[name[posAddress + 4] & 0x3f](reinterpret_cast<void *>(std::stol(name.substr(posAddress + 5))), ss);
+                    #endif
             }
         }
     }
