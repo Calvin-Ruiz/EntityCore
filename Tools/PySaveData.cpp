@@ -1,3 +1,12 @@
+/*
+** EntityCore
+** C++ Tools - PySaveData
+** File description:
+** Python binding for SaveData and BigSave
+** License:
+** MIT (see https://github.com/Calvin-Ruiz/EntityCore)
+*/
+
 #include "PySaveData.hpp"
 #include "BigSave.hpp"
 #include <sstream>
