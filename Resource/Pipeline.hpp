@@ -23,8 +23,10 @@ const VkPipelineColorBlendAttachmentState BLEND_ADD {VK_TRUE, VK_BLEND_FACTOR_ON
 */
 class Pipeline {
 public:
-    Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLayout *layout, std::vector<VkDynamicState> _dynamicStates = {});
+    Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLayout *layout = nullptr, std::vector<VkDynamicState> _dynamicStates = {});
     ~Pipeline();
+    //! Attach the PipelineLayout (or VkPipelineLayout) to this Pipeline, ignored if a valid layout is already attached
+    void bindLayout(VkPipelineLayout layout);
     //! Define which shader must be used
     void bindShader(const std::string &filename, const std::string entry = "main");
     void bindShader(const std::string &filename, VkShaderStageFlagBits stage, const std::string entry = "main");

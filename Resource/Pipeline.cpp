@@ -44,7 +44,7 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     pipelineInfo.pViewportState = &master.getViewportState();
 
     pipelineInfo.pDynamicState = nullptr; // Optionnel
-    pipelineInfo.layout = layout->getPipelineLayout();
+    pipelineInfo.layout = layout ? layout->getPipelineLayout() : VK_NULL_HANDLE;
     pipelineInfo.renderPass = render.renderPass;
     pipelineInfo.subpass = subpass;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optionnel
@@ -68,6 +68,14 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     multisampling.alphaToOneEnable = VK_FALSE;
 
     isOk = (pipelineInfo.layout != VK_NULL_HANDLE);
+}
+
+void Pipeline::bindLayout(VkPipelineLayout layout)
+{
+    if (pipelineInfo.layout == VK_NULL_HANDLE) {
+        pipelineInfo.layout = layout;
+        isOk = true;
+    }
 }
 
 void Pipeline::initPtr()
