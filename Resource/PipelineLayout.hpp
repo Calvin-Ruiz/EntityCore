@@ -52,7 +52,8 @@ public:
         vkCmdPushConstants(cmd, pipelineLayout, info.stageFlags, info.offset + offset, size, pValues);
     }
     //! Return pipeline layout
-    VkPipelineLayout &getPipelineLayout() {return pipelineLayout;}
+    VkPipelineLayout getPipelineLayout() {return pipelineLayout;}
+    inline operator VkPipelineLayout() const {return pipelineLayout;}
     //! Return layout for Set
     VkDescriptorSetLayout &getDescriptorLayout(int index = -1) {return descriptor[(index != -1) ? index : descriptorPos.front()];}
     static VkSamplerCreateInfo DEFAULT_SAMPLER;
