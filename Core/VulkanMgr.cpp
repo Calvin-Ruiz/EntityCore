@@ -189,8 +189,9 @@ void VulkanMgr::applyDynamicState(const VulkanMgrCreateInfo &createInfo)
 {
     if (createInfo.preserveCrashLogs) {
         if (std::filesystem::exists(cachePath + "active.lock")) {
+            std::error_code ec;
             std::filesystem::rename(createInfo.logPath + "EntityCore-logs.txt",
-                createInfo.logPath + "EntityCore-logs-" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".txt"
+                createInfo.logPath + "EntityCore-logs-" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".txt", ec
             );
         } else {
             std::ofstream file(cachePath + "active.lock");
