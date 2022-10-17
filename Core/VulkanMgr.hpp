@@ -94,6 +94,7 @@ struct VulkanMgrCreateInfo {
     bool enableDebugLayers = true;
     bool drawLogs = true;
     bool saveLogs = false;
+    bool preserveCrashLogs = false; // Preserve the logs for the sessions were the VulkanMgr wasn't destroyed at exit
     bool preferIntegrated = false;
     bool colorSpaceSRGB = false;
     // Allow the user to override parameters and some object properties with an override.cfg file in the cache path
@@ -186,6 +187,9 @@ private:
     VkRect2D scissor{};
     VkPhysicalDeviceFeatures2 deviceFeatures{};
     VkPipelineCache pipelineCache;
+
+    //! Apply runtime state changes, like crash detection and parameter override
+    void applyDynamicState(const VulkanMgrCreateInfo &createInfo);
 
     void initVulkan(const char *AppName, uint32_t appVersion, uint32_t vulkanVersion, SDL_Window *window, bool _hasLayer = false, bool preferIntegrated = false);
     vk::UniqueInstance vkinstance;

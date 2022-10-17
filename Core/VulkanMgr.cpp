@@ -46,6 +46,7 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     auto swapchainUsage = createInfo.swapchainUsage;
     if (!createInfo.requiredExtensions.empty())
         deviceExtension.insert(deviceExtension.end(), createInfo.requiredExtensions.begin(), createInfo.requiredExtensions.end());
+    applyDynamicState(createInfo);
     if (saveLogs) {
         logs.open(createInfo.logPath + "EntityCore-logs.txt", std::ofstream::out | std::ofstream::trunc);
         saveLogs = logs.is_open();
@@ -62,7 +63,6 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     } else {
         swapchainUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
-
     initVulkan(createInfo.AppName, createInfo.appVersion, createInfo.vulkanVersion, createInfo.window, createInfo.enableDebugLayers, createInfo.preferIntegrated);
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
@@ -176,9 +176,26 @@ VulkanMgr::~VulkanMgr()
     vkDestroyDevice(device, nullptr);
     if (hasLayer)
         destroyDebug();
+    try {
+        std::filesystem::remove(cachePath + "active.lock");
+    } catch (...) {
+    }
     instance = nullptr;
     for (auto ia : internalAllocations)
         ::free(ia);
+}
+
+void VulkanMgr::applyDynamicState(const VulkanMgrCreateInfo &createInfo)
+{
+    if (createInfo.preserveCrashLogs) {
+        if (std::filesystem::exists(cachePath + "active.lock")) {
+            std::filesystem::rename(createInfo.logPath + "EntityCore-logs.txt",
+                createInfo.logPath + "EntityCore-logs-" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".txt"
+            );
+        } else {
+            std::ofstream file(cachePath + "active.lock");
+        }
+    }
 }
 
 void VulkanMgr::waitIdle()
