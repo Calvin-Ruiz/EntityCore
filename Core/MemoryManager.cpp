@@ -46,6 +46,8 @@ SubMemory MemoryManager::dmalloc(const VkMemoryRequirements &memRequirements, co
     subMemory.memory = VK_NULL_HANDLE;
     subMemory.memoryBatch = UINT32_MAX;
     findMemoryIndex(memRequirements, properties, preferedProperties, &subMemory);
+    if (subMemory.memoryIndex == UINT32_MAX) // If true, there is no compatible memory
+        return subMemory;
     if (availableDeviceMemory <= 64 + chunkSize / 1024 / 1024 && !hasReleasedUnusedMemory && memProperties.memoryProperties.memoryTypes[subMemory.memoryIndex].heapIndex == deviceMemoryHeap) {
         master.releaseUnusedMemory();
         hasReleasedUnusedMemory = true;
@@ -126,6 +128,7 @@ void MemoryManager::findMemoryIndex(const VkMemoryRequirements &memRequirements,
             return;
         }
     }
+    master.putLog("Can't find a memory type which fullfill the required properties", LogType::ERROR);
     subMemory->memoryIndex = UINT32_MAX;
 }
 
