@@ -104,7 +104,7 @@ static void interpreteFeatures(VkPhysicalDeviceFeatures2 &_deviceFeatures, VkPhy
 static void finalizeFeatures(VkPhysicalDeviceFeatures2 &_deviceFeatures, VkPhysicalDeviceFeatures2 &_requestedFeatures, VkPhysicalDeviceFeatures2 &_requiredFeatures)
 {
     VulkanFeatureWalker *deviceFeatures = (VulkanFeatureWalker *) &_deviceFeatures;
-    VulkanFeatureWalker *requestedFeatures = (VulkanFeatureWalker *) &_requestedFeatures;
+    // VulkanFeatureWalker *requestedFeatures = (VulkanFeatureWalker *) &_requestedFeatures;
     VulkanFeatureWalker *requiredFeatures = (VulkanFeatureWalker *) &_requiredFeatures;
 
     while (deviceFeatures->pNext)

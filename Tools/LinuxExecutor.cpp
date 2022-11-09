@@ -218,7 +218,7 @@ bool LinuxExecutor::closed()
 void LinuxExecutor::execute(std::vector<char> &datas)
 {
     StrPack<unsigned short> pack(datas);
-    SpawnHead *head;
+    SpawnHead *head; // uninitialized
     ExecutorInstanceInternal instance;
     char **args;
     char **env = nullptr;
