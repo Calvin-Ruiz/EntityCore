@@ -302,7 +302,7 @@ void MemoryManager::displayFragmentation(int memoryBatch)
     auto &b = batch[memoryBatch];
     b.mtx.lock();
     master.putLog("----- Fragmentation of memory batch " + std::to_string(memoryBatch) + " -----", LogType::DEBUG);
-    for (int i = 0; i < VK_MAX_MEMORY_TYPES; ++i) {
+    for (int i = 0; i < (int)VK_MAX_MEMORY_TYPES; ++i) {
         if (b.memory[i].availableSpaces.empty())
             continue;
         std::ostringstream oss;

@@ -51,8 +51,10 @@ void LinuxExecutor::start(bool fortifyCurrent)
     assert(instance == nullptr);
     alive = true;
     int pipes[4];
-    pipe(pipes);
-    pipe(pipes + 2);
+    if (pipe(pipes) != 0)
+        throw std::system_error(errno, std::system_category(), "pipe");
+    if (pipe(pipes + 2) != 0)
+        throw std::system_error(errno, std::system_category(), "pipe");
     processCount = 0;
     pid = fork();
     if (pid == 0) {
@@ -98,10 +100,10 @@ void LinuxExecutor::compileContext(const ExecutorInfo &info, std::vector<char> &
     head.pushInput = info.pushInput;
     head.saveOutput = info.saveOutput;
     pack.push((char *) &head, sizeof(head));
-    for (int i = 0; i < head.nbArgs; ++i) {
+    for (int i = 0; i < (int)head.nbArgs; ++i) {
         pack.push(info.args[i], strlen(info.args[i]) + 1);
     }
-    for (int j = 0; j < head.nbEnvs; ++j) {
+    for (int j = 0; j < (int)head.nbEnvs; ++j) {
         pack.push(info.env[j], strlen(info.env[j]) + 1);
     }
     if (info.pushInput)
@@ -222,30 +224,33 @@ void LinuxExecutor::execute(std::vector<char> &datas)
     char **env = nullptr;
     int pipes[4];
 
-    pack.pop((char *&) head);
+    pack.pop((char *&) head); // -Wstrict-aliasing with head var
     args = (char **) alloca((head->nbArgs + 1) * sizeof(char *));
-    for (int i = 0; i < head->nbArgs; ++i) {
+    for (int i = 0; i < (int)head->nbArgs; ++i) {
         pack.pop(args[i]);
     }
     args[head->nbArgs] = nullptr;
     if (head->nbEnvs) {
         env = (char **) alloca((head->nbEnvs + 1) * sizeof(char *));
-        for (int i = 0; i < head->nbEnvs; ++i) {
+        for (int i = 0; i < (int)head->nbEnvs; ++i) {
             pack.pop(env[i]);
         }
         env[head->nbEnvs] = nullptr;
     }
     instance.id = head->id;
     if (head->saveOutput) {
-        pipe(pipes);
+        if (pipe(pipes) != 0)
+            throw std::system_error(errno, std::system_category(), "pipe");
         instance.stdout = pipes[0];
     }
     if (head->pushInput) {
-        pipe(pipes + 2);
+        if (pipe(pipes + 2) != 0)
+            throw std::system_error(errno, std::system_category(), "pipe");
         VString pushedData;
         pushedData.size = pack.pop(pushedData.str);
         if (pushedData.size > 0)
-            write(pipes[3], pushedData.str, pushedData.size);
+            if (write(pipes[3], pushedData.str, pushedData.size) == -1)
+                throw std::system_error(errno, std::system_category(), "write");
         ::close(pipes[3]);
     }
     forkMutex.lock();
@@ -406,12 +411,16 @@ void LinuxExecutor::request(LEFlag request, const std::vector<char> &datas, bool
 
     if (requestShouldLock) {
         requestMutex.lock();
-        write(pipeRequest, (char *) &head, sizeof(head));
-        write(pipeRequest, datas.data(), head.size);
+        if (write(pipeRequest, (char *) &head, sizeof(head)) == -1)
+            throw std::system_error(errno, std::system_category(), "write");
+        if (write(pipeRequest, datas.data(), head.size) == -1)
+            throw std::system_error(errno, std::system_category(), "write");
         requestMutex.unlock();
     } else {
-        write(pipeRequest, (char *) &head, sizeof(head));
-        write(pipeRequest, datas.data(), head.size);
+        if (write(pipeRequest, (char *) &head, sizeof(head)) == -1)
+            throw std::system_error(errno, std::system_category(), "write");
+        if (write(pipeRequest, datas.data(), head.size) == -1)
+            throw std::system_error(errno, std::system_category(), "write");
     }
 }
 

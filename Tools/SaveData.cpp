@@ -223,13 +223,13 @@ void SaveData::save(char *data)
     *(data++) = type | sizeType | specialType;
     switch (sizeType) {
         case SaveSection::CHAR_SIZE:
-            *(((uint8_t *&) data)++) = raw.size();
+            *(((uint8_t *&) data)++) = raw.size(); // -Wstrict-aliasing with data var
             break;
         case SaveSection::SHORT_SIZE:
-            *(((uint16_t *&) data)++) = raw.size();
+            *(((uint16_t *&) data)++) = raw.size(); // -Wstrict-aliasing with data var
             break;
         case SaveSection::INT_SIZE:
-            *(((uint32_t *&) data)++) = raw.size();
+            *(((uint32_t *&) data)++) = raw.size(); // -Wstrict-aliasing with data var
             break;
     }
     memcpy(data, raw.data(), raw.size());
@@ -239,12 +239,12 @@ void SaveData::save(char *data)
             break;
         case SaveSection::STRING_MAP:
         {
-            uint16_t &nbEntry = *((uint16_t *&) data)++;
+            uint16_t &nbEntry = *((uint16_t *&) data)++; // -Wstrict-aliasing with data var
             nbEntry = 0;
             for (auto &v : str) {
                 if (v.second.nonEmpty()) {
                     ++nbEntry;
-                    *(((uint8_t *&) data)++) = v.first.size();
+                    *(((uint8_t *&) data)++) = v.first.size(); // -Wstrict-aliasing with data var
                     memcpy(data, v.first.c_str(), v.first.size());
                     data += v.first.size();
                     v.second.save(data);
@@ -255,12 +255,12 @@ void SaveData::save(char *data)
         }
         case SaveSection::SHORT_MAP:
         {
-            uint16_t &nbEntry = *((uint16_t *&) data)++;
+            uint16_t &nbEntry = *((uint16_t *&) data)++; // -Wstrict-aliasing with data var
             nbEntry = 0;
             for (auto &v : addr) {
                 if (v.second.nonEmpty()) {
                     ++nbEntry;
-                    *(((uint16_t *&) data)++) = v.first;
+                    *(((uint16_t *&) data)++) = v.first; // -Wstrict-aliasing with data var
                     v.second.save(data);
                     data += v.second.getSize();
                 }
@@ -269,12 +269,12 @@ void SaveData::save(char *data)
         }
         case SaveSection::ADDRESS_MAP:
         {
-            uint16_t &nbEntry = *((uint16_t *&) data)++;
+            uint16_t &nbEntry = *((uint16_t *&) data)++; // -Wstrict-aliasing with data var
             nbEntry = 0;
             for (auto &v : addr) {
                 if (v.second.nonEmpty()) {
                     ++nbEntry;
-                    *(((uint64_t *&) data)++) = v.first;
+                    *(((uint64_t *&) data)++) = v.first; // -Wstrict-aliasing with data var
                     v.second.save(data);
                     data += v.second.getSize();
                 }
@@ -283,7 +283,7 @@ void SaveData::save(char *data)
         }
         case SaveSection::LIST:
         {
-            *(((uint16_t *&) data)++) = arr.size();
+            *(((uint16_t *&) data)++) = arr.size(); // -Wstrict-aliasing with data var
             for (auto &v : arr) {
                 v.save(data);
                 data += v.getSize();
@@ -292,7 +292,7 @@ void SaveData::save(char *data)
         }
         case SaveSection::WIDE_LIST:
         {
-            *(((uint32_t *&) data)++) = arr.size();
+            *(((uint32_t *&) data)++) = arr.size(); // -Wstrict-aliasing with data var
             for (auto &v : arr) {
                 v.save(data);
                 data += v.getSize();
