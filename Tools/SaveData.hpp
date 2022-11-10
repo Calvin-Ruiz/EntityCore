@@ -92,8 +92,6 @@ public:
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     const T &operator=(const T &value) {
-        if (type == SaveSection::POINTER)
-            return *ptr = value;
         raw.resize(sizeof(T));
         *reinterpret_cast<T *>(raw.data()) = value;
         return value;
@@ -118,17 +116,30 @@ public:
     std::map<std::string, SaveData> &getStrMap() {return str;}
     void truncate(); // Discard content attached to it (except raw)
     void reset(); // Discard content, type and attached datas
-    SaveSection getType() const {return (SaveSection) type;}
-    bool nonEmpty() const;
-    bool empty() const;
+    inline void clear() { // Clear all datas hold
+        type = SaveSection::UNDEFINED;
+        str.clear();
+        addr.clear();
+        arr.clear();
+        raw.clear();
+    }
+    inline SaveSection getType() const {return (SaveSection) type;}
+    inline bool nonEmpty() const {
+        if (raw.empty())
+            return type != SaveSection::UNDEFINED;
+        return true;
+    }
+    inline bool empty() const {
+        if (raw.empty())
+            return type == SaveSection::UNDEFINED;
+        return false;
+    }
     std::vector<char> &get() {return raw;}
     template<typename T>
     #ifndef NO_SAVEDATA_CONCEPT
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     T &get(const T &defaultValue = {}) {
-        if (type == SaveSection::POINTER)
-            return ptr->get<T>(defaultValue);
         if (raw.empty()) {
             raw.resize(sizeof(T));
             *reinterpret_cast<T *>(raw.data()) = defaultValue;
@@ -145,8 +156,6 @@ public:
     requires std::is_trivially_destructible_v<T> && std::is_copy_assignable_v<T>
     #endif
     operator T&() {
-        if (type == SaveSection::POINTER)
-            return *ptr;
         if (raw.empty()) {
             raw.resize(sizeof(T));
             *reinterpret_cast<T *>(raw.data()) = T{};
@@ -181,13 +190,12 @@ private:
     unsigned char specialType = SaveSection::UNDEFINED;
     size_t dataSize;
 
+    std::shared_ptr<BigSave> subsave;
     std::map<std::string, SaveData> str;
     std::map<uint64_t, SaveData> addr;
     std::vector<SaveData> arr;
-    SaveData *ptr;
 
     std::vector<char> raw; // Can hold raw data or big save data
-    std::shared_ptr<BigSave> subsave;
 };
 
 #endif /* SAVE_DATA_HPP_ */
