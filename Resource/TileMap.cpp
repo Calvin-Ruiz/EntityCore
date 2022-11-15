@@ -21,13 +21,13 @@ TileMap::TileMap(VulkanMgr &master, BufferMgr &mgr, const std::string &name, uin
 TileMap::~TileMap()
 {
     if (map)
-        delete (map - 1);
+        delete[] (map - 1);
 }
 
 bool TileMap::createMap(uint32_t width, uint32_t height)
 {
     if (map)
-        delete (map - 1);
+        delete[] (map - 1);
     info.extent.width = width;
     info.extent.height = height;
     createSurface();
