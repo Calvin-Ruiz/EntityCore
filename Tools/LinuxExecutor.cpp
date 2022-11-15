@@ -411,16 +411,12 @@ void LinuxExecutor::request(LEFlag request, const std::vector<char> &datas, bool
 
     if (requestShouldLock) {
         requestMutex.lock();
-        if (write(pipeRequest, (char *) &head, sizeof(head)) == -1)
-            throw std::system_error(errno, std::system_category(), "write");
-        if (write(pipeRequest, datas.data(), head.size) == -1)
-            throw std::system_error(errno, std::system_category(), "write");
+        (void) write(pipeRequest, (char *) &head, sizeof(head));
+        (void) write(pipeRequest, datas.data(), head.size);
         requestMutex.unlock();
     } else {
-        if (write(pipeRequest, (char *) &head, sizeof(head)) == -1)
-            throw std::system_error(errno, std::system_category(), "write");
-        if (write(pipeRequest, datas.data(), head.size) == -1)
-            throw std::system_error(errno, std::system_category(), "write");
+        (void) write(pipeRequest, (char *) &head, sizeof(head));
+        (void) write(pipeRequest, datas.data(), head.size);
     }
 }
 
