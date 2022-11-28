@@ -9,7 +9,7 @@ public:
             mgr->stopTicking(this);
     }
     //! This method is called every tic as long as it return true
-    virtual bool update(double deltaTime) = 0;
+    virtual bool update(float deltaTime) = 0;
 protected:
     //! Inform about a new ticking dependency
     inline void needUpdate(TickMgr *_mgr) {
