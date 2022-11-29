@@ -26,18 +26,18 @@ public:
                 timer = duration;
                 value = interpolator.one();
                 this->mgr = nullptr;
-                return false;
+                return true;
             }
         } else {
             if ((timer -= deltaTime) <= 0) {
                 timer = 0;
                 value = interpolator.zero();
                 this->mgr = nullptr;
-                return false;
+                return true;
             }
         }
         value = interpolator(timer / duration);
-        return true;
+        return false;
     }
 
     bool finalState() const {

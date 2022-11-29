@@ -9,7 +9,7 @@ public:
         if (mgr)
             mgr->stopTicking(this);
     }
-    //! This method is called every tic as long as it return true
+    //! This method is called every tick as long as it return false
     virtual bool update(float deltaTime) = 0;
 protected:
     //! Inform about a new ticking dependency
@@ -19,7 +19,7 @@ protected:
             _mgr->startTicking(this);
         }
     }
-    //! This member MUST be set to nullptr before returning false in update()
+    //! This member MUST be set to nullptr before returning true in update()
     TickMgr *mgr = nullptr;
 };
 
