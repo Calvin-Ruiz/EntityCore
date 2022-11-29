@@ -7,7 +7,7 @@
 template <class GlobalTickMgr, class Interp>
 class AFader : public Tickable<GlobalTickMgr> {
 public:
-    AFader(bool state, int duration) : duration(duration)
+    AFader(bool state = false, float duration = 2) : duration(duration)
     {
         setNoDelay(state);
         timer = state ? duration : 0;
