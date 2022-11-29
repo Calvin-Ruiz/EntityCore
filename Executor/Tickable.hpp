@@ -4,6 +4,7 @@
 template <class TickMgr>
 class Tickable {
 public:
+    Tickable() = default;
     virtual ~Tickable() {
         if (mgr)
             mgr->stopTicking(this);
@@ -15,7 +16,7 @@ protected:
     inline void needUpdate(TickMgr *_mgr) {
         if (!mgr) {
             mgr = _mgr;
-            mgr->startTicking(this);
+            _mgr->startTicking(this);
         }
     }
     //! This member MUST be set to nullptr before returning false in update()

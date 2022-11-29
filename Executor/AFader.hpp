@@ -7,8 +7,7 @@
 template <class GlobalTickMgr, class Interp>
 class AFader : public Tickable<GlobalTickMgr> {
 public:
-    AFader(bool state, int duration) :
-        context(context), duration(duration)
+    AFader(bool state, int duration) : duration(duration)
     {
         setNoDelay(state);
         timer = state ? duration : 0;
@@ -17,7 +16,7 @@ public:
     void operator=(bool b) {
         if (state != b) {
             state = b;
-            needUpdate(GlobalTickMgr::instance);
+            this->needUpdate(GlobalTickMgr::instance);
         }
     }
 
@@ -26,14 +25,14 @@ public:
             if ((timer += deltaTime) >= duration) {
                 timer = duration;
                 value = interpolator.one();
-                mgr = nullptr;
+                this->mgr = nullptr;
                 return false;
             }
         } else {
             if ((timer -= deltaTime) <= 0) {
                 timer = 0;
                 value = interpolator.zero();
-                mgr = nullptr;
+                this->mgr = nullptr;
                 return false;
             }
         }
@@ -41,13 +40,17 @@ public:
         return true;
     }
 
+    bool finalState() const {
+        return state;
+    }
+
     void setNoDelay(bool b) {
-        if (mgr) {
-            mgr->stopTicking(this);
-            mgr = nullptr;
+        if (this->mgr) {
+            this->mgr->stopTicking(this);
+            this->mgr = nullptr;
         }
         state = b;
-        value = b ? interpolator.one() : interplator.zero();
+        value = b ? interpolator.one() : interpolator.zero();
     }
 
     float getInterstate() const {
@@ -58,13 +61,13 @@ public:
         return value;
     }
 
-    void getDuration() const {
+    float getDuration() const {
         return duration;
     }
 
     void setDuration(float duration_) {
         duration = duration_;
-        if (state && !mgr)
+        if (state && !this->mgr)
             timer = duration_;
     }
 
@@ -79,7 +82,7 @@ public:
     }
 
     bool isTransiting() const {
-        return mgr != nullptr;
+        return this->mgr != nullptr;
     }
 
     Interp interpolator;
