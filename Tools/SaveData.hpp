@@ -34,6 +34,7 @@
 #include <memory>
 #include <ostream>
 #include <cassert>
+#include <filesystem>
 
 enum SaveSection {
     UNDEFINED,
@@ -134,6 +135,12 @@ public:
             return type == SaveSection::UNDEFINED;
         return false;
     }
+    //! Return true if the last modification time stored in this SaveData doesn't fit with the given file(s)
+    bool checkCache(const std::filesystem::path &filename);
+    bool checkCache(const std::vector<std::filesystem::path> &filenames);
+    //! This version doesn't throw and return false in case of error
+    bool checkCache(const std::filesystem::path &filename, std::error_code &ec);
+    bool checkCache(const std::vector<std::filesystem::path> &filenames, std::error_code &ec);
     std::vector<char> &get() {return raw;}
     template<typename T>
     #ifndef NO_SAVEDATA_CONCEPT

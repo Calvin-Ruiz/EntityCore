@@ -492,3 +492,61 @@ const std::string &SaveData::operator=(const std::string &content)
     content.copy(raw.data(), raw.size());
     return content;
 }
+
+bool SaveData::checkCache(const std::filesystem::path &filename)
+{
+    size_t &last = *this;
+    size_t tmp = std::filesystem::last_write_time(filename).time_since_epoch().count();
+    if (last == tmp)
+        return false;
+    last = tmp;
+    return true;
+}
+
+bool SaveData::checkCache(const std::filesystem::path &filename, std::error_code &ec)
+{
+    size_t &last = *this;
+    size_t tmp = std::filesystem::last_write_time(filename, ec).time_since_epoch().count();
+    if (ec || last == tmp)
+        return false;
+    last = tmp;
+    return true;
+}
+
+bool SaveData::checkCache(const std::vector<std::filesystem::path> &filenames)
+{
+    bool ret = false;
+    if (raw.size() != sizeof(size_t) * filenames.size()) {
+        raw.clear();
+        raw.resize(sizeof(size_t) * filenames.size());
+    }
+    size_t *_ptr = ((size_t *) raw.data()) - 1;
+    for (auto &f : filenames) {
+        size_t tmp = std::filesystem::last_write_time(f).time_since_epoch().count();
+        if (tmp != *++_ptr) {
+            *_ptr = tmp;
+            ret = true;
+        }
+    }
+    return ret;
+}
+
+bool SaveData::checkCache(const std::vector<std::filesystem::path> &filenames, std::error_code &ec)
+{
+    bool ret = false;
+    if (raw.size() != sizeof(size_t) * filenames.size()) {
+        raw.clear();
+        raw.resize(sizeof(size_t) * filenames.size());
+    }
+    size_t *_ptr = ((size_t *) raw.data()) - 1;
+    for (auto &f : filenames) {
+        size_t tmp = std::filesystem::last_write_time(f, ec).time_since_epoch().count();
+        if (ec)
+            return false;
+        if (tmp != *++_ptr) {
+            *_ptr = tmp;
+            ret = true;
+        }
+    }
+    return ret;
+}
