@@ -98,6 +98,10 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
         scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + viewport.height + 0.001f)};
         scissor.extent = {(uint32_t) createInfo.width, (uint32_t) -createInfo.height};
     }
+    mouseNorm.scaleX = 0.5f * (scissor.extent.width - 1);
+    mouseNorm.scaleY = 0.5f * (scissor.extent.height - 1);
+    mouseNorm.offsetX = scissor.offset.x + mouseNorm.scaleX;
+    mouseNorm.offsetY = scissor.offset.x + mouseNorm.scaleY;
 
     // Viewport
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -608,6 +612,10 @@ bool VulkanMgr::regenerateSwapchain(int width, int height)
         scissor.offset = {(int) (viewport.x + 0.001f), (int) (viewport.y + viewport.height + 0.001f)};
         scissor.extent = {(uint32_t) width, (uint32_t) -height};
     }
+    mouseNorm.scaleX = 0.5f * (scissor.extent.width - 1);
+    mouseNorm.scaleY = 0.5f * (scissor.extent.height - 1);
+    mouseNorm.offsetX = scissor.offset.x + mouseNorm.scaleX;
+    mouseNorm.offsetY = scissor.offset.x + mouseNorm.scaleY;
     return true;
 }
 

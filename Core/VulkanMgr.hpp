@@ -114,6 +114,14 @@ public:
     VulkanMgr(const VulkanMgrCreateInfo &createInfo);
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0, uint32_t batch = 0);
+    //! Convert screen position to normalized position in the ScreenRect, between -1 and 1.
+    std::pair<float, float> screenToRect(const std::pair<uint16_t, uint16_t> &pos) const {
+        return std::make_pair<float, float>((pos.first - mouseNorm.offsetX) / mouseNorm.scaleX, (pos.second - mouseNorm.offsetY) / mouseNorm.scaleY);
+    }
+    //! Convert normalized position in the ScreenRect (between -1 and 1) to screen position.
+    std::pair<uint16_t, uint16_t> rectToScreen(const std::pair<float, float> &pos) const {
+        return std::make_pair<uint16_t, uint16_t>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX + 0.5f, pos.second * mouseNorm.scaleY + mouseNorm.offsetY + 0.5f);
+    }
     //! for malloc
     MemoryManager *getMemoryManager() {return memoryManager;}
     void free(SubMemory& bufferMemory);
@@ -185,6 +193,12 @@ private:
     VkPipelineViewportStateCreateInfo viewportState{};
     VkViewport viewport{};
     VkRect2D scissor{};
+    struct MouseNormalizer {
+        float offsetX;
+        float offsetY;
+        float scaleX;
+        float scaleY;
+    } mouseNorm;
     VkPhysicalDeviceFeatures2 deviceFeatures{};
     VkPipelineCache pipelineCache;
 
