@@ -57,7 +57,7 @@ public:
         return value;
     }
 
-    operator float() const {
+    operator const float&() const {
         return value;
     }
 
