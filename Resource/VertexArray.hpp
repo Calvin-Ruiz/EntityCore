@@ -30,7 +30,8 @@ public:
     bool createBindingEntry(uint32_t stride, VkVertexInputRate type = VK_VERTEX_INPUT_RATE_VERTEX);
     // Add input for the last binding entry created
     bool addInput(VkFormat format, bool used = true);
-    std::unique_ptr<VertexBuffer> createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr = nullptr, BufferMgr *instanceMgr = nullptr);
+    std::unique_ptr<VertexBuffer> createBuffer(int binding, int vertexCount, BufferMgr *bufferMgr);
+    std::unique_ptr<VertexBuffer> createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr);
     VertexBuffer *newBuffer(int binding, int vertexCount, BufferMgr *vertexMgr = nullptr, BufferMgr *instanceMgr = nullptr);
     //! Bind VertexBuffer for use with offset in draw, allowing switching with any other VertexBuffer with the same BufferMgr
     static inline void bindGlobal(VkCommandBuffer cmd, SubBuffer &vertex) {

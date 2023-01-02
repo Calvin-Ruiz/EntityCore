@@ -16,6 +16,11 @@ struct CString;
 
 // Constant string
 struct CString {
+    constexpr CString(const char *_str, int id = 0) :
+        str(_str), size(-1), id(id)
+    {
+        while (_str[++size]);
+    }
     const char *str = nullptr;
     unsigned int size = 0; // Size of the string
     unsigned int id; // Might be externally used for fast identification

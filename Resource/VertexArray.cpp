@@ -68,6 +68,11 @@ VertexBuffer *VertexArray::newBuffer(int binding, int vertexCount, BufferMgr *ve
     }
 }
 
+std::unique_ptr<VertexBuffer> VertexArray::createBuffer(int binding, int vertexCount, BufferMgr *bufferMgr)
+{
+    return std::make_unique<VertexBuffer>(*bufferMgr, vertexCount, bindingDesc[binding].stride, alignment ? alignment : bindingDesc[binding].stride, binding);
+}
+
 std::unique_ptr<VertexBuffer> VertexArray::createBuffer(int binding, int vertexCount, BufferMgr *vertexMgr, BufferMgr *instanceMgr)
 {
    return std::unique_ptr<VertexBuffer>(newBuffer(binding, vertexCount, vertexMgr, instanceMgr));

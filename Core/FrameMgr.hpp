@@ -13,6 +13,7 @@
 #include <vector>
 #include <thread>
 #include "EntityCore/Tools/SafeQueue.hpp"
+#include <cassert>
 
 class VulkanMgr;
 class RenderMgr;
@@ -99,6 +100,7 @@ public:
         batches[layerIdx].push_back(cmds[idx]);
     }
     inline void toExecute(VkCommandBuffer cmd, int layerIdx) {
+        assert(cmd);
         batches[layerIdx].push_back(cmd);
     }
     // Cancel execution of one or several commands
