@@ -50,6 +50,7 @@ public:
             this->mgr = nullptr;
         }
         state = b;
+        timer = b ? duration : 0;
         value = b ? interpolator.one() : interpolator.zero();
     }
 
