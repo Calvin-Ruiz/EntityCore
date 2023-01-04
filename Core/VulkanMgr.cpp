@@ -762,7 +762,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanMgr::debugCallback(
     void * /*pUserData*/)
 {
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
-        && pCallbackData->pMessageIdName == std::string("Loader Message"))
+        && pCallbackData->pMessageIdName && pCallbackData->pMessageIdName == std::string("Loader Message"))
         return VK_FALSE;
     std::ostringstream ss;
     ss << vk::to_string( static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>( messageSeverity ) ) << ": "
