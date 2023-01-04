@@ -1,6 +1,5 @@
 #include "EntityCore/Core/BufferMgr.hpp"
 #include "TransferMgr.hpp"
-#include <cassert>
 
 TransferMgr::TransferMgr(BufferMgr &mgr, uint32_t size) : mgr(mgr), size(size)
 {
@@ -15,53 +14,6 @@ TransferMgr::~TransferMgr()
 {
     buffer.size = size;
     mgr.releaseBuffer(buffer);
-}
-
-void *TransferMgr::beginPlanCopy(uint32_t _size)
-{
-    assert(!planningCopy);
-    if (buffer.size + _size > size)
-        return nullptr;
-    planningCopy = true;
-    return (void *) (((char *) ptr) + buffer.size);
-}
-
-void TransferMgr::endPlanCopy(SubBuffer &dst, uint32_t _size)
-{
-    assert(planningCopy);
-    planningCopy = false;
-    if (_size == 0)
-        return;
-    pendingCopy[dst.buffer].push_back({(VkDeviceSize) (buffer.offset + buffer.size), (VkDeviceSize) dst.offset, (VkDeviceSize) _size});
-    buffer.size += _size;
-}
-
-void *TransferMgr::planCopy(SubBuffer &dst)
-{
-    assert(!planningCopy);
-    void *ret = (void *) (((char *) ptr) + buffer.size);
-    pendingCopy[dst.buffer].push_back({(VkDeviceSize) (buffer.offset + buffer.size), (VkDeviceSize) dst.offset, (VkDeviceSize) dst.size});
-    buffer.size += dst.size;
-    if (buffer.size > size) {
-        buffer.size -= dst.size;
-        pendingCopy[dst.buffer].pop_back();
-        return nullptr;
-    }
-    return ret;
-}
-
-void *TransferMgr::planCopy(SubBuffer &dst, int offset, int _size)
-{
-    assert(!planningCopy);
-    void *ret = (void *) (((char *) ptr) + buffer.size);
-    pendingCopy[dst.buffer].push_back({(VkDeviceSize) (buffer.offset + buffer.size), (VkDeviceSize) (dst.offset + offset), (VkDeviceSize) _size});
-    buffer.size += _size;
-    if (buffer.size > size) {
-        buffer.size -= _size;
-        pendingCopy[dst.buffer].pop_back();
-        return nullptr;
-    }
-    return ret;
 }
 
 void TransferMgr::planCopyBetween(SubBuffer &src, SubBuffer &dst)
