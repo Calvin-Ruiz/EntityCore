@@ -22,6 +22,12 @@ void VertexBuffer::bind(VkCommandBuffer cmd)
     vkCmdBindVertexBuffers(cmd, binding, 1, &vertexBuffer.buffer, &offset);
 }
 
+void VertexBuffer::bind(VkCommandBuffer cmd, int _offset)
+{
+    const VkDeviceSize offset = vertexBuffer.offset + _offset;
+    vkCmdBindVertexBuffers(cmd, binding, 1, &vertexBuffer.buffer, &offset);
+}
+
 void VertexBuffer::fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst)
 {
     while (count--) {

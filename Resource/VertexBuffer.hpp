@@ -26,6 +26,8 @@ public:
     int getVertexCount() const {return size;}
     //! Bind this VertexBuffer, don't allow switching between VertexBuffer without binding
     void bind(VkCommandBuffer cmd);
+    //! Bind this VertexBuffer with an offset, don't allow switching between VertexBuffer without binding
+    void bind(VkCommandBuffer cmd, int offset);
     //! Fill an entry with another one, elemSize being is the size of an element
     void fillEntry(unsigned char elemSize, unsigned int count, const float *src, float *dst);
 private:
