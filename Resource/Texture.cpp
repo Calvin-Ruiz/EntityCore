@@ -25,7 +25,7 @@ Texture::Texture(VulkanMgr &master, const TextureInfo &texInfo) : master(master)
     nbChannels = texInfo.nbChannels;
     elemSize = texInfo.channelSize;
     aspect = texInfo.aspect;
-    widthSplit = 1 << (static_cast<int>(std::log2(info.extent.depth)) / 2);
+    widthSplit = (texInfo.depthColumn) ? texInfo.depthColumn : (1 << (static_cast<int>(std::log2(info.extent.depth)) / 2));
     memoryBatch = texInfo.memoryBatch;
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;

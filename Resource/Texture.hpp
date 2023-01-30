@@ -23,6 +23,7 @@ struct TextureInfo {
     int width = 0; // width of the texture, or 0 to use name as the filename of the texture to load
     int height = 1; // Negate height to inverse the up and the down of this image at initial upload
     int depth = 1;
+    int depthColumn = 0; // Number of column used for the depth, 0 mean pow(2, int(log2(depth) / 2))
     int nbChannels = 4; // Number of channels
     int channelSize = 1; // Size of a channel
     int arrayLayers = 1; // Number of layers in the texture
