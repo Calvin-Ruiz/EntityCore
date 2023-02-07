@@ -252,7 +252,7 @@ void Texture::unuse()
 void Texture::createSurface()
 {
     if (!onCPU) {
-        VkDeviceSize size = info.extent.width * info.extent.height * nbChannels * elemSize;
+        VkDeviceSize size = info.extent.width * info.extent.height * info.extent.depth * nbChannels * elemSize;
         staging = mgr->acquireBuffer(size);
         onCPU = true;
     }
