@@ -4,6 +4,7 @@
 #include "EntityCore/Resource/SyncEvent.hpp"
 #include "EntityCore/Resource/Set.hpp"
 #include "EntityCore/Resource/Texture.hpp"
+#include "EntityCore/Executor/gc.hpp"
 #include <SDL2/SDL_vulkan.h>
 #include <iostream>
 #include <set>
@@ -136,6 +137,8 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
 
 VulkanMgr::~VulkanMgr()
 {
+    gc::stop();
+    gc::waitStopped();
     vkDeviceWaitIdle(device);
     putLog("Release resources", LogType::INFO);
     cleanupOldSwapchain();
