@@ -156,7 +156,6 @@ void Pipeline::bindShader(const std::string &filename, VkShaderStageFlagBits sta
     VkPipelineShaderStageCreateInfo tmp{};
     tmp.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     tmp.stage = stage;
-    tmp.pSpecializationInfo = nullptr; // define constant values if any
 
     pNames.push_front(entry);
     tmp.pName = pNames.front().c_str();

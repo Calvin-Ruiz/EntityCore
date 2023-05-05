@@ -197,7 +197,7 @@ bool Texture::createImage()
     }
     if (info.usage & ALL_IMAGE_VIEW_USAGE) {
         // Create view
-        VkImageViewCreateInfo viewInfo {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr, 0, image, (VkImageViewType) info.imageType, info.format, {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY}, {aspect, 0, info.mipLevels, 0, info.arrayLayers}};
+        VkImageViewCreateInfo viewInfo {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, nullptr, 0, image, static_cast<VkImageViewType>(info.imageType + VK_IMAGE_VIEW_TYPE_1D_ARRAY * (info.arrayLayers > 1)), info.format, {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY}, {aspect, 0, info.mipLevels, 0, VK_REMAINING_ARRAY_LAYERS}};
         if (vkCreateImageView(master.refDevice, &viewInfo, nullptr, &view) != VK_SUCCESS) {
             master.putLog("Failed to create view for '" + name + "'", LogType::ERROR);
             vkDestroyImage(master.refDevice, image, nullptr);

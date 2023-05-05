@@ -19,8 +19,18 @@ public:
     void bindShader(const std::string &filename, const std::string entry = "main");
     //! Set specialized constant to shader
     void setSpecializedConstant(uint32_t constantID, const void *data, size_t size);
-    //! Build pipeline for use
-    void build();
+    template <typename T>
+    inline void setSpecializedConstant(uint32_t constantID, const T &data) {
+        setSpecializedConstant(constantID, &data, sizeof(data));
+    }
+    //! Modify a previously set specialized constant
+    void modifySpecializedConstant(uint32_t constantID, const void *data, size_t size);
+    template <typename T>
+    inline void modifySpecializedConstant(uint32_t constantID, const T &data) {
+        modifySpecializedConstant(constantID, &data, sizeof(data));
+    }
+    //! Build pipeline for use, return the previous pipeline to destroy when unused
+    VkPipeline build(bool allowRebuild = false);
     //! Bind pipeline in command buffer
     inline void bind(VkCommandBuffer cmd) {
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);

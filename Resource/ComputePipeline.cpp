@@ -15,9 +15,10 @@ ComputePipeline::ComputePipeline(VulkanMgr &master, PipelineLayout *layout, VkPi
 
 ComputePipeline::~ComputePipeline()
 {
-    if (computePipeline != VK_NULL_HANDLE) {
+    if (computePipeline != VK_NULL_HANDLE)
         vkDestroyPipeline(master.refDevice, computePipeline, nullptr);
-    }
+    if (pipelineInfo.stage.module != VK_NULL_HANDLE)
+        vkDestroyShaderModule(master.refDevice, pipelineInfo.stage.module, nullptr);
 }
 
 void ComputePipeline::bindShader(const std::string &filename, const std::string entry)
@@ -66,19 +67,35 @@ void ComputePipeline::setSpecializedConstant(uint32_t constantID, const void *da
     specializationInfo.info.pData = reinterpret_cast<void *>(specializationInfo.data.data());
 }
 
-void ComputePipeline::build()
+void ComputePipeline::modifySpecializedConstant(uint32_t constantID, const void *data, size_t size)
+{
+    for (auto &se : specializationInfo.entry) {
+        if (se.constantID == constantID) {
+            memcpy(specializationInfo.data.data() + se.offset, data, size);
+        }
+    }
+}
+
+VkPipeline ComputePipeline::build(bool allowRebuild)
 {
     if (!isOk || entryName.empty()) {
         master.putLog("Can't build invalid Pipeline", LogType::ERROR);
-        if (!entryName.empty())
+        if (!entryName.empty()) {
             vkDestroyShaderModule(master.refDevice, pipelineInfo.stage.module, nullptr);
-        return;
+            pipelineInfo.stage.module = VK_NULL_HANDLE;
+        }
+        return VK_NULL_HANDLE;
     }
+    auto ret = computePipeline;
     if (vkCreateComputePipelines(master.refDevice, master.getPipelineCache(), 1, &pipelineInfo, nullptr, &computePipeline) != VK_SUCCESS) {
         master.putLog("Faild to create compute Pipeline", LogType::ERROR);
         computePipeline = VK_NULL_HANDLE;
     } else {
         master.setObjectName(computePipeline, VK_OBJECT_TYPE_PIPELINE, name);
     }
-    vkDestroyShaderModule(master.refDevice, pipelineInfo.stage.module, nullptr);
+    if (!allowRebuild) {
+        vkDestroyShaderModule(master.refDevice, pipelineInfo.stage.module, nullptr);
+        pipelineInfo.stage.module = VK_NULL_HANDLE;
+    }
+    return ret;
 }
