@@ -167,7 +167,7 @@ public:
             raw.resize(sizeof(T));
             *reinterpret_cast<T *>(raw.data()) = T{};
         }
-        assert(raw.size() == sizeof(T));
+        assert(raw.size() >= sizeof(T));
         return *reinterpret_cast<T *>(raw.data());
     }
     #endif
