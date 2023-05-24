@@ -16,7 +16,7 @@ AsyncLoaderMgr::AsyncLoaderMgr(const std::filesystem::path &dataPath, const std:
         std::filesystem::create_directories(this->cachePath);
     assert(!instance);
     instance = this;
-    sd.open(cachePath.string());
+    sd.open((cachePath/"loader").string());
 }
 
 AsyncLoaderMgr::~AsyncLoaderMgr()
