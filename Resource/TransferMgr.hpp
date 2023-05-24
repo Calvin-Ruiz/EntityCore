@@ -56,6 +56,10 @@ public:
         return ret;
     }
 
+    SyncEvent &overrideBarrier() {
+        return barrier;
+    }
+
     void planCopyBetween(SubBuffer &src, SubBuffer &dst);
     void planCopyBetween(SubBuffer &src, SubBuffer &dst, int size);
     void planCopyBetween(SubBuffer &src, SubBuffer &dst, int size, int srcOffset, int dstOffset);

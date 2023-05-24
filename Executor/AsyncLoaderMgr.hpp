@@ -39,6 +39,10 @@ public:
         cvBuilder.notify_all();
     }
 
+    inline bool isLoaderIdle() const {
+        return paused;
+    }
+
     SaveData &getCache(const std::filesystem::path &source) {
         SaveData *ret = &sd;
         for (auto &p : source.lexically_relative(dataPath)) {
