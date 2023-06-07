@@ -133,6 +133,14 @@ void Set::bindStorageImage(VkImageView view, uint32_t binding, VkImageLayout lay
         &imageInfo.front(), nullptr, nullptr});
 }
 
+void Set::bindImage(VkImageView view, uint32_t binding, VkImageLayout layout)
+{
+    imageInfo.push_front({VK_NULL_HANDLE, view, layout});
+    writeSet.emplace_back(VkWriteDescriptorSet{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, set, binding, 0, 1,
+        VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        &imageInfo.front(), nullptr, nullptr});
+}
+
 int Set::bindVirtualUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, uint32_t arraySize)
 {
     VkDescriptorBufferInfo buffInfo{};

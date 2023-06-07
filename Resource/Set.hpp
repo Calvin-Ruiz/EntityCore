@@ -40,6 +40,7 @@ public:
     //! Bind storage buffer to this set
     void bindStorageBuffer(SubBuffer &buffer, uint32_t binding, uint32_t range, int offset = 0);
     void bindStorageImage(VkImageView view, uint32_t binding, VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL);
+    void bindImage(VkImageView view, uint32_t binding, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //! Bind uniform location
     //! @return virtualUniformId used as reference in setVirtualUniform
     int bindVirtualUniform(SubBuffer &buffer, uint32_t binding, uint32_t range, uint32_t arraySize = 1);

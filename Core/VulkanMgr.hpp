@@ -122,6 +122,10 @@ public:
     std::pair<uint16_t, uint16_t> rectToScreen(const std::pair<float, float> &pos) const {
         return std::make_pair<uint16_t, uint16_t>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX + 0.5f, pos.second * mouseNorm.scaleY + mouseNorm.offsetY + 0.5f);
     }
+    //! Convert normalized position in the ScreenRect (between -1 and 1) to screen position.
+    std::pair<float, float> rectToScreenf(const std::pair<float, float> &pos) const {
+        return std::make_pair<float, float>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX, pos.second * mouseNorm.scaleY + mouseNorm.offsetY);
+    }
     //! for malloc
     MemoryManager *getMemoryManager() {return memoryManager;}
     void free(SubMemory& bufferMemory);
