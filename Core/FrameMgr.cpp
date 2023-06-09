@@ -298,3 +298,31 @@ void FrameMgr::cancelExecution(std::vector<VkCommandBuffer> &cmds)
         }
     }
 }
+
+ViewportState FrameMgr::makeViewport(int width, int height)
+{
+    ViewportState ret;
+    ret.viewport.minDepth = 0.f;
+    ret.viewport.maxDepth = 1.f;
+    if (height) {
+        ret.viewport.width = width;
+        ret.viewport.height = height;
+        ret.viewport.x = (info.width - width) / 2.f;
+        ret.viewport.y = (info.height - height) / 2.f;
+        if (height > 0) {
+            ret.scissor.offset = {(int) (ret.viewport.x + 0.001f), (int) (ret.viewport.y + 0.001f)};
+            ret.scissor.extent = {(uint32_t) width, (uint32_t) height};
+        } else {
+            ret.scissor.offset = {(int) (ret.viewport.x + 0.001f), (int) (ret.viewport.y + ret.viewport.height + 0.001f)};
+            ret.scissor.extent = {(uint32_t) width, (uint32_t) -height};
+        }
+    } else {
+        ret.viewport.width = info.width;
+        ret.viewport.height = info.height;
+        ret.viewport.x = 0;
+        ret.viewport.y = 0;
+        ret.scissor.offset = {0, 0};
+        ret.scissor.extent = {(uint32_t) width, (uint32_t) height};
+    }
+    return ret;
+}

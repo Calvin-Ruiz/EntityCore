@@ -20,6 +20,19 @@ class RenderMgr;
 class Texture;
 class SyncEvent;
 
+struct ViewportState {
+    ViewportState() :
+        pipelineInfo(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, nullptr, 0, 1, &viewport, 1, &scissor)
+    {
+    }
+    VkPipelineViewportStateCreateInfo pipelineInfo;
+    VkViewport viewport;
+    VkRect2D scissor;
+    inline operator VkPipelineViewportStateCreateInfo *() {
+        return &pipelineInfo;
+    }
+};
+
 /*
 ** Manage frame-local resources
 ** CommandPool must came from here
@@ -64,6 +77,8 @@ public:
     void discardRecord();
     // Get handle of subCommand
     VkCommandBuffer getHandle(int idx) {return cmds[idx];}
+    // Create a viewport state which can be used by a pipeline
+    ViewportState makeViewport(int width = 0, int height = 0);
 
     // --- main command --- //
     // Create a primary CommandBuffer which will be resetted when starting recording the main command
