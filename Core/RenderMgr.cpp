@@ -74,6 +74,7 @@ void RenderMgr::bindColor(int id, VkImageLayout layout)
 void RenderMgr::bindDepth(int id, VkImageLayout layout)
 {
     layers.back().depthAttachment.push_back({(uint32_t) id, layout});
+    currentSampleCount = attachment[id].samples;
 }
 
 void RenderMgr::bindResolveDst(int id, VkImageLayout layout)
