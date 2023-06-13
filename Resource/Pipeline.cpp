@@ -236,6 +236,13 @@ void Pipeline::setDepthStencilMode(VkBool32 enableDepthTest, VkBool32 enableDept
     rasterizer.depthBiasSlopeFactor = depthBiasSlopeFactor;
 }
 
+void Pipeline::setStencilMode(VkStencilOpState front, VkStencilOpState back)
+{
+    depthStencil.stencilTestEnable = VK_TRUE;
+    depthStencil.front = front;
+    depthStencil.back = back;
+}
+
 void Pipeline::setTessellationState(uint32_t patchControlPoints)
 {
     tessellation.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;

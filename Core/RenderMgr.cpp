@@ -20,12 +20,14 @@ RenderMgr::~RenderMgr()
     }
 }
 
-int RenderMgr::attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout, VkImageLayout finalLayout, bool store, bool load)
+int RenderMgr::attach(VkFormat format, VkSampleCountFlagBits samples, VkImageLayout initialLayout, VkImageLayout finalLayout, bool store, bool load, bool stencilStore, bool stencilLoad)
 {
     attachment.push_back({0, format, samples,
         (load) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         (store) ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, initialLayout, finalLayout});
+        (stencilLoad) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        (stencilStore) ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout, finalLayout});
     return (attachment.size() - 1);
 }
 
@@ -42,7 +44,15 @@ void RenderMgr::setupClear(unsigned int id, float value)
     attachment[id].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     if (clears.size() <= id)
         clears.resize(id + 1);
-    clears[id].depthStencil = {value, 0};
+    clears[id].depthStencil.depth = value;
+}
+
+void RenderMgr::setupClearStencil(unsigned int id, uint8_t value)
+{
+    attachment[id].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    if (clears.size() <= id)
+        clears.resize(id + 1);
+    clears[id].depthStencil.stencil = value;
 }
 
 void RenderMgr::addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
