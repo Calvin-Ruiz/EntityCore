@@ -322,7 +322,7 @@ ViewportState FrameMgr::makeViewport(int width, int height)
         ret.viewport.x = 0;
         ret.viewport.y = 0;
         ret.scissor.offset = {0, 0};
-        ret.scissor.extent = {(uint32_t) width, (uint32_t) height};
+        ret.scissor.extent = {(uint32_t) info.width, (uint32_t) info.height};
     }
     return ret;
 }
