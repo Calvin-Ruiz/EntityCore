@@ -59,7 +59,7 @@ public:
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
     //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
     bool use(VkCommandBuffer cmd = VK_NULL_HANDLE, bool includeTransition = false);
-    //! Export texture to GPU, return true on success
+    //! Export texture to GPU, given which layout transition must be performed implicitly, return true on success
     bool use(VkCommandBuffer cmd, Implicit implicit = Implicit::LAYOUT, VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VkImageLayout srcLayout = VK_IMAGE_LAYOUT_UNDEFINED);
     //! Release texture on GPU (may invalidate all previous bindings)
     void unuse();
