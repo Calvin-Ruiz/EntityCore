@@ -47,12 +47,12 @@ void PipelineLayout::setTextureArrayLocation(uint32_t binding, uint32_t textureC
     uniformsLayout.push_back(samplerLayoutBinding);
 }
 
-void PipelineLayout::setImageLocation(uint32_t binding, VkShaderStageFlags stage)
+void PipelineLayout::setImageLocation(uint32_t binding, VkShaderStageFlags stage, VkDescriptorType type)
 {
     VkDescriptorSetLayoutBinding imageLayoutBinding{};
     imageLayoutBinding.binding = binding;
     imageLayoutBinding.descriptorCount = 1;
-    imageLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    imageLayoutBinding.descriptorType = type;
     imageLayoutBinding.stageFlags = stage;
     uniformsLayout.push_back(imageLayoutBinding);
 }
