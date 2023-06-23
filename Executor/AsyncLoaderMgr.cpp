@@ -53,6 +53,7 @@ void AsyncLoaderMgr::addLoad(AsyncLoader *task)
 
 void AsyncLoaderMgr::addBuild(AsyncBuilder *task)
 {
+    task->deletable = false;
     builders.push_front(task);
     if (task->priority > minPriority)
         cvBuilder.notify_one();
@@ -110,6 +111,7 @@ void AsyncLoaderMgr::update()
                         task->priority = LoadPriority::DONE;
                         [[fallthrough]];
                     case LoadPriority::DONE:
+                        task->deletable = true;
                         return true;
                     default:
                         return false;

@@ -15,6 +15,7 @@ public:
     virtual void postLoad() = 0;
 
     LoadPriority priority;
+    bool deletable = true; // Implicitly set to false as long as it is acquired by the AsyncLoaderMgr
 };
 
 #endif /* end of include guard: ASYNC_BUILDER_HPP_ */
