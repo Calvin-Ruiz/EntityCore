@@ -11,6 +11,7 @@
 #define BIG_SAVE_HPP_
 
 #include "SaveData.hpp"
+#include <filesystem>
 
 class BigSave : public SaveData {
 public:
@@ -31,6 +32,8 @@ public:
     // reducedCheck : If true, assume that content is unchanged if this->get() content is unchanged.
     bool open(const std::string &saveName, bool _saveAtDestroy = true, bool _reduceWrite = true, bool _reducedCheck = false);
     bool store();
+    // Note : Must add ".sav" extension, as open implicitly add it
+    bool saveAs(const std::filesystem::path &saveName);
     const std::string &getSaveName() const;
     // Global configuration used for loadShared
     static bool lsSaveAtDestroy;

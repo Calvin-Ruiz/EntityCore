@@ -99,6 +99,19 @@ bool BigSave::store()
     return (file.good());
 }
 
+bool BigSave::saveAs(const std::filesystem::path &saveName)
+{
+    std::ofstream file(saveName, std::ofstream::trunc);
+    if (file) {
+        std::vector<char> data;
+        save(data);
+        const size_t size = data.size();
+        file.write((char *) &size, sizeof(size));
+        file.write(data.data(), size);
+    }
+    return (file.good());
+}
+
 const std::string &BigSave::getSaveName() const
 {
     return saveName;
