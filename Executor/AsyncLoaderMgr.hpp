@@ -42,6 +42,8 @@ public:
     inline bool isLoaderIdle() const {
         return paused;
     }
+    // Return true if there is one task with this priority or a higher one
+    bool isTaskWithPriority(LoadPriority priority);
 
     SaveData &getCache(const std::filesystem::path &source) {
         SaveData *ret = &sd;

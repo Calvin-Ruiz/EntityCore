@@ -172,6 +172,19 @@ void AsyncLoaderMgr::threadloop()
     }
 }
 
+bool AsyncLoaderMgr::isTaskWithPriority(LoadPriority priority)
+{
+    for (auto t : loaders) {
+        if (t->priority >= priority)
+            return true;
+    }
+    for (auto t : builders) {
+        if (t->priority >= priority)
+            return true;
+    }
+    return false;
+}
+
 void AsyncLoaderMgr::builderThreadLoop()
 {
     std::mutex mtx;
