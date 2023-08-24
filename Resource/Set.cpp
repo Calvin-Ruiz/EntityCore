@@ -59,6 +59,7 @@ void Set::uninit()
     if (temporary && initialized) {
         mgr.destroySet(set);
         initialized = false;
+        used = false;
     }
 }
 

@@ -13,7 +13,7 @@ public:
         timer = state ? duration : 0;
     }
 
-    void operator=(bool b) {
+    inline void operator=(bool b) {
         if (state != b) {
             state = b;
             this->needUpdate(GlobalTickMgr::instance);
@@ -40,11 +40,11 @@ public:
         return false;
     }
 
-    bool finalState() const {
+    inline bool finalState() const {
         return state;
     }
 
-    void setNoDelay(bool b) {
+    inline void setNoDelay(bool b) {
         if (this->mgr) {
             this->mgr->stopTicking(this);
             this->mgr = nullptr;
@@ -54,35 +54,35 @@ public:
         value = b ? interpolator.one() : interpolator.zero();
     }
 
-    float getInterstate() const {
+    inline float getInterstate() const {
         return value;
     }
 
-    operator const float&() const {
+    inline operator const float&() const {
         return value;
     }
 
-    float getDuration() const {
+    inline float getDuration() const {
         return duration;
     }
 
-    void setDuration(float duration_) {
+    inline void setDuration(float duration_) {
         duration = duration_;
         if (state && !this->mgr)
             timer = duration_;
     }
 
     //! Return true if current value is interpolator.zero()
-    bool isZero() const {
+    inline bool isZero() const {
         return timer == 0;
     }
 
     //! Return true if current value is not interpolator.zero()
-    bool isNonZero() const {
+    inline bool isNonZero() const {
         return timer > 0;
     }
 
-    bool isTransiting() const {
+    inline bool isTransiting() const {
         return this->mgr != nullptr;
     }
 

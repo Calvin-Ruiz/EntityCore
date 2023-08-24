@@ -93,6 +93,12 @@ int FrameMgr::create(uint32_t count)
     return (first);
 }
 
+VkResult FrameMgr::createExternal(VkCommandBuffer *dst, uint32_t count)
+{
+    VkCommandBufferAllocateInfo allocInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, secondaryPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY, count};
+    return vkAllocateCommandBuffers(master.refDevice, &allocInfo, dst);
+}
+
 void FrameMgr::destroy(int idx)
 {
     vkFreeCommandBuffers(master.refDevice, secondaryPool, 1, &cmds[idx]);

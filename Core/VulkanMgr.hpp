@@ -115,15 +115,15 @@ public:
     ~VulkanMgr();
     bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, SubMemory& bufferMemory, VkMemoryPropertyFlags preferedProperties = 0, uint32_t batch = 0);
     //! Convert screen position to normalized position in the ScreenRect, between -1 and 1.
-    std::pair<float, float> screenToRect(const std::pair<uint16_t, uint16_t> &pos) const {
+    inline std::pair<float, float> screenToRect(const std::pair<uint16_t, uint16_t> &pos) const {
         return std::make_pair<float, float>((pos.first - mouseNorm.offsetX) / mouseNorm.scaleX, (pos.second - mouseNorm.offsetY) / mouseNorm.scaleY);
     }
     //! Convert normalized position in the ScreenRect (between -1 and 1) to screen position.
-    std::pair<uint16_t, uint16_t> rectToScreen(const std::pair<float, float> &pos) const {
+    inline std::pair<uint16_t, uint16_t> rectToScreen(const std::pair<float, float> &pos) const {
         return std::make_pair<uint16_t, uint16_t>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX + 0.5f, pos.second * mouseNorm.scaleY + mouseNorm.offsetY + 0.5f);
     }
     //! Convert normalized position in the ScreenRect (between -1 and 1) to screen position.
-    std::pair<float, float> rectToScreenf(const std::pair<float, float> &pos) const {
+    inline std::pair<float, float> rectToScreenf(const std::pair<float, float> &pos) const {
         return std::make_pair<float, float>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX, pos.second * mouseNorm.scaleY + mouseNorm.offsetY);
     }
     //! for malloc
