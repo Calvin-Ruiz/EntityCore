@@ -32,6 +32,16 @@ public:
         offset += value + sizeof(T);
         return value;
     }
+    // Extract the next element and return it
+    template <typename T2>
+    T2 *pop() {
+        if (offset == datas.size())
+            return nullptr;
+        T value = *reinterpret_cast<T *>(datas.data() + offset);
+        T2 *ptr = reinterpret_cast<T2*>(datas.data() + offset + sizeof(T));
+        offset += value + sizeof(T);
+        return ptr;
+    }
     // Extract the next string and return it
     // If there is no more entries, return an empty string
     std::string pop() {
@@ -51,7 +61,7 @@ public:
         return datas.data() + tmp + sizeof(T);
     }
     // Insert data
-    void push(const char *str, int length) {
+    void push(const void *str, int length) {
         const int tmp = datas.size();
         datas.resize(tmp + sizeof(T) + length);
         *reinterpret_cast<T *>(datas.data() + tmp) = length;
@@ -78,7 +88,7 @@ public:
         }
     }
     // Return element at this index
-    T at(char *&ptr, int index) {
+    T at(void *&ptr, int index) {
         T value = *reinterpret_cast<T *>(datas.data() + table[index]);
         ptr = datas.data() + table[index] + sizeof(T);
         return value;
@@ -105,7 +115,7 @@ public:
     // Rewrite content at index with a content of different length
     // This is a heavy operation, if the string length is unchanged, use at() and write you new string directly
     // This is a lightweight operation if the index is the last index and the rewrite don't involve reallocation
-    void rewrite(const char *ptr, int size, unsigned int index) {
+    void rewrite(const void *ptr, int size, unsigned int index) {
         if (index == table.size() - 1) {
             const int tmp = table.back();
             datas.resize(tmp + sizeof(T) + size);

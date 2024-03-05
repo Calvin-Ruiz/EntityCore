@@ -13,6 +13,7 @@ LinuxExecutor *LinuxExecutor::instance = nullptr;
 
 #ifdef __linux__
 
+#include <iostream>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -99,7 +100,7 @@ void LinuxExecutor::compileContext(const ExecutorInfo &info, std::vector<char> &
     head.pipeOutput = info.pipeOutput;
     head.pushInput = info.pushInput;
     head.saveOutput = info.saveOutput;
-    pack.push((char *) &head, sizeof(head));
+    pack.push(&head, sizeof(head));
     for (int i = 0; i < (int)head.nbArgs; ++i) {
         pack.push(info.args[i], strlen(info.args[i]) + 1);
     }
@@ -218,22 +219,22 @@ bool LinuxExecutor::closed()
 void LinuxExecutor::execute(std::vector<char> &datas)
 {
     StrPack<unsigned short> pack(datas);
-    SpawnHead *head; // uninitialized
+    SpawnHead *head;
     ExecutorInstanceInternal instance;
     char **args;
     char **env = nullptr;
     int pipes[4];
 
-    pack.pop((char *&) head); // -Wstrict-aliasing with head var
+    head = pack.pop<SpawnHead>();
     args = (char **) alloca((head->nbArgs + 1) * sizeof(char *));
     for (int i = 0; i < (int)head->nbArgs; ++i) {
-        pack.pop(args[i]);
+        args[i] = pack.pop<char>();
     }
     args[head->nbArgs] = nullptr;
     if (head->nbEnvs) {
         env = (char **) alloca((head->nbEnvs + 1) * sizeof(char *));
         for (int i = 0; i < (int)head->nbEnvs; ++i) {
-            pack.pop(env[i]);
+            env[i] = pack.pop<char>();
         }
         env[head->nbEnvs] = nullptr;
     }
@@ -409,15 +410,18 @@ void LinuxExecutor::request(LEFlag request, const std::vector<char> &datas, bool
 {
     ExecutorMsgHead head = {datas.size(), request};
 
-    if (requestShouldLock) {
+    if (requestShouldLock)
         requestMutex.lock();
-        (void) write(pipeRequest, (char *) &head, sizeof(head));
-        (void) write(pipeRequest, datas.data(), head.size);
-        requestMutex.unlock();
+    if (write(pipeRequest, (char *) &head, sizeof(head)) == sizeof(head)) {
+        uint64_t pos = 0;
+        do {
+            pos += write(pipeRequest, datas.data()+pos, head.size-pos);
+        } while (pos < head.size);
     } else {
-        (void) write(pipeRequest, (char *) &head, sizeof(head));
-        (void) write(pipeRequest, datas.data(), head.size);
+        std::cerr << "CRITICAL [LinuxExecutor] : FAILED TO SUBMIT REQUEST !\n";
     }
+    if (requestShouldLock)
+        requestMutex.unlock();
 }
 
 LEFlag LinuxExecutor::getRequest(std::vector<char> &datas)
