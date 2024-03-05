@@ -888,10 +888,6 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
             drawHeader = "(\x1b[96mDEBUG\x1b[0m)\t";
             saveHeader = "(DEBUG)\t";
             break;
-        case LogType::LAYER:
-            drawHeader = "\0";
-            saveHeader = "\0";
-            break;
         case LogType::WARNING:
             drawHeader = "(\x1b[1;93mWARN\x1b[0m)\t\x1b[93m";
             saveHeader = "(WARN)\t";
@@ -900,6 +896,9 @@ void VulkanMgr::putLog(const std::string &str, LogType type)
             drawHeader = "(\x1b[1;91mERROR\x1b[0m)\t\x1b[1;4;91m";
             saveHeader = "(ERROR)\t";
             break;
+        default: // LAYER
+            drawHeader = "\0";
+            saveHeader = "\0";
     }
     if (drawLogs && type >= minLogPrintLevel) {
         logMutex.lock();
