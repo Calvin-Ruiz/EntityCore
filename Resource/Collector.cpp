@@ -19,7 +19,7 @@ Collector::~Collector()
 VkFence Collector::createFence(bool signaled, const std::string &name)
 {
     VkFence fence;
-    VkFenceCreateInfo info {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, (signaled) ? VK_FENCE_CREATE_SIGNALED_BIT : 0u};
+    VkFenceCreateInfo info {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, (signaled) ? static_cast<VkFenceCreateFlags>(VK_FENCE_CREATE_SIGNALED_BIT) : 0u};
     if (vkCreateFence(vkmgr.refDevice, &info, nullptr, &fence) != VK_SUCCESS)
         return VK_NULL_HANDLE;
     if (!name.empty())

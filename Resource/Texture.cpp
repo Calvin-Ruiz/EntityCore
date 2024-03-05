@@ -52,14 +52,26 @@ Texture::Texture(VulkanMgr &master, const TextureInfo &texInfo) : master(master)
         onCPU = true;
         if (flipHorizontal) {
             // Note : we can't round up with horizontal flipping
-            assert(info.extent.width * nbChannels * elemSize % sizeof(uint64_t) == 0);
-            const int lineSize = info.extent.width * nbChannels * elemSize / sizeof(uint64_t);
-            uint64_t *src = ((uint64_t *) content) + lineSize * (info.extent.height + 1);
-            uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
-            for (int i = info.extent.height; i--;) {
-                src -= lineSize * 2;
-                for (int j = lineSize; j--;)
-                    *(dst++) = *(src++);
+            if (info.extent.width * nbChannels * elemSize % sizeof(uint64_t) == 0) {
+                const int lineSize = info.extent.width * nbChannels * elemSize / sizeof(uint64_t);
+                uint64_t *src = ((uint64_t *) content) + lineSize * (info.extent.height + 1);
+                uint64_t *dst = (uint64_t *) mgr->getPtr(staging);
+                for (int i = info.extent.height; i--;) {
+                    src -= lineSize * 2;
+                    for (int j = lineSize; j--;)
+                        *(dst++) = *(src++);
+                }
+            } else {
+                if (size > 16*1024*1024)
+                    master.putLog("Horizontal flipping of texture '" + texInfo.name + "' whose line size is NOT multiple of 8 bytes, this may increase loading time", LogType::WARNING);
+                const int lineSize = info.extent.width * nbChannels * elemSize;
+                uint8_t *src = ((uint8_t *) content) + lineSize * (info.extent.height + 1);
+                uint8_t *dst = (uint8_t *) mgr->getPtr(staging);
+                for (int i = info.extent.height; i--;) {
+                    src -= lineSize * 2;
+                    for (int j = lineSize; j--;)
+                        *(dst++) = *(src++);
+                }
             }
         } else {
             uint64_t *src = (uint64_t *) content;

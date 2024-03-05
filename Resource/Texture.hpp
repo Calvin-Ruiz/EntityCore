@@ -46,15 +46,7 @@ class Texture {
 public:
     // Create a texture
     Texture(VulkanMgr &master, const TextureInfo &info);
-    // Create a framebuffer attachment
-    [[deprecated]] Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT, bool mipmap = false);
-    // Create a texture
-    [[deprecated]] Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
     virtual ~Texture();
-    // load texture using name as filename, return true on success
-    [[deprecated]] bool init(int nbChannels = 4, bool mipmap = false);
-    // load texture with custom datas
-    [[deprecated]] bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, int depth = 1);
     //! Export texture to GPU, return true on success
     //! note : if the texture is already on GPU, assume the texture layout is TRANSFER_DST and don't have mipmap
     //! includeTransition : include layout transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL. Also build mipmap, if any.
@@ -96,6 +88,16 @@ public:
     VkDeviceSize getTextureSize() const {return sizeInMemory;}
     //! Set the implicit access and pipeline stage assigned to an image layout
     static void implicitBarrier(VkImageLayout layout, VkAccessFlags &access, VkPipelineStageFlags &stage);
+
+    // ==================== LEGACY METHODS ==================== //
+    // Create a framebuffer attachment
+    [[deprecated]] Texture(VulkanMgr &master, int width, int height, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, const std::string &name = "depth attachment", VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VkFormat format = VK_FORMAT_D24_UNORM_S8_UINT, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT, bool mipmap = false);
+    // Create a texture
+    Texture(VulkanMgr &master, BufferMgr &mgr, VkImageUsageFlags usage, const std::string &name = "unnamed", VkFormat format = VK_FORMAT_R8G8B8A8_UNORM, VkImageType type = VK_IMAGE_TYPE_2D);
+    // load texture using name as filename, return true on success
+    [[deprecated]] bool init(int nbChannels = 4, bool mipmap = false);
+    // load texture with custom datas
+    bool init(int width, int height, void *content = nullptr, bool mipmap = false, int nbChannels = 4, int elemSize = 1, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, int depth = 1);
 protected:
     //! Pre-create image on GPU
     bool preCreateImage();
