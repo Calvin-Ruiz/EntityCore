@@ -11,7 +11,7 @@ class SaveData;
 #define AL_READ(file, buffer, size) for (size_t pos = 0; pos < size; pos += read(file, reinterpret_cast<char*>(buffer) + pos, size - pos))
 #else
 #define AL_FILE std::ifstream*
-#define AL_READ(file, buffer, size) file->read(buffer, size)
+#define AL_READ(file, buffer, size) file->read(reinterpret_cast<char*>(buffer), size)
 #endif
 
 class AsyncLoader {

@@ -57,17 +57,17 @@ void RenderMgr::setupClearStencil(unsigned int id, uint8_t value)
 
 void RenderMgr::addDependencyFrom(int id, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(id == -1) ? VK_SUBPASS_EXTERNAL : id, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
+    dep.push_back({(id == -1) ? VK_SUBPASS_EXTERNAL : id, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, static_cast<VkDependencyFlags>((framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0)});
 }
 
 void RenderMgr::addDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(subpass == -1) ? VK_SUBPASS_EXTERNAL : subpass, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
+    dep.push_back({(subpass == -1) ? VK_SUBPASS_EXTERNAL : subpass, (uint32_t) (subpass + 1), srcStage, dstStage, srcAccess, dstAccess, static_cast<VkDependencyFlags>((framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0)});
 }
 
 void RenderMgr::addSelfDependency(VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage, VkAccessFlags srcAccess, VkAccessFlags dstAccess, bool framebufferLocal)
 {
-    dep.push_back({(uint32_t) subpass, (uint32_t) subpass, srcStage, dstStage, srcAccess, dstAccess, (framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0});
+    dep.push_back({(uint32_t) subpass, (uint32_t) subpass, srcStage, dstStage, srcAccess, dstAccess, static_cast<VkDependencyFlags>((framebufferLocal) ? VK_DEPENDENCY_BY_REGION_BIT : (VkDependencyFlagBits) 0)});
 }
 
 void RenderMgr::bindInput(int id, VkImageLayout layout)
