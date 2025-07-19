@@ -135,6 +135,34 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
     }
 }
 
+void VulkanMgr::dedicatedViewport(int width, int height)
+{
+    // viewportState.scissorCount = 0;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.x = 0;
+    viewport.y = (height < 0) ? -height : 0.f;
+    // Assume linear scaling
+    const double scalingFactor = std::min(static_cast<double>(swapchainExtent.width)/width, static_cast<double>(swapchainExtent.height)/abs(height));
+    std::cout << "Scaling : " << scalingFactor << std::endl;
+    std::cout << "Viewport : (" << viewport.width << ", " << viewport.height << ')' << std::endl;
+    std::cout << "Swapchain : (" << swapchainExtent.width << ", " << swapchainExtent.height << ')' << std::endl;
+    // ASSUME VIEWPORT FIT RENDER W
+    scissor.extent.width = width;
+    scissor.extent.height = abs(height);
+    scissor.offset.x = 0;
+    scissor.offset.y =  0;
+    std::cout << "Rect : (" << scissor.extent.width << ", " << scissor.extent.height << ") offset=(" << scissor.offset.x << ", " << scissor.offset.y << ')'  << std::endl;
+
+    int scaledWidth = scalingFactor * width;
+    int scaledHeight = scalingFactor * abs(height);
+
+    mouseNorm.scaleX = 0.5f * (scaledWidth - 1);
+    mouseNorm.scaleY = 0.5f * (scaledHeight - 1);
+    mouseNorm.offsetX = (swapchainExtent.width - scaledWidth) / 2 + mouseNorm.scaleX;
+    mouseNorm.offsetY = (swapchainExtent.height - scaledHeight) + mouseNorm.scaleY;
+}
+
 VulkanMgr::~VulkanMgr()
 {
     gc::stop();

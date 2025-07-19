@@ -126,6 +126,9 @@ public:
     inline std::pair<float, float> rectToScreenf(const std::pair<float, float> &pos) const {
         return std::make_pair<float, float>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX, pos.second * mouseNorm.scaleY + mouseNorm.offsetY);
     }
+    inline std::pair<float, float> rectToRender(const std::pair<float, float> &pos) const {
+        return std::make_pair<float, float>((pos.first * 0.5f + 0.5f) * scissor.extent.width, (pos.second * 0.5f + 0.5f) * scissor.extent.height);
+    }
     //! for malloc
     MemoryManager *getMemoryManager() {return memoryManager;}
     void free(SubMemory& bufferMemory);
@@ -155,6 +158,9 @@ public:
     VkInstance getInstance() {
         return vkinstance.get();
     }
+
+    //! Override the viewport configuration (for external swapchain)
+    void dedicatedViewport(int width, int height);
 
     //! Create a new swapchain from the old one, may modify the swapchain Extent and Screen Rect
     //! Return false if the Swapchain can't be regenerated
