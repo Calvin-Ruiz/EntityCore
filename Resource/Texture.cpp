@@ -314,11 +314,11 @@ bool Texture::use(VkCommandBuffer cmd, bool includeTransition)
     }
     if (cmd == VK_NULL_HANDLE) {
         if (onCPU)
-            master.putLog("No cmd given for '" + name + "', don't upload anything", LogType::DEBUG);
+            master.putLog("No cmd given for '" + name + "', creating uninitialized texture", LogType::DEBUG);
         return true;
     }
     if (!onCPU) {
-        master.putLog("Can't upload '" + name + "' datas : not stored in RAM", LogType::WARNING);
+        master.putLog("Can't upload '" + name + "' data : not stored in RAM", LogType::WARNING);
         return true;
     }
     if (sdlSurface) {
@@ -457,7 +457,7 @@ bool Texture::use(VkCommandBuffer cmd, Implicit implicit, VkImageLayout layout, 
             vkCmdPipelineBarrier(cmd, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
             return true;
         }
-        master.putLog("Can't upload '" + name + "' datas : not stored in RAM", LogType::WARNING);
+        master.putLog("Can't upload '" + name + "' data : not stored in RAM", LogType::WARNING);
         return false;
     }
     if ((uint8_t) implicit & (uint8_t)Implicit::SRC_LAYOUT) {

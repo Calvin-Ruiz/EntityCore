@@ -127,7 +127,7 @@ public:
         return std::make_pair<float, float>(pos.first * mouseNorm.scaleX + mouseNorm.offsetX, pos.second * mouseNorm.scaleY + mouseNorm.offsetY);
     }
     inline std::pair<float, float> rectToRender(const std::pair<float, float> &pos) const {
-        return std::make_pair<float, float>((pos.first * 0.5f + 0.5f) * scissor.extent.width, (pos.second * 0.5f + 0.5f) * scissor.extent.height);
+        return std::make_pair<float, float>((pos.first * 0.5f + 0.5f) * scissor.extent.width + scissor.offset.x, (pos.second * 0.5f + 0.5f) * scissor.extent.height + scissor.offset.y);
     }
     //! for malloc
     MemoryManager *getMemoryManager() {return memoryManager;}
