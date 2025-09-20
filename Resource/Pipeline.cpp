@@ -9,7 +9,7 @@
 std::string Pipeline::shaderDir = "./";
 float Pipeline::defaultLineWidth = 1.0f;
 
-Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLayout *layout, std::vector<VkDynamicState> _dynamicStates) : master(master)
+Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLayout *layout, std::vector<VkDynamicState> _dynamicStates) : master(master), dynamicStatesVec(std::move(_dynamicStates))
 {
     initPtr();
     colorBlendAttachment = BLEND_SRC_ALPHA;
@@ -49,6 +49,7 @@ Pipeline::Pipeline(VulkanMgr &master, RenderMgr &render, int subpass, PipelineLa
     pipelineInfo.subpass = subpass;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optionnel
     pipelineInfo.basePipelineIndex = -1; // Optionnel
+    pipelineInfo.pDynamicState = nullptr;
 
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
@@ -293,6 +294,15 @@ VkGraphicsPipelineCreateInfo &Pipeline::preBuild(const std::string &customName)
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optionnel
     pipelineInfo.basePipelineIndex = -1; // Optionnel
+
+    if (!dynamicStatesVec.empty()) {
+        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStatesVec.size());
+        dynamicState.pDynamicStates = dynamicStatesVec.data();
+        pipelineInfo.pDynamicState = &dynamicState;
+    } else {
+        pipelineInfo.pDynamicState = nullptr;
+    }
 
     if (name.empty())
         name = customName + " clone";

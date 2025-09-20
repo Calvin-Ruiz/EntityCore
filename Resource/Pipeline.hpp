@@ -79,6 +79,8 @@ public:
     static void setShaderDir(const std::string &_shaderDir) {shaderDir = _shaderDir;}
     //! Set default line width for all pipelines created after this call (default : 1.0f)
     static void setDefaultLineWidth(float _defaultLineWidth) {defaultLineWidth = _defaultLineWidth;}
+    //! Get default line width for all pipelines (default : 1.0f)
+    static float getDefaultLineWidth() {return defaultLineWidth;}
 private:
     VkGraphicsPipelineCreateInfo &preBuild(const std::string &customName = "\0");
     void postBuild(bool canRebuild);
@@ -95,7 +97,8 @@ private:
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    VkPipelineDynamicStateCreateInfo dynamicState{}; // UNUSED
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    std::vector<VkDynamicState> dynamicStatesVec;
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     VkPipelineTessellationStateCreateInfo tessellation{};
     VkPipelineMultisampleStateCreateInfo multisampling{};
