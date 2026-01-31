@@ -112,6 +112,8 @@ void AsyncLoaderMgr::update()
                         [[fallthrough]];
                     case LoadPriority::DONE:
                         task->deletable = true;
+                        if (task->autodelete)
+                            delete task;
                         return true;
                     default:
                         return false;
