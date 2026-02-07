@@ -39,8 +39,10 @@ void AsyncLoaderMgr::stop()
         for (auto &t : threads)
             t.join();
         threads.clear();
-        for (auto task : builders)
-            task->priority = LoadPriority::DONE;
+        for (auto task : builders) {
+            task->priority.store(LoadPriority::DONE, std::memory_order_relaxed);
+            task->detach();
+        }
     }
 }
 
@@ -53,9 +55,9 @@ void AsyncLoaderMgr::addLoad(AsyncLoader *task)
 
 void AsyncLoaderMgr::addBuild(AsyncBuilder *task)
 {
-    task->deletable = false;
+    task->useCount.fetch_add(1, std::memory_order_relaxed);
     builders.push_front(task);
-    if (task->priority > minPriority)
+    if (task->priority.load(std::memory_order_relaxed) > minPriority)
         cvBuilder.notify_one();
 }
 
@@ -98,22 +100,20 @@ void AsyncLoaderMgr::update()
     if (!builders.empty()) {
         if (buildersLock.test_and_set()) {
             for (auto task : builders) {
-                if (task->priority == LoadPriority::COMPLETED) {
+                if (task->priority.load(std::memory_order_acquire) == LoadPriority::COMPLETED) {
                     task->postLoad();
                     task->priority = LoadPriority::DONE;
                 }
             }
         } else {
             builders.remove_if([](AsyncBuilder *task){
-                switch (task->priority) {
+                switch (task->priority.load(std::memory_order_acquire)) {
                     case LoadPriority::COMPLETED:
                         task->postLoad();
-                        task->priority = LoadPriority::DONE;
+                        task->priority.store(LoadPriority::DONE, std::memory_order_release);
                         [[fallthrough]];
                     case LoadPriority::DONE:
-                        task->deletable = true;
-                        if (task->autodelete)
-                            delete task;
+                        task->detach();
                         return true;
                     default:
                         return false;
@@ -181,7 +181,7 @@ bool AsyncLoaderMgr::isTaskWithPriority(LoadPriority priority)
             return true;
     }
     for (auto t : builders) {
-        if (t->priority >= priority)
+        if (t->priority.load(std::memory_order_relaxed) >= priority)
             return true;
     }
     return false;
@@ -200,16 +200,16 @@ void AsyncLoaderMgr::builderThreadLoop()
         AsyncBuilder *task = nullptr;
         LoadPriority taskPriority = minPriority;
         for (auto t : builders) {
-            if (t->priority > taskPriority) {
+            if (t->priority.load(std::memory_order_relaxed) > taskPriority) {
                 taskPriority = t->priority;
                 task = t;
             }
         }
         buildersLock.clear();
         if (task) {
-            task->priority = LoadPriority::LOADING;
+            task->priority.store(LoadPriority::LOADING, std::memory_order_relaxed);
             task->asyncLoad();
-            task->priority = LoadPriority::COMPLETED;
+            task->priority.store(LoadPriority::COMPLETED, std::memory_order_release);
         } else
             cvBuilder.wait(lock);
     }

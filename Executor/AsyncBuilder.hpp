@@ -2,6 +2,7 @@
 #define ASYNC_BUILDER_HPP_
 
 #include "AsyncBase.hpp"
+#include <atomic>
 
 class AsyncBuilder {
 public:
@@ -13,10 +14,13 @@ public:
 
     virtual void asyncLoad() = 0;
     virtual void postLoad() = 0;
+    inline void detach() noexcept {
+        if (useCount.fetch_sub(1U, std::memory_order_relaxed) == 1U)
+            delete this;
+    }
 
-    LoadPriority priority;
-    bool deletable = true; // Implicitly set to false as long as it is acquired by the AsyncLoaderMgr
-    bool autodelete = false;
+    std::atomic<LoadPriority> priority;
+    std::atomic<uint32_t> useCount{1U};
 };
 
 #endif /* end of include guard: ASYNC_BUILDER_HPP_ */
