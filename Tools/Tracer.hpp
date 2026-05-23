@@ -17,6 +17,10 @@
 #include <iostream>
 #include <atomic>
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
 enum class Trace : unsigned char {
     CHAR,
     UCHAR,
@@ -54,6 +58,15 @@ public:
     void start();
     void stop();
     void redraw();
+    void redirect(int newFD, bool owned)
+    {
+        #ifdef __linux__
+        if (ownFD)
+            close(fd);
+        fd = newFD;
+        ownFD = owned;
+        #endif
+    }
 private:
     void drawBorders();
     void mainloop();
@@ -63,6 +76,8 @@ private:
     void jmp(int x, int y);
     void putStr(const char *str);
     void putPtr(uint64_t ptr);
+    int fd = 1;
+    bool ownFD = false;
     bool alive = false;
     bool needRedraw = false;
     std::atomic<bool> interrupt {false};

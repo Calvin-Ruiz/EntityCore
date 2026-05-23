@@ -9,12 +9,17 @@
 #include "Tracer.hpp"
 #include <chrono>
 
+#ifndef __linux__
+#define write(fd, content, size) std::cout.write(content, size)
+#endif
+
 Tracer::Tracer(int width, int height) : width(width), height(height)
 {}
 
 Tracer::~Tracer()
 {
     stop();
+    redirect(1, false);
 }
 
 void Tracer::emplace(Trace type, void *data, const std::string &name, trace_drawer_t handler)
@@ -56,22 +61,22 @@ void Tracer::drawBorders()
     char str[3] = {(char) 226, (char) 148, (char) 140};
     char end[3] = {'\x1b', '[', 'H'};
 
-    std::cout.write(clr, 2);
-    std::cout.write(str, 3);
+    write(fd, clr, 2);
+    write(fd, str, 3);
     str[2] = 128;
     for (short i = 1; ++i < width;)
-        std::cout.write(str, 3);
+        write(fd, str, 3);
     str[2] = 144;
-    std::cout.write(str, 3);
-    std::cout.write("\n", 1);
+    write(fd, str, 3);
+    write(fd, "\n", 1);
     str[2] = 148;
-    std::cout.write(str, 3);
+    write(fd, str, 3);
     str[2] = 128;
     for (short i = 1; ++i < width;)
-        std::cout.write(str, 3);
+        write(fd, str, 3);
     str[2] = 152;
-    std::cout.write(str, 3);
-    std::cout.write(end, 3);
+    write(fd, str, 3);
+    write(fd, end, 3);
 }
 
 void Tracer::start()
@@ -123,8 +128,7 @@ void Tracer::draw()
     while (lastSize < tracing.size()) {
         insert(tracing[lastSize++]);
     }
-    std::cout.write(reinterpret_cast<char *>(buffer), (int64_t) (pbuffer - buffer));
-    std::cout.flush();
+    write(fd, reinterpret_cast<char *>(buffer), (int64_t) (pbuffer - buffer));
 }
 
 void Tracer::insert(TraceData &data)

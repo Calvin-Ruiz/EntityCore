@@ -1,7 +1,7 @@
 #include "EntityCore/Core/VulkanMgr.hpp"
 #include "SetMgr.hpp"
 
-SetMgr::SetMgr(VulkanMgr &master, int maxSet, uint32_t maxUniformSet, uint32_t maxTextureSet, uint32_t maxStorageBufferSet, uint32_t maxStorageImageSet, bool temporarySets) : master(master)
+SetMgr::SetMgr(VulkanMgr &master, int maxSet, uint32_t maxUniformSet, uint32_t maxTextureSet, uint32_t maxStorageBufferSet, uint32_t maxStorageImageSet, bool temporarySets, uint32_t maxDynamicUniformSet) : master(master)
 {
     std::vector<VkDescriptorPoolSize> poolSize;
     if (maxUniformSet)
@@ -12,6 +12,8 @@ SetMgr::SetMgr(VulkanMgr &master, int maxSet, uint32_t maxUniformSet, uint32_t m
         poolSize.push_back({VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxStorageBufferSet});
     if (maxStorageImageSet)
         poolSize.push_back({VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxStorageImageSet});
+    if (maxDynamicUniformSet)
+        poolSize.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, maxDynamicUniformSet});
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
