@@ -53,6 +53,23 @@ public:
             duration = accelerationTime;
             nextDuration = minDuration - duration;
         } else if (minDuration) {
+            // A FRESH movement starts at phase time 0 - forced by the same
+            // p(t) = c + t*(b + t*a) the coefficients below are solved for,
+            // whose "now" is t==0. This branch is the ONLY writer that leaves
+            // the object ticking, so anything it does not write is what every
+            // later read and every later retarget starts from: without this
+            // line `timer` is (i) INDETERMINATE on the first movement - the
+            // constructor never wrote it - and (ii) STALE (>= duration) on
+            // every movement after a completed one, since update() leaves the
+            // finished phase's timer in place when it clears mgr.
+            // Measured on the shipped config (INTENT 11.152 / 5.102): the
+            // Moon's scaling read -nan immediately after its first setScaling,
+            // and the following retarget turned the whole state to NaN through
+            // `c += timer*(b + timer*a)`, so scaledRadius/scaledDatumRadius/
+            // scaledGroundRadius/boundingRadius were NaN for the whole session.
+            // That also defeated 11.16's b==0 guard: `b += timer*a*2` is NaN,
+            // never 0, so the analytic-limit branch could not fire.
+            timer = 0;
             duration = nextDuration = minDuration / 2;
             dst -= c; // Dst now represent the delta
             a = (dst/2) / (duration*duration);
@@ -99,10 +116,17 @@ public:
         return (this->mgr) ? (((a * timer) + b) * timer + c) : c;
     }
 private:
-    T a, b, c; // Coefficients of the current equation
-    float timer;
-    float duration;
-    float nextDuration;
+    // Every member is defined at construction: an ASmooth is a VALUE, and a
+    // value has no indeterminate state. `c` is the one the constructor sets
+    // (it IS the value); the rest describe "no movement in progress", which is
+    // what mgr == nullptr already says - they simply must not contradict it.
+    // The class-wide initializer is the defect's class fix; `set`'s own
+    // `timer = 0` above is the per-movement invariant (a second movement
+    // starts fresh too, and no constructor runs in between).
+    T a {}, b {}, c; // Coefficients of the current equation
+    float timer = 0;
+    float duration = 0;
+    float nextDuration = 0;
 };
 
 #endif /* end of include guard: ASMOOTH_HPP_ */
