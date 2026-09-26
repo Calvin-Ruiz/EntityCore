@@ -76,8 +76,8 @@ struct VulkanMgrCreateInfo {
     // Note : Version features extensions MUST be chained in increasing order and include every subversion
     // e.g. VkPhysicalDeviceFeatures2 -> VkPhysicalDeviceVulkan11Features -> VkPhysicalDeviceVulkan12Features
     // pNext chains other than version features and are ensured to :
-    // - When coming from requiredFeatures, be passed to vkCreateDevice
-    // - When coming from preferedFeatures, be passed to vkGetPhysicalDeviceFeatures2 then vkCreateDevice
+    // - When coming from requiredFeatures, be passed to vkCreateDevice (fail if unsupported)
+    // - When coming from preferedFeatures, be passed to vkCreateDevice if supported (as reported by vkGetPhysicalDeviceFeatures2)
     // - Be chained to deviceFeatures after version features
     // - Possibly have his pNext value modified
     VkPhysicalDeviceFeatures2 requiredFeatures = {};
@@ -89,6 +89,7 @@ struct VulkanMgrCreateInfo {
     VkImageUsageFlags swapchainUsage = 0;
     VkPresentModeKHR preferedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
     int chunkSize = 64;
+    int vramOverride = 0; // Override the querried total VRAM, in Mio - set as total if strictly positive, added to total otherwise
     int memoryBatchCount = 0; // Number of memory batch
     int forceSwapchainCount = 0;
     bool enableDebugLayers = true;

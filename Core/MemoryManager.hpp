@@ -31,7 +31,7 @@ struct MemoryQuerry {
 class MemoryManager
 {
 public:
-    MemoryManager(VulkanMgr &master, uint32_t _chunkSize, uint32_t _batchCount = 0);
+    MemoryManager(VulkanMgr &master, uint32_t _chunkSize, uint32_t _batchCount = 0, int vramOverride = 0);
     ~MemoryManager();
     //! Allocate memory from a given batch
     //! @return SubMemory.memory can be VK_NULL_HANDLE if memory allocation has failed
@@ -72,6 +72,7 @@ private:
     bool hasReleasedUnusedMemory = false; // Tell if releaseUnusedMemory have been called this frame
     uint16_t availableDeviceMemory; // Available GPU memory in MiB
     uint16_t deviceMemoryHeap; // GPU memory heap index
+    int64_t deviceMemoryHeapCorrection; // Modification over the GPU memory (in bytes) regarding to the override
     const VkDevice &refDevice;
     VkPhysicalDeviceMemoryProperties2 memProperties{};
     VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudjet{};

@@ -78,7 +78,7 @@ VulkanMgr::VulkanMgr(const VulkanMgrCreateInfo &createInfo) :
         swapchainExtent.width = createInfo.width;
         swapchainExtent.height = abs(createInfo.height);
     }
-    memoryManager = new MemoryManager(*this, (createInfo.chunkSize < 256*1024) ? createInfo.chunkSize*1024*1024 : createInfo.chunkSize, createInfo.memoryBatchCount);
+    memoryManager = new MemoryManager(*this, (createInfo.chunkSize < 256*1024) ? createInfo.chunkSize*1024*1024 : createInfo.chunkSize, createInfo.memoryBatchCount, createInfo.vramOverride);
     BufferMgr::setUniformOffsetAlignment(physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
     SyncEvent::setupPFN(vkinstance.get());
     Set::setupPFN(vkinstance.get());
