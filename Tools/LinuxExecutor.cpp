@@ -17,6 +17,7 @@ LinuxExecutor *LinuxExecutor::instance = nullptr;
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <alloca.h>
 #include "StrPack.hpp"
@@ -412,12 +413,12 @@ void LinuxExecutor::request(LEFlag request, const std::vector<char> &datas, bool
 
     if (requestShouldLock)
         requestMutex.lock();
-    if (write(pipeRequest, (char *) &head, sizeof(head)) == sizeof(head)) {
+    if (send(pipeRequest, (char *) &head, sizeof(head), MSG_NOSIGNAL) == sizeof(head)) {
         uint64_t pos = 0;
         do {
             pos += write(pipeRequest, datas.data()+pos, head.size-pos);
         } while (pos < head.size);
-    } else {
+    } else if (request != LEFlag::CLOSE) {
         std::cerr << "CRITICAL [LinuxExecutor] : FAILED TO SUBMIT REQUEST !\n";
     }
     if (requestShouldLock)
