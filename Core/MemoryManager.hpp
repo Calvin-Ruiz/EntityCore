@@ -48,12 +48,13 @@ public:
     //! Tell frame has complete
     void endOfFrame() {hasReleasedUnusedMemory = false;}
     //! Querry available ressources to decide what to do
-    std::vector<MemoryQuerry> querryMemory();
+    std::vector<MemoryQuerry> queryMemory();
     //! Display memory fragmentation of one batch
     void displayFragmentation(int memoryBatch);
     //! Release unused chunks of memory
     void releaseUnusedChunks();
 private:
+    //!
     //! Assign the memory index according to requirements
     void findMemoryIndex(const VkMemoryRequirements &memRequirements, VkMemoryPropertyFlags properties, VkMemoryPropertyFlags preferedProperties, SubMemory *subMemory);
     //! Assign the smallest compatible SubMemory
@@ -71,16 +72,13 @@ private:
     VulkanMgr &master;
     bool hasReleasedUnusedMemory = false; // Tell if releaseUnusedMemory have been called this frame
     uint16_t availableDeviceMemory; // Available GPU memory in MiB
-    uint16_t deviceMemoryHeap = 0U; // GPU memory heap index
-    int64_t deviceMemoryHeapCorrection; // Modification over the GPU memory (in bytes) regarding to the override
+    uint16_t deviceMemoryHeap = 0; // GPU memory heap index
+    int64_t deviceMemoryHeapCorrection = 0; // Modification over the GPU memory (in bytes) regarding to the override
     const VkDevice &refDevice;
-    VkPhysicalDeviceMemoryProperties2 memProperties{};
-    VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudjet{};
     typedef struct Memory {
         std::list<SubMemory> availableSpaces;
         std::list<VkDeviceMemory> memoryChunks;
     } Memory;
-    std::atomic_flag onDisplayResources = ATOMIC_FLAG_INIT;
     std::atomic_flag onReleaseMemory = ATOMIC_FLAG_INIT;
     std::mutex mtx; // General mutex,
     struct MemoryBatch {

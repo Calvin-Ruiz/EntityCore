@@ -7,21 +7,17 @@
 MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize, uint32_t _batchCount, const int vramOverride) :
     master(master), refDevice(master.refDevice), batch(_batchCount ? _batchCount : 1), chunkSize(chunkSize), usingBatches(_batchCount > 0)
 {
-    memBudjet.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
-    memBudjet.pNext = nullptr;
-    memProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
-    memProperties.pNext = &memBudjet;
+    auto heaps = queryMemory();
     uint64_t deviceHeapSize = 0;
-    vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
-    for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
-        if (memProperties.memoryProperties.memoryHeaps[i].size > deviceHeapSize) {
-            deviceHeapSize = memProperties.memoryProperties.memoryHeaps[i].size;
+    for (size_t i = 0; i < heaps.size(); ++i) {
+        if ((heaps[i].flag & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && (heaps[i].total > deviceHeapSize)) {
+            deviceHeapSize = heaps[i].total;
             deviceMemoryHeap = i;
         }
     }
-    deviceMemoryHeapCorrection = static_cast<int64_t>(vramOverride) * static_cast<int64_t>(1024 * 1024);
+    deviceMemoryHeapCorrection = static_cast<int64_t>(vramOverride) * (1024LL * 1024LL);
     if (vramOverride > 0)
-        deviceMemoryHeapCorrection += deviceHeapSize;
+        deviceMemoryHeapCorrection -= deviceHeapSize;
     displayResources();
 }
 
@@ -278,40 +274,36 @@ SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatc
 
 void MemoryManager::displayResources()
 {
-    if (onDisplayResources.test_and_set())
-        return;
-    vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
-    memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size += deviceMemoryHeapCorrection;
-    memBudjet.heapBudget[deviceMemoryHeap] += deviceMemoryHeapCorrection;
-    availableDeviceMemory = (memBudjet.heapBudget[deviceMemoryHeap] - memBudjet.heapUsage[deviceMemoryHeap]) / 1024 / 1024;
     std::ostringstream oss;
-    for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
-        oss << ((memProperties.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "GPU" : "local") << " memory";
-        oss << "\ttotal : " << memProperties.memoryProperties.memoryHeaps[i].size / 1024 / 1024 << " MiB   \tavailable : " << memBudjet.heapBudget[i] / 1024 / 1024 << " MiB\tused : " << memBudjet.heapUsage[i] / 1024 / 1024 << " MiB    \tfree : " << (memBudjet.heapBudget[i] - memBudjet.heapUsage[i]) / 1024 / 1024 << " MiB";
+    for (auto &mem : queryMemory()) {
+        oss << ((mem.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "GPU" : "local") << " memory";
+        oss << "\ttotal : " << mem.total / 1024 / 1024 << " MiB   \tavailable : " << mem.available / 1024 / 1024 << " MiB\tused : " << mem.used / 1024 / 1024 << " MiB    \tfree : " << mem.free / 1024 / 1024 << " MiB";
         master.putLog(oss.str(), LogType::DEBUG);
         oss.str(std::string());
     }
-    onDisplayResources.clear();
 }
 
-std::vector<MemoryQuerry> MemoryManager::querryMemory()
+std::vector<MemoryQuerry> MemoryManager::queryMemory()
 {
-    while (onDisplayResources.test_and_set())
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
+    VkPhysicalDeviceMemoryProperties2 memProperties{};
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT memBudjet{};
+    memBudjet.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    memProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    memProperties.pNext = &memBudjet;
     vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
     memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size += deviceMemoryHeapCorrection;
-    std::vector<MemoryQuerry> querry(memProperties.memoryProperties.memoryHeapCount);
+    if (memBudjet.heapBudget[deviceMemoryHeap] > memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size)
+        memBudjet.heapBudget[deviceMemoryHeap] = memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size;
+    availableDeviceMemory = (memBudjet.heapBudget[deviceMemoryHeap] - memBudjet.heapUsage[deviceMemoryHeap]) / 1024 / 1024;
+    std::vector<MemoryQuerry> query(memProperties.memoryProperties.memoryHeapCount);
     for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
-        querry[i].total = memProperties.memoryProperties.memoryHeaps[i].size;
-        querry[i].available = memBudjet.heapBudget[i];
-        if (querry[i].total > querry[i].available)
-            querry[i].available = querry[i].total;
-        querry[i].used = memBudjet.heapUsage[i];
-        querry[i].free = querry[i].available - querry[i].used;
-        querry[i].flags = memProperties.memoryProperties.memoryHeaps[i].flags;
+        query[i].total = memProperties.memoryProperties.memoryHeaps[i].size;
+        query[i].available = memBudjet.heapBudget[i];
+        query[i].used = memBudjet.heapUsage[i];
+        query[i].free = query[i].available - query[i].used;
+        query[i].flags = memProperties.memoryProperties.memoryHeaps[i].flags;
     }
-    onDisplayResources.clear();
-    return querry;
+    return query;
 }
 
 void MemoryManager::displayFragmentation(int memoryBatch)
