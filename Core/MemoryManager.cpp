@@ -7,14 +7,22 @@
 MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize, uint32_t _batchCount, const int vramOverride) :
     master(master), refDevice(master.refDevice), batch(_batchCount ? _batchCount : 1), chunkSize(chunkSize), usingBatches(_batchCount > 0)
 {
-    deviceMemoryHeapCorrection = static_cast<int64_t>(vramOverride) * static_cast<int64_t>(1024 * 1024);
     memBudjet.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
     memBudjet.pNext = nullptr;
     memProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
     memProperties.pNext = &memBudjet;
-    displayResources();
+    uint64_t deviceHeapSize = 0;
+    vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
+    for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
+        if (memProperties.memoryProperties.memoryHeaps[i].size > deviceHeapSize) {
+            deviceHeapSize = memProperties.memoryProperties.memoryHeaps[i].size;
+            deviceMemoryHeap = i;
+        }
+    }
+    deviceMemoryHeapCorrection = static_cast<int64_t>(vramOverride) * static_cast<int64_t>(1024 * 1024);
     if (vramOverride > 0)
-        deviceMemoryHeapCorrection -= memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size;
+        deviceMemoryHeapCorrection += deviceHeapSize;
+    displayResources();
 }
 
 MemoryManager::~MemoryManager()
@@ -273,14 +281,11 @@ void MemoryManager::displayResources()
     if (onDisplayResources.test_and_set())
         return;
     vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
+    memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size += deviceMemoryHeapCorrection;
+    memBudjet.heapBudget[deviceMemoryHeap] += deviceMemoryHeapCorrection;
+    availableDeviceMemory = (memBudjet.heapBudget[deviceMemoryHeap] - memBudjet.heapUsage[deviceMemoryHeap]) / 1024 / 1024;
     std::ostringstream oss;
     for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
-        if (memProperties.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-            deviceMemoryHeap = i;
-            memProperties.memoryProperties.memoryHeaps[i].size += deviceMemoryHeapCorrection;
-            memBudjet.heapBudget[i] += deviceMemoryHeapCorrection;
-            availableDeviceMemory = (memBudjet.heapBudget[i] - memBudjet.heapUsage[i]) / 1024 / 1024;
-        }
         oss << ((memProperties.memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "GPU" : "local") << " memory";
         oss << "\ttotal : " << memProperties.memoryProperties.memoryHeaps[i].size / 1024 / 1024 << " MiB   \tavailable : " << memBudjet.heapBudget[i] / 1024 / 1024 << " MiB\tused : " << memBudjet.heapUsage[i] / 1024 / 1024 << " MiB    \tfree : " << (memBudjet.heapBudget[i] - memBudjet.heapUsage[i]) / 1024 / 1024 << " MiB";
         master.putLog(oss.str(), LogType::DEBUG);

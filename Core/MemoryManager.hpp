@@ -71,7 +71,7 @@ private:
     VulkanMgr &master;
     bool hasReleasedUnusedMemory = false; // Tell if releaseUnusedMemory have been called this frame
     uint16_t availableDeviceMemory; // Available GPU memory in MiB
-    uint16_t deviceMemoryHeap; // GPU memory heap index
+    uint16_t deviceMemoryHeap = 0U; // GPU memory heap index
     int64_t deviceMemoryHeapCorrection; // Modification over the GPU memory (in bytes) regarding to the override
     const VkDevice &refDevice;
     VkPhysicalDeviceMemoryProperties2 memProperties{};
