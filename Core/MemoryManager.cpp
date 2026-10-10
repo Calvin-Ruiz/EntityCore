@@ -7,17 +7,20 @@
 MemoryManager::MemoryManager(VulkanMgr &master, uint32_t chunkSize, uint32_t _batchCount, const int vramOverride) :
     master(master), refDevice(master.refDevice), batch(_batchCount ? _batchCount : 1), chunkSize(chunkSize), usingBatches(_batchCount > 0)
 {
-    auto heaps = queryMemory();
+    memProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    vkGetPhysicalDeviceMemoryProperties2(master.getPhysicalDevice(), &memProperties);
     uint64_t deviceHeapSize = 0;
-    for (size_t i = 0; i < heaps.size(); ++i) {
-        if ((heaps[i].flag & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && (heaps[i].total > deviceHeapSize)) {
-            deviceHeapSize = heaps[i].total;
+    for (uint32_t i = 0; i < memProperties.memoryProperties.memoryHeapCount; ++i) {
+        auto &heap = memProperties.memoryProperties.memoryHeaps[i];
+        if ((heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) && heap.size > deviceHeapSize) {
+            deviceHeapSize = heap.size;
             deviceMemoryHeap = i;
         }
     }
     deviceMemoryHeapCorrection = static_cast<int64_t>(vramOverride) * (1024LL * 1024LL);
     if (vramOverride > 0)
         deviceMemoryHeapCorrection -= deviceHeapSize;
+    memProperties.memoryProperties.memoryHeaps[deviceMemoryHeap].size += deviceMemoryHeapCorrection;
     displayResources();
 }
 

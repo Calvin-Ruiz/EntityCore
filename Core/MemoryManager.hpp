@@ -70,6 +70,7 @@ private:
     //! Write memory statistics in log
     void displayResources();
     VulkanMgr &master;
+    VkPhysicalDeviceMemoryProperties2 memProperties{};
     bool hasReleasedUnusedMemory = false; // Tell if releaseUnusedMemory have been called this frame
     uint16_t availableDeviceMemory; // Available GPU memory in MiB
     uint16_t deviceMemoryHeap = 0; // GPU memory heap index
