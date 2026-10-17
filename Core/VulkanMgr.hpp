@@ -101,7 +101,7 @@ struct VulkanMgrCreateInfo {
     // Allow the user to override parameters and some object properties with an override.cfg file in the cache path
     bool allowOverrides = false;
     LogType minLogPrintLevel = LogType::INFO;
-    LogType minLogWriteLevel = LogType::INFO;
+    LogType minLogWriteLevel = LogType::DEBUG;
     void (*customReleaseMemory)() = nullptr;
 };
 

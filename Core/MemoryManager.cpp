@@ -261,7 +261,7 @@ SubMemory MemoryManager::allocateChunk(uint32_t memoryIndex, uint32_t memoryBatc
 
     if (vkAllocateMemory(refDevice, &allocInfo, nullptr, &subMemory.memory) == VK_SUCCESS) {
         oss << "Allocate chunk of " << subMemory.size / 1024 / 1024 << " MiB in " << heapType << " memory.";
-        master.putLog(oss.str(), LogType::DEBUG);
+        master.putLog(oss.str(), LogType::INFO);
         if (registerChunk)
             batch[memoryBatch].memory[memoryIndex].memoryChunks.push_back(subMemory.memory);
         else
@@ -281,7 +281,7 @@ void MemoryManager::displayResources()
     for (auto &mem : queryMemory()) {
         oss << ((mem.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ? "GPU" : "local") << " memory";
         oss << "\ttotal : " << mem.total / 1024 / 1024 << " MiB   \tavailable : " << mem.available / 1024 / 1024 << " MiB\tused : " << mem.used / 1024 / 1024 << " MiB    \tfree : " << mem.free / 1024 / 1024 << " MiB";
-        master.putLog(oss.str(), LogType::DEBUG);
+        master.putLog(oss.str(), LogType::INFO);
         oss.str(std::string());
     }
 }
